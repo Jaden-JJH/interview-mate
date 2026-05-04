@@ -1,9 +1,12 @@
 "use client";
 
+// Worker file is copied into /public via postinstall (see scripts/copy-pdf-worker.mjs).
+// Same-origin .mjs avoids MIME/CSP issues that break module workers loaded from CDNs.
+const PDF_WORKER_URL = "/pdf.worker.min.mjs";
+
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  // Worker is loaded from CDN to avoid bundler/worker config issues.
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
 
   const buffer = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buffer }).promise;
