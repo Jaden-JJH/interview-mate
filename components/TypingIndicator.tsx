@@ -1,5 +1,6 @@
 "use client";
 
+import LottieAnimation from "@/components/LottieAnimation";
 import { motion } from "framer-motion";
 
 export default function TypingIndicator() {
@@ -10,10 +11,11 @@ export default function TypingIndicator() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="flex items-center gap-1.5 rounded-[4px_18px_18px_18px] bg-white px-5 py-3">
-        <span className="typing-dot inline-block h-[6px] w-[6px] rounded-full bg-[var(--gray-300)]" />
-        <span className="typing-dot inline-block h-[6px] w-[6px] rounded-full bg-[var(--gray-300)]" />
-        <span className="typing-dot inline-block h-[6px] w-[6px] rounded-full bg-[var(--gray-300)]" />
+      <div className="flex items-center rounded-[4px_18px_18px_18px] bg-white px-4 py-1">
+        <LottieAnimation
+          src="/lottie/Loading Dots Blue.json"
+          className="w-12 h-8"
+        />
       </div>
     </motion.div>
   );

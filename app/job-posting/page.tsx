@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
+import LottieAnimation from "@/components/LottieAnimation";
+import BottomSheet from "@/components/BottomSheet";
+
+const LOADING_TEXTS = [
+  "회사 정보를 가져오는 중...",
+  "공고 내용 분석 중...",
+  "핵심 직무 역량 추출 중...",
+  "예상 면접 질문 생성 중...",
+];
 
 type Status = "idle" | "loading" | "success" | "fallback";
 
@@ -19,6 +28,7 @@ export default function JobPostingPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [fallbackText, setFallbackText] = useState("");
   const [showDirectInput, setShowDirectInput] = useState(false);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
 
   const hasInput =
     status === "success" ||
@@ -28,7 +38,18 @@ export default function JobPostingPage() {
   const handleAnalyze = () => {
     if (!url.trim()) return;
     setStatus("loading");
-    setTimeout(() => setStatus("success"), 1500);
+    
+    // Cycle text every 800ms
+    let count = 0;
+    const interval = setInterval(() => {
+      count = (count + 1) % LOADING_TEXTS.length;
+      setLoadingTextIndex(count);
+    }, 800);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      setStatus("success");
+    }, 3200);
   };
 
   return (
@@ -104,10 +125,21 @@ export default function JobPostingPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="flex flex-col items-center gap-3 py-8"
+              className="flex flex-col items-center gap-2 py-4"
             >
-              <div className="h-7 w-7 animate-spin rounded-full border-[2.5px] border-[var(--gray-200)] border-t-[var(--blue-primary)]" />
-              <p className="text-[13px] text-[var(--gray-500)]">채용공고를 분석하고 있어요</p>
+              <LottieAnimation
+                src="/lottie/Sparkles Loop Loader ai.json"
+                className="w-16 h-16"
+              />
+              <motion.p
+                key={loadingTextIndex}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="text-[13px] font-medium text-[var(--blue-primary)]"
+              >
+                {LOADING_TEXTS[loadingTextIndex]}
+              </motion.p>
             </motion.div>
           )}
 
@@ -120,11 +152,11 @@ export default function JobPostingPage() {
               className="rounded-2xl bg-white p-5"
             >
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00B167]">
-                  <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+                <LottieAnimation
+                  src="/lottie/login success.json"
+                  className="w-8 h-8"
+                  loop={false}
+                />
                 <span className="text-[13px] font-semibold text-[#00875A]">분석 완료</span>
               </div>
 
@@ -154,33 +186,48 @@ export default function JobPostingPage() {
             </motion.div>
           )}
 
-          {/* Fallback textarea */}
-          {(showDirectInput || status === "fallback") && status !== "success" && status !== "loading" && (
-            <motion.div
-              key="fallback"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl bg-white p-5"
-            >
-              <label className="text-[13px] font-semibold text-[var(--gray-700)] mb-2 block">
-                채용공고 내용
-              </label>
-              <textarea
-                value={fallbackText}
-                onChange={(e) => setFallbackText(e.target.value)}
-                placeholder="채용공고 내용을 붙여넣으세요"
-                className="h-40 w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20 transition-all"
-              />
-              <span className="mt-1 block text-[12px] text-[var(--gray-400)]">
-                {fallbackText.length}자
-              </span>
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
 
+      <BottomSheet
+        isOpen={showDirectInput}
+        onClose={() => setShowDirectInput(false)}
+        title="채용공고 직접 입력"
+      >
+        <div className="pb-8 pt-2">
+          <textarea
+            value={fallbackText}
+            onChange={(e) => setFallbackText(e.target.value)}
+            placeholder="채용공고 본문을 여기에 붙여넣으세요"
+            className="h-48 w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20 transition-all"
+          />
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-[12px] text-[var(--gray-400)]">
+              {fallbackText.length}자
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setShowDirectInput(false);
+              setStatus("fallback");
+            }}
+            disabled={!fallbackText.trim()}
+            className={`mt-4 w-full rounded-xl py-3 text-[14px] font-semibold transition-all ${
+              fallbackText.trim()
+                ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
+                : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
+            }`}
+          >
+            입력 완료
+          </button>
+        </div>
+      </BottomSheet>
+
+      {/* Floating fade gradient */}
+      <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-[var(--gray-bg)] to-transparent z-40" />
+
       {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)]">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
         <button
           disabled={!hasInput}
           onClick={() => router.push("/interview")}

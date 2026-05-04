@@ -4,10 +4,20 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ScoreGauge from "@/components/ScoreGauge";
 import AccordionItem from "@/components/AccordionItem";
+import LottieAnimation from "@/components/LottieAnimation";
+import RadarChart from "@/components/RadarChart";
 
-const OVERALL_SCORE = 78;
+const OVERALL_SCORE = 92;
 const OVERALL_COMMENT =
   "전체적으로 준비가 잘 되어 있어요. 기술적 역량 설명에서 구체적인 수치를 더하면 더 좋겠어요. 팀 갈등 해결 사례에서 본인의 역할을 좀 더 명확히 어필해 보세요.";
+
+const RADAR_DATA = [
+  { label: "직무 이해도", value: 95 },
+  { label: "문제 해결력", value: 85 },
+  { label: "커뮤니케이션", value: 75 },
+  { label: "논리성", value: 82 },
+  { label: "인성/태도", value: 90 },
+];
 
 const QUESTION_DATA = [
   {
@@ -62,6 +72,12 @@ export default function ResultPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      {OVERALL_SCORE >= 70 && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+          <LottieAnimation src="/lottie/congratulation.json" loop={false} className="w-full h-full object-cover" />
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="flex items-center bg-white px-5 py-3 border-b border-[var(--gray-200)]">
         <button onClick={() => router.push("/")} className="p-1 mr-3">
@@ -75,17 +91,25 @@ export default function ResultPage() {
       {/* Scrollable */}
       <div className="flex-1 overflow-y-auto pb-28">
         {/* Score section */}
-        <div className="bg-white px-5 pt-8 pb-6">
+        <div className="bg-white px-5 pt-8 pb-6 relative overflow-hidden">
           <motion.div
-            className="flex flex-col items-center"
+            className="flex flex-col items-center relative z-10"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
           >
+            {OVERALL_SCORE >= 90 && (
+              <div className="absolute -top-14 w-28 h-28 z-20 pointer-events-none">
+                <LottieAnimation src="/lottie/Trophy.json" />
+              </div>
+            )}
             <ScoreGauge score={OVERALL_SCORE} />
-            <p className="mt-6 text-[14px] leading-[22px] text-center text-[var(--gray-700)] px-4">
+            <p className="mt-5 text-[14px] leading-[22px] text-center text-[var(--gray-700)] px-4">
               {OVERALL_COMMENT}
             </p>
+            <div className="mt-8 mb-2 w-full flex justify-center">
+              <RadarChart data={RADAR_DATA} size={260} />
+            </div>
           </motion.div>
         </div>
 
@@ -135,8 +159,11 @@ export default function ResultPage() {
         </div>
       </div>
 
+      {/* Floating fade gradient */}
+      <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-[var(--gray-bg)] to-transparent z-40" />
+
       {/* Bottom buttons */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)]">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
         <div className="flex gap-3">
           <button
             onClick={() => router.push("/")}

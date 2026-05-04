@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
+import LottieAnimation from "@/components/LottieAnimation";
 
 const DUMMY_RESUME = `저는 3년 차 프론트엔드 개발자로, React와 TypeScript를 주력 기술 스택으로 활용하고 있습니다. 현재 재직 중인 회사에서 B2B SaaS 제품의 프론트엔드를 담당하며, 컴포넌트 설계 및 상태 관리 최적화에 기여했습니다.
 
@@ -106,11 +107,11 @@ export default function ResumePage() {
                     animate={{ scale: 1, opacity: 1 }}
                     className="flex flex-col items-center gap-3"
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--blue-primary)]">
-                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
+                    <LottieAnimation
+                      src="/lottie/login success.json"
+                      className="w-20 h-20"
+                      loop={false}
+                    />
                     <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-[var(--gray-700)] shadow-sm">
                       {uploadedFileName}
                       <button
@@ -123,9 +124,10 @@ export default function ResumePage() {
                   </motion.div>
                 ) : (
                   <>
-                    <svg className="mb-3 h-10 w-10 text-[var(--gray-300)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
+                    <LottieAnimation
+                      src="/lottie/Loading 51 _ Monoplane.json"
+                      className="w-24 h-24 mb-3 opacity-80"
+                    />
                     <p className="text-[14px] font-medium text-[var(--gray-700)]">
                       PDF 파일을 업로드해 주세요
                     </p>
@@ -186,8 +188,11 @@ export default function ResumePage() {
         </AnimatePresence>
       </div>
 
+      {/* Floating fade gradient */}
+      <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-[var(--gray-bg)] to-transparent z-40" />
+
       {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)]">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
         <button
           disabled={!hasInput}
           onClick={() => router.push("/job-posting")}
