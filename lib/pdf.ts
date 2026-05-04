@@ -1,73 +1,28 @@
 "use client";
 
-// pdfjs-dist v5 frequently breaks under Next.js 14 webpack ESM interop with
-// `Object.defineProperty called on non-object`. The robust workaround is to
-// bypass the bundler entirely: load both the main library and the worker as
-// browser-native ESM modules at runtime via `webpackIgnore`. The files are
-// copied into /public by scripts/copy-pdf-worker.mjs (postinstall).
-
-interface PdfTextItem {
-  str?: string;
-}
-
-interface PdfPage {
-  getTextContent: () => Promise<{ items: PdfTextItem[] }>;
-}
-
-interface PdfDocument {
-  numPages: number;
-  getPage: (n: number) => Promise<PdfPage>;
-  destroy: () => Promise<void>;
-}
-
-interface GetDocumentOpts {
-  data: ArrayBuffer;
-  cMapUrl?: string;
-  cMapPacked?: boolean;
-  standardFontDataUrl?: string;
-}
-
-interface PdfjsModule {
-  GlobalWorkerOptions: { workerSrc: string };
-  getDocument: (opts: GetDocumentOpts) => { promise: Promise<PdfDocument> };
-}
-
-let pdfjsPromise: Promise<PdfjsModule> | null = null;
-
-function loadPdfjs(): Promise<PdfjsModule> {
-  if (pdfjsPromise) return pdfjsPromise;
-  pdfjsPromise = (async () => {
-    // webpackIgnore makes this a runtime browser ESM import, not a webpack bundle.
-    // The string is wrapped in a dynamic expression to keep TS from resolving it.
-    const url = "/pdf.min.mjs";
-    const mod = (await import(/* webpackIgnore: true */ url)) as PdfjsModule;
-    mod.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-    return mod;
-  })();
-  return pdfjsPromise;
-}
+// PDF text extraction is performed server-side via poppler `pdftotext` so that
+// font/encoding edge cases (Figma exports, embedded subsets, Korean glyphs
+// without ToUnicode CMaps) are handled by a real PDF engine instead of
+// pdfjs-in-the-browser. The server route streams the file as a raw body.
 
 export async function extractPdfText(file: File): Promise<string> {
-  const pdfjs = await loadPdfjs();
-  const buffer = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({
-    data: buffer,
-    // CJK glyph→Unicode tables are required to extract Korean text from PDFs
-    // produced by 한컴오피스, MS Word (Korean), and most resume builders.
-    cMapUrl: "/pdf-cmaps/",
-    cMapPacked: true,
-    standardFontDataUrl: "/pdf-standard-fonts/",
-  }).promise;
+  const res = await fetch("/api/parse-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/pdf" },
+    body: file,
+  });
 
-  const parts: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const text = content.items
-      .map((item) => item.str ?? "")
-      .join(" ");
-    parts.push(text);
+  if (!res.ok) {
+    let detail = `${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.error) detail = data.error;
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error(detail);
   }
-  await doc.destroy();
-  return parts.join("\n").replace(/\s+/g, " ").trim();
+
+  const data = (await res.json()) as { text?: string };
+  return (data.text ?? "").trim();
 }
