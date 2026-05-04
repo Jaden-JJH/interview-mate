@@ -52,12 +52,12 @@ export default function ResumePage() {
       {/* Top bar */}
       <div className="bg-white">
         <StepIndicator currentStep={1} totalSteps={3} />
-        <div className="px-5 pt-6 flex items-end justify-between relative bg-[#EBF1FF] mb-6 rounded-b-3xl">
-          <div className="relative z-10 pb-6 pt-2">
+        <div className="px-5 pt-6 pb-2 flex items-end justify-between relative">
+          <div className="relative z-10 pb-4 pt-2">
             <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
               자기소개서를 입력해 주세요
             </h1>
-            <p className="mt-1.5 text-[14px] text-[var(--blue-primary)] font-medium">
+            <p className="mt-1.5 text-[14px] text-[var(--gray-500)] font-medium">
               면접 질문 생성에 활용돼요
             </p>
           </div>
