@@ -148,9 +148,9 @@ export default function ResumePage() {
                     className="flex flex-col items-center gap-3"
                   >
                     <LottieAnimation
-                      src="/lottie/login success.json"
+                      src={isParsingPdf ? "/lottie/scanner-lite.json" : "/lottie/login success.json"}
                       className="w-20 h-20"
-                      loop={false}
+                      loop={isParsingPdf}
                     />
                     <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-[var(--gray-700)] shadow-sm">
                       {uploadedFileName}
@@ -180,7 +180,7 @@ export default function ResumePage() {
                 ) : (
                   <>
                     <LottieAnimation
-                      src="/lottie/search for employee.json"
+                      src="/lottie/File Search.json"
                       className="w-28 h-28 mb-1"
                     />
                     <p className="text-[14px] font-medium text-[var(--gray-700)]">

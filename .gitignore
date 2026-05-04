@@ -38,3 +38,4 @@ next-env.d.ts
 # playwright MCP tool cache
 .playwright-mcp/
 
+/.test-pdfs/

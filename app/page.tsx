@@ -9,7 +9,7 @@ const STEPS = [
     n: "01",
     title: "자기소개서 입력",
     desc: "PDF 업로드 또는 직접 입력",
-    lottie: "/lottie/search for employee.json",
+    lottie: "/lottie/File Search.json",
   },
   {
     n: "02",
