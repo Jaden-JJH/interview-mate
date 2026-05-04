@@ -25,14 +25,11 @@ export default function ResumePage() {
     (activeTab === "pdf" && uploadedFileName !== null) ||
     (activeTab === "text" && textContent.trim().length > 0);
 
-  const handleFileSelect = useCallback(
-    (file: File) => {
-      if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-        setUploadedFileName(file.name);
-      }
-    },
-    []
-  );
+  const handleFileSelect = useCallback((file: File) => {
+    if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+      setUploadedFileName(file.name);
+    }
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -44,97 +41,81 @@ export default function ResumePage() {
     [handleFileSelect]
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => setIsDragOver(false);
-
-  const fillDummy = () => setTextContent(DUMMY_RESUME);
-
   return (
     <motion.div
-      className="flex min-h-dvh flex-col"
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -30 }}
-      transition={{ duration: 0.35, ease: "easeInOut" }}
+      className="flex min-h-dvh flex-col bg-[var(--gray-bg)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Step indicator */}
-      <StepIndicator currentStep={1} totalSteps={3} label="자기소개서 입력" />
+      {/* Top bar */}
+      <div className="bg-white">
+        <StepIndicator currentStep={1} totalSteps={3} />
+        <div className="px-5 pt-6 pb-5">
+          <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
+            자기소개서를 입력해 주세요
+          </h1>
+          <p className="mt-1.5 text-[14px] text-[var(--gray-500)]">
+            면접 질문 생성에 활용돼요
+          </p>
+        </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-28">
-        {/* Tab toggle */}
-        <div className="mb-5 flex rounded-xl bg-gray-100 p-1">
+        {/* Tabs */}
+        <div className="flex border-b border-[var(--gray-200)]">
           {(["pdf", "text"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`relative flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+              className={`flex-1 pb-3 text-[14px] transition-colors ${
+                activeTab === tab ? "tab-active" : "tab-inactive"
               }`}
             >
               {tab === "pdf" ? "PDF 업로드" : "직접 입력"}
             </button>
           ))}
         </div>
+      </div>
 
+      {/* Content */}
+      <div className="flex-1 px-5 pt-5 pb-28">
         <AnimatePresence mode="wait">
           {activeTab === "pdf" ? (
             <motion.div
               key="pdf"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Drop zone */}
               <div
                 onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-all ${
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 py-14 text-center transition-all ${
                   isDragOver
-                    ? "border-indigo-500 bg-indigo-50"
+                    ? "border-[var(--blue-primary)] bg-[var(--blue-light)]"
                     : uploadedFileName
-                    ? "border-indigo-300 bg-indigo-50/50"
-                    : "border-gray-300 bg-indigo-50/30 hover:border-indigo-400 hover:bg-indigo-50/60"
+                    ? "border-[var(--blue-primary)] bg-[var(--blue-light)]"
+                    : "border-[var(--gray-300)]"
                 }`}
               >
                 {uploadedFileName ? (
                   <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
+                    initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     className="flex flex-col items-center gap-3"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-                      <svg
-                        className="h-6 w-6 text-indigo-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--blue-primary)]">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200">
-                      📄 {uploadedFileName}
+                    <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-[var(--gray-700)] shadow-sm">
+                      {uploadedFileName}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUploadedFileName(null);
-                        }}
-                        className="ml-1 text-gray-400 hover:text-red-500"
+                        onClick={(e) => { e.stopPropagation(); setUploadedFileName(null); }}
+                        className="text-[var(--gray-400)] hover:text-[var(--danger)]"
                       >
                         ✕
                       </button>
@@ -142,28 +123,14 @@ export default function ResumePage() {
                   </motion.div>
                 ) : (
                   <>
-                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100/80">
-                      <svg
-                        className="h-7 w-7 text-indigo-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium text-gray-700">
-                      PDF 파일을 드래그하거나
-                      <br />
-                      클릭하여 업로드하세요
+                    <svg className="mb-3 h-10 w-10 text-[var(--gray-300)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <p className="text-[14px] font-medium text-[var(--gray-700)]">
+                      PDF 파일을 업로드해 주세요
                     </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      최대 10MB · PDF 형식만 지원
+                    <p className="mt-1 text-[12px] text-[var(--gray-400)]">
+                      드래그 또는 클릭하여 파일 선택
                     </p>
                   </>
                 )}
@@ -178,41 +145,39 @@ export default function ResumePage() {
                   if (file) handleFileSelect(file);
                 }}
               />
-
-              {/* Quick demo shortcut */}
               {!uploadedFileName && (
                 <button
                   onClick={() => setUploadedFileName("이력서_홍길동_2024.pdf")}
-                  className="mt-4 w-full text-center text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2"
+                  className="mt-4 w-full text-center text-[12px] text-[var(--gray-400)] underline underline-offset-2"
                 >
-                  데모용 샘플 파일로 테스트하기
+                  데모용 샘플로 테스트하기
                 </button>
               )}
             </motion.div>
           ) : (
             <motion.div
               key="text"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
             >
               <textarea
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
-                placeholder="자기소개서 내용을 여기에 붙여넣으세요"
-                className="h-64 w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm leading-relaxed text-gray-800 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                placeholder="자기소개서 내용을 붙여넣으세요"
+                className="h-56 w-full resize-none rounded-2xl bg-white px-4 py-4 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20 transition-all"
               />
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-xs text-gray-400">
-                  {textContent.length}자 입력됨
+                <span className="text-[12px] text-[var(--gray-400)]">
+                  {textContent.length}자
                 </span>
                 {!textContent && (
                   <button
-                    onClick={fillDummy}
-                    className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2"
+                    onClick={() => setTextContent(DUMMY_RESUME)}
+                    className="text-[12px] text-[var(--blue-primary)] font-medium"
                   >
-                    샘플 자기소개서 채우기
+                    샘플 채우기
                   </button>
                 )}
               </div>
@@ -222,17 +187,17 @@ export default function ResumePage() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-gradient-to-t from-gray-50 via-gray-50/95 to-gray-50/0 px-5 pb-6 pt-4">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)]">
         <button
           disabled={!hasInput}
           onClick={() => router.push("/job-posting")}
-          className={`w-full rounded-xl py-4 text-base font-semibold transition-all ${
+          className={`w-full rounded-2xl py-[16px] text-[16px] font-bold transition-all ${
             hasInput
-              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-500 active:scale-[0.98]"
-              : "cursor-not-allowed bg-indigo-600/50 text-white/70"
+              ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
+              : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
           }`}
         >
-          다음 단계로 →
+          다음
         </button>
       </div>
     </motion.div>

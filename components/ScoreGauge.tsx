@@ -9,13 +9,13 @@ interface ScoreGaugeProps {
 }
 
 function getScoreColor(score: number) {
-  if (score >= 80) return { stroke: "#10B981", text: "text-emerald-500" }; // emerald
-  if (score >= 50) return { stroke: "#F59E0B", text: "text-amber-500" }; // amber
-  return { stroke: "#EF4444", text: "text-red-500" }; // red
+  if (score >= 80) return "#00B167";
+  if (score >= 50) return "#1B64DA";
+  return "#F04452";
 }
 
-export default function ScoreGauge({ score, size = 200 }: ScoreGaugeProps) {
-  const strokeWidth = 12;
+export default function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -26,7 +26,7 @@ export default function ScoreGauge({ score, size = 200 }: ScoreGaugeProps) {
   );
 
   const [displayScore, setDisplayScore] = useState(0);
-  const { stroke, text } = getScoreColor(score);
+  const color = getScoreColor(score);
 
   useEffect(() => {
     const controls = animate(motionScore, score, {
@@ -40,32 +40,29 @@ export default function ScoreGauge({ score, size = 200 }: ScoreGaugeProps) {
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#E5E7EB"
+          stroke="var(--gray-200)"
           strokeWidth={strokeWidth}
         />
-        {/* Animated progress circle */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={stroke}
+          stroke={color}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
           style={{ strokeDashoffset: dashOffset }}
         />
       </svg>
-      {/* Center text */}
       <div className="absolute flex flex-col items-center">
-        <span className={`text-4xl font-bold ${text}`}>{displayScore}점</span>
-        <span className="mt-1 text-sm text-gray-400">/ 100</span>
+        <span className="text-[40px] font-bold leading-none" style={{ color }}>{displayScore}</span>
+        <span className="mt-1 text-[13px] text-[var(--gray-400)]">/ 100점</span>
       </div>
     </div>
   );

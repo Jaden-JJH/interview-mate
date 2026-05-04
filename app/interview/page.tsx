@@ -35,19 +35,17 @@ export default function InterviewPage() {
     useState<{ role: "ai" | "user"; content: string }[]>(PRE_POPULATED);
   const [typing, setTyping] = useState(true);
   const [input, setInput] = useState("");
-  const [questionIndex, setQuestionIndex] = useState(2); // next question to show
+  const [questionIndex, setQuestionIndex] = useState(2);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const totalQuestions = DUMMY_QUESTIONS.length;
   const answeredCount = messages.filter((m) => m.role === "user").length;
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
-  // Show typing indicator for 3rd question on mount
   useEffect(() => {
     const timer = setTimeout(() => {
       setMessages((prev) => [
@@ -63,7 +61,6 @@ export default function InterviewPage() {
     const text = input.trim();
     if (!text || typing) return;
 
-    // Add user message
     const newMessages = [...messages, { role: "user" as const, content: text }];
     setMessages(newMessages);
     setInput("");
@@ -71,25 +68,16 @@ export default function InterviewPage() {
 
     const nextIdx = questionIndex + 1;
 
-    // Check if we're done
     if (nextIdx >= totalQuestions) {
-      // Show typing then navigate
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
-            content:
-              "면접이 모두 끝났습니다. 잠시만 기다려 주시면 결과를 분석하겠습니다. 수고하셨습니다! 🎉",
-          },
+          { role: "ai", content: "면접이 모두 끝났습니다. 결과를 분석하고 있어요." },
         ]);
         setTyping(false);
-        setTimeout(() => {
-          router.push("/result");
-        }, 1500);
+        setTimeout(() => router.push("/result"), 1500);
       }, 1000);
     } else {
-      // Show next question
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
@@ -111,49 +99,46 @@ export default function InterviewPage() {
 
   return (
     <motion.div
-      className="flex min-h-dvh flex-col"
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -30 }}
-      transition={{ duration: 0.35, ease: "easeInOut" }}
+      className="flex min-h-dvh flex-col bg-[var(--gray-bg)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-gray-100 bg-white/80 px-5 py-3 backdrop-blur-sm">
+      <div className="flex items-center justify-between bg-white px-5 py-3 border-b border-[var(--gray-200)]">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-800">
-            질문{" "}
-            <span className="text-indigo-600">
-              {Math.min(answeredCount + 1, totalQuestions)}
-            </span>
-            /{totalQuestions}
-          </span>
-          {/* Progress bar */}
-          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-200">
-            <motion.div
-              className="h-full rounded-full bg-indigo-600"
-              initial={{ width: 0 }}
-              animate={{
-                width: `${(answeredCount / totalQuestions) * 100}%`,
-              }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            />
-          </div>
+          <button onClick={() => router.back()} className="p-1">
+            <svg className="h-5 w-5 text-[var(--gray-900)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span className="text-[15px] font-bold text-[var(--gray-900)]">면접 진행</span>
         </div>
-        <button
-          onClick={() => router.push("/result")}
-          className="text-sm font-medium text-red-500 hover:text-red-600 transition-colors"
-        >
-          종료
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] font-medium text-[var(--gray-500)]">
+            {Math.min(answeredCount + 1, totalQuestions)}/{totalQuestions}
+          </span>
+          <button
+            onClick={() => router.push("/result")}
+            className="text-[13px] font-medium text-[var(--danger)]"
+          >
+            종료
+          </button>
+        </div>
       </div>
 
-      {/* Chat area */}
-      <div className="chat-scroll flex-1 overflow-y-auto px-5 py-4">
-        {/* Welcome bubble */}
-        <div className="mb-6 rounded-2xl bg-indigo-50 px-4 py-3 text-center text-sm text-indigo-700 ring-1 ring-indigo-100">
-          면접을 시작합니다. 편하게 답변해 주세요 😊
-        </div>
+      {/* Progress bar */}
+      <div className="h-1 bg-[var(--gray-200)]">
+        <motion.div
+          className="h-full bg-[var(--blue-primary)]"
+          initial={{ width: 0 }}
+          animate={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        />
+      </div>
 
+      {/* Chat */}
+      <div className="scroll-area flex-1 overflow-y-auto px-5 py-4">
         {messages.map((msg, i) => (
           <ChatBubble key={i} role={msg.role} content={msg.content} />
         ))}
@@ -161,8 +146,8 @@ export default function InterviewPage() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Bottom input */}
-      <div className="border-t border-gray-100 bg-white px-4 py-3">
+      {/* Input */}
+      <div className="bg-white px-4 py-3 border-t border-[var(--gray-200)]">
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -170,31 +155,21 @@ export default function InterviewPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="답변을 입력하세요..."
+            placeholder="답변을 입력하세요"
             disabled={typing}
-            className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all disabled:opacity-50"
+            className="flex-1 rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none transition-all disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || typing}
-            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+            className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-xl transition-all ${
               input.trim() && !typing
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-500 active:scale-95"
-                : "bg-gray-200 text-gray-400"
+                ? "bg-[var(--blue-primary)] text-white active:scale-95"
+                : "bg-[var(--gray-200)] text-[var(--gray-400)]"
             }`}
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-              />
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
         </div>

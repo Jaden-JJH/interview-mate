@@ -13,12 +13,10 @@ interface AccordionItemProps {
   feedback: string;
 }
 
-function getScoreBadge(score: number) {
-  if (score >= 80)
-    return { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" };
-  if (score >= 60)
-    return { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" };
-  return { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" };
+function getScoreStyle(score: number) {
+  if (score >= 80) return { bg: "bg-[#E6F7EF]", text: "text-[#00875A]" };
+  if (score >= 60) return { bg: "bg-[#E8F0FE]", text: "text-[#1B64DA]" };
+  return { bg: "bg-[#FFEAED]", text: "text-[#D6293E]" };
 }
 
 export default function AccordionItem({
@@ -31,29 +29,31 @@ export default function AccordionItem({
   feedback,
 }: AccordionItemProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const badge = getScoreBadge(score);
+  const badge = getScoreStyle(score);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl bg-white">
       {/* Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between px-4 py-4 text-left transition-colors hover:bg-gray-50"
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
-        <div className="mr-3 flex-1">
-          <span className="text-xs font-semibold text-indigo-500">Q{questionNumber}</span>
-          <p className="mt-0.5 text-sm font-medium text-gray-800 line-clamp-1">{question}</p>
+        <div className="mr-3 flex-1 min-w-0">
+          <p className="text-[14px] font-medium text-[var(--gray-900)] line-clamp-1">
+            <span className="text-[var(--gray-400)] mr-1.5">Q{questionNumber}.</span>
+            {question}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
-            className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${badge.bg} ${badge.text} ${badge.border}`}
+            className={`rounded-lg px-2.5 py-1 text-[13px] font-bold ${badge.bg} ${badge.text}`}
           >
             {score}점
           </span>
           <motion.svg
             animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-            className="h-4 w-4 text-gray-400"
+            transition={{ duration: 0.2 }}
+            className="h-4 w-4 text-[var(--gray-400)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -64,57 +64,57 @@ export default function AccordionItem({
         </div>
       </button>
 
-      {/* Expandable content */}
+      {/* Expandable */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-4 border-t border-gray-100 px-4 py-4">
+            <div className="space-y-4 border-t border-[var(--gray-200)] px-5 py-4">
               {/* My answer */}
               <div>
-                <h4 className="mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  💬 내 답변
-                </h4>
-                <p className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm leading-relaxed text-gray-700">
+                <p className="mb-2 text-[12px] font-semibold text-[var(--gray-400)]">
+                  내 답변
+                </p>
+                <p className="rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[13px] leading-[20px] text-[var(--gray-700)]">
                   {myAnswer}
                 </p>
               </div>
               {/* Model answer */}
               <div>
-                <h4 className="mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  ✅ 모범 답변
-                </h4>
-                <p className="rounded-lg bg-indigo-50 px-3 py-2.5 text-sm leading-relaxed text-indigo-900">
+                <p className="mb-2 text-[12px] font-semibold text-[var(--blue-primary)]">
+                  모범 답변
+                </p>
+                <p className="rounded-xl bg-[var(--blue-light)] px-4 py-3 text-[13px] leading-[20px] text-[var(--gray-900)]">
                   {modelAnswer}
                 </p>
               </div>
               {/* Keywords */}
               <div>
-                <h4 className="mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  🏷 핵심 키워드
-                </h4>
+                <p className="mb-2 text-[12px] font-semibold text-[var(--gray-400)]">
+                  핵심 키워드
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700"
+                      className="rounded-lg bg-[var(--gray-100)] px-3 py-1.5 text-[12px] font-medium text-[var(--gray-700)]"
                     >
                       {kw}
                     </span>
                   ))}
                 </div>
               </div>
-              {/* Detailed feedback */}
+              {/* Feedback */}
               <div>
-                <h4 className="mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  📝 상세 피드백
-                </h4>
-                <p className="text-sm leading-relaxed text-gray-700">{feedback}</p>
+                <p className="mb-2 text-[12px] font-semibold text-[var(--gray-400)]">
+                  피드백
+                </p>
+                <p className="text-[13px] leading-[20px] text-[var(--gray-700)]">{feedback}</p>
               </div>
             </div>
           </motion.div>

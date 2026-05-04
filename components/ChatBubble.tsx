@@ -12,21 +12,16 @@ export default function ChatBubble({ role, content }: ChatBubbleProps) {
 
   return (
     <motion.div
-      className={`flex ${isAI ? "justify-start" : "justify-end"} mb-4`}
-      initial={{ opacity: 0, y: 12 }}
+      className={`flex ${isAI ? "justify-start" : "justify-end"} mb-3`}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
-      {isAI && (
-        <div className="mr-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm">
-          🤖
-        </div>
-      )}
       <div
-        className={`max-w-[80%] px-4 py-3 text-[15px] leading-relaxed ${
+        className={`max-w-[80%] px-4 py-3 text-[14px] leading-[22px] ${
           isAI
-            ? "rounded-2xl rounded-tl-md bg-gray-100 text-gray-900"
-            : "rounded-2xl rounded-tr-md bg-indigo-600 text-white"
+            ? "rounded-[4px_18px_18px_18px] bg-white text-[var(--gray-900)]"
+            : "rounded-[18px_4px_18px_18px] bg-[var(--blue-primary)] text-white"
         }`}
       >
         {content}
