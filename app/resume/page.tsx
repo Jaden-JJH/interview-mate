@@ -69,6 +69,37 @@ export default function ResumePage() {
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Hydrate from the user's saved resume on mount, but only if the
+  // in-memory context is empty (so we don't clobber a freshly-uploaded one).
+  useEffect(() => {
+    if (resume) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/me/resume", { cache: "no-store" });
+      if (!res.ok || cancelled) return;
+      const data = await res.json();
+      const saved = data.resume as
+        | { content: string; fileName: string | null }
+        | null;
+      if (!saved || !saved.content || cancelled) return;
+      setResume(saved.content, saved.fileName ?? undefined);
+      if (saved.fileName) {
+        setUploadedFileName(saved.fileName);
+        setPdfText(saved.content);
+        setActiveTab("pdf");
+      } else {
+        setTextContent(saved.content);
+        setActiveTab("text");
+      }
+    })().catch(() => {
+      // Silently ignore — likely unauthenticated; the user can still type.
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const hasInput =
     (activeTab === "pdf" && uploadedFileName !== null && pdfText.trim().length > 0) ||
     (activeTab === "text" && textContent.trim().length > 0);
@@ -104,13 +135,26 @@ export default function ResumePage() {
   );
 
   const handleNext = () => {
+    let content = "";
+    let fileName: string | undefined;
     if (activeTab === "pdf") {
       if (!uploadedFileName || !pdfText.trim()) return;
-      setResume(pdfText.trim(), uploadedFileName);
+      content = pdfText.trim();
+      fileName = uploadedFileName;
     } else {
       if (!textContent.trim()) return;
-      setResume(textContent.trim());
+      content = textContent.trim();
     }
+    setResume(content, fileName);
+    // Persist in the background; navigation shouldn't wait on it.
+    fetch("/api/me/resume", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, fileName: fileName ?? null }),
+    }).catch(() => {
+      // Silently ignore — auth-required or transient errors shouldn't block
+      // the interview flow. The in-memory context still has the resume.
+    });
     router.push("/job-posting");
   };
 

@@ -46,28 +46,40 @@ export default function AuthHeader() {
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/80 px-5 backdrop-blur-md">
       <BrandMark />
-      <div className={AUTH_SLOT}>
-        <ClerkLoading>
-          <span
-            aria-hidden
-            className="block h-8 w-[72px] rounded-full bg-gray-100"
-          />
-        </ClerkLoading>
+      <div className="flex items-center gap-3">
         <ClerkLoaded>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(27,100,218,0.45)] transition hover:brightness-110 active:scale-[0.98]">
-                로그인
-              </button>
-            </SignInButton>
-          </SignedOut>
           <SignedIn>
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{ elements: { avatarBox: "w-8 h-8" } }}
-            />
+            <Link
+              href="/history"
+              className="text-[13px] font-medium text-[var(--gray-700)] hover:text-[var(--gray-900)]"
+            >
+              지난 면접
+            </Link>
           </SignedIn>
         </ClerkLoaded>
+        <div className={AUTH_SLOT}>
+          <ClerkLoading>
+            <span
+              aria-hidden
+              className="block h-8 w-[72px] rounded-full bg-gray-100"
+            />
+          </ClerkLoading>
+          <ClerkLoaded>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(27,100,218,0.45)] transition hover:brightness-110 active:scale-[0.98]">
+                  로그인
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{ elements: { avatarBox: "w-8 h-8" } }}
+              />
+            </SignedIn>
+          </ClerkLoaded>
+        </div>
       </div>
     </header>
   );

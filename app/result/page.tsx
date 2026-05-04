@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -17,7 +17,16 @@ function safeAvg(values: number[]): number {
 
 export default function ResultPage() {
   const router = useRouter();
-  const { qaResults, overallScore, overallComment, reset } = useInterview();
+  const {
+    qaResults,
+    overallScore,
+    overallComment,
+    durationMinutes,
+    resolvedPersonaId,
+    personaId,
+    reset,
+  } = useInterview();
+  const savedRef = useRef(false);
 
   // Guard: if no results, route back home.
   useEffect(() => {
@@ -25,6 +34,35 @@ export default function ResultPage() {
       router.replace("/");
     }
   }, [qaResults.length, router]);
+
+  // Persist this completed interview once. Guard with a ref so React's
+  // double-invoke (StrictMode dev) and confetti re-renders can't double-save.
+  useEffect(() => {
+    if (qaResults.length === 0 || savedRef.current) return;
+    savedRef.current = true;
+    fetch("/api/interview-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personaId: resolvedPersonaId || personaId,
+        durationMinutes,
+        overallScore,
+        overallComment,
+        qaResults,
+        endedAt: new Date().toISOString(),
+      }),
+    }).catch(() => {
+      // Best-effort: a save failure shouldn't break the result page.
+      savedRef.current = false;
+    });
+  }, [
+    qaResults,
+    overallScore,
+    overallComment,
+    durationMinutes,
+    resolvedPersonaId,
+    personaId,
+  ]);
 
   // Confetti celebration when a result is shown and the score is decent.
   useEffect(() => {

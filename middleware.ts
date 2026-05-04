@@ -14,6 +14,8 @@ const isProtectedRoute = createRouteMatcher([
   "/api/generate-feedback(.*)",
   "/api/parse-pdf(.*)",
   "/api/parse-job-posting(.*)",
+  "/api/me(.*)",
+  "/api/interview-history(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
