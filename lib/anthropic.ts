@@ -4,7 +4,9 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const CLAUDE_MODEL = "claude-sonnet-4-5";
+export const CLAUDE_MODEL = "claude-sonnet-4-6";
+// Cheaper model used for non-reasoning bulk tasks (e.g. raw PDF text extraction).
+export const CLAUDE_HAIKU = "claude-haiku-4-5";
 
 export function extractText(message: Anthropic.Message): string {
   return message.content
