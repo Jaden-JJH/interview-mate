@@ -9,6 +9,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/nextjs";
+import CreditBadge from "./CreditBadge";
 
 function BrandMark() {
   return (
@@ -53,9 +54,10 @@ export default function AuthHeader() {
             >
               지난 면접
             </Link>
+            <CreditBadge />
           </SignedIn>
         </ClerkLoaded>
-        <div className={AUTH_SLOT}>
+        <div className={`${AUTH_SLOT} ml-2`}>
           <ClerkLoading>
             <span
               aria-hidden

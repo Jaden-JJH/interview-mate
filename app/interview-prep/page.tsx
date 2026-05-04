@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import Toast from "@/components/Toast";
+import PaywallModal from "@/components/PaywallModal";
 import { useInterview } from "@/contexts/InterviewContext";
 import {
   PERSONAS,
@@ -31,6 +32,27 @@ export default function InterviewPrepPage() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>(personaId);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [balance, setBalance] = useState<{
+    free: number;
+    paid: number;
+    total: number;
+  } | null>(null);
+
+  // Pre-flight: load credit balance so we can short-circuit before the
+  // expensive Claude call when the user is already out.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me/credits", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => {
+        if (!cancelled && b) setBalance(b);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Guard: redirect if no job posting / resume
   useEffect(() => {
@@ -50,6 +72,11 @@ export default function InterviewPrepPage() {
   const handleStart = async () => {
     if (!resume.trim() || !jobPosting) {
       setErrorMsg("이전 단계의 정보가 없어요.");
+      return;
+    }
+
+    if (balance && balance.total < 1) {
+      setPaywallOpen(true);
       return;
     }
 
@@ -86,11 +113,17 @@ export default function InterviewPrepPage() {
           personaId: finalPersona.id,
         }),
       });
+      if (res.status === 402) {
+        setPaywallOpen(true);
+        setIsGenerating(false);
+        return;
+      }
       const data = await res.json();
       if (!res.ok || !Array.isArray(data.questions)) {
         throw new Error(data.error ?? "질문 생성 실패");
       }
       setQuestions(data.questions);
+      if (data.balance) setBalance(data.balance);
       if (typeof data.resolvedPersonaId === "string") {
         setPersona(selectedPersonaId, data.resolvedPersonaId);
       }
@@ -336,6 +369,13 @@ export default function InterviewPrepPage() {
       <Toast
         message={errorMsg && !isGenerating ? errorMsg : null}
         onClose={() => setErrorMsg(null)}
+      />
+
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        freeRemaining={balance?.free}
+        paidRemaining={balance?.paid}
       />
 
       {/* Floating fade gradient */}

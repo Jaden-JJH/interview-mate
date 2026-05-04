@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas";
+import { getOrCreateAppUserId } from "@/lib/db/users";
+import { consumeCredit } from "@/lib/db/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,6 +17,11 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await getOrCreateAppUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: Body;
   try {
     body = await req.json();
@@ -40,6 +47,17 @@ export async function POST(req: NextRequest) {
   const generateCount = Math.max(2, duration.questionCount - 1);
 
   const systemPrompt = `${BASE_SYSTEM}\n\nInterviewer persona tone: ${persona.systemAddendum}`;
+
+  // Charge before the (expensive) Claude call so abandoned interviews still
+  // pay for the question-generation cost we incurred. Atomic UPDATE handles
+  // race conditions; null = out of credits.
+  const balance = await consumeCredit(userId);
+  if (!balance) {
+    return NextResponse.json(
+      { error: "insufficient_credits" },
+      { status: 402 }
+    );
+  }
 
   try {
     const message = await anthropic.messages.create({
@@ -79,6 +97,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       questions: cleaned,
       resolvedPersonaId: resolvedId,
+      balance,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
