@@ -1,13 +1,14 @@
 "use client";
 
-import Lottie from "lottie-react";
-import { useEffect, useState } from "react";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import { useEffect, useState, useRef } from "react";
 
 interface LottieAnimationProps {
   src: string;
   className?: string;
   loop?: boolean;
   autoplay?: boolean;
+  playing?: boolean;
 }
 
 export default function LottieAnimation({
@@ -15,8 +16,10 @@ export default function LottieAnimation({
   className = "",
   loop = true,
   autoplay = true,
+  playing = true,
 }: LottieAnimationProps) {
   const [animationData, setAnimationData] = useState(null);
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
 
   useEffect(() => {
     fetch(src)
@@ -25,13 +28,24 @@ export default function LottieAnimation({
       .catch(() => {});
   }, [src]);
 
+  useEffect(() => {
+    if (lottieRef.current) {
+      if (playing) {
+        lottieRef.current.play();
+      } else {
+        lottieRef.current.pause();
+      }
+    }
+  }, [playing]);
+
   if (!animationData) return null;
 
   return (
     <Lottie
+      lottieRef={lottieRef}
       animationData={animationData}
       loop={loop}
-      autoplay={autoplay}
+      autoplay={playing ? autoplay : false}
       className={className}
     />
   );

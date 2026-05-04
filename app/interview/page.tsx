@@ -153,15 +153,32 @@ export default function InterviewPage() {
       </div>
 
       {/* AI Interviewer Avatar Section */}
-      <div className="bg-[var(--blue-primary)] text-white flex flex-col items-center pt-5 pb-6 shrink-0 relative overflow-hidden shadow-sm z-10">
-        <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl overflow-hidden">
-            <LottieAnimation src="/lottie/Talking Character.json" className="w-[120px] h-[120px] ml-1 mt-3" />
+      <div className="bg-[#1a2b4c] text-white flex flex-col items-center justify-center py-8 shrink-0 relative overflow-hidden shadow-md z-10 min-h-[300px]">
+        
+        {/* Animated Background Blob */}
+        <div className="absolute inset-0 z-0 opacity-80 flex items-center justify-center mix-blend-screen pointer-events-none">
+          <LottieAnimation 
+            src="/lottie/Fixed Blur.json" 
+            className="w-[200%] h-[200%] max-w-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
+            playing={typing} 
+          />
+        </div>
+        
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#1a2b4c]/90 z-10 pointer-events-none" />
+
+        <div className="relative z-20 flex flex-col items-center justify-center">
+          {/* Unbound Large Avatar */}
+          <div className="w-48 h-48 flex items-center justify-center pointer-events-none mb-3">
+            <LottieAnimation 
+              src="/lottie/Talking Character.json" 
+              className="w-full h-full scale-[1.3] origin-center" 
+              playing={typing}
+            />
           </div>
-          <h2 className="text-[15px] font-bold mt-4">AI 면접관</h2>
-          <p className="text-[12px] opacity-80 mt-1">
-            {typing ? "질문을 준비 중입니다..." : "답변을 기다리고 있어요"}
+          
+          <h2 className="text-[18px] font-bold z-20 drop-shadow-md">수석 채용담당자 Alex</h2>
+          <p className="text-[13px] text-white/80 mt-2 z-20 font-medium bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md">
+            {typing ? "질문을 말씀하고 있습니다..." : "당신의 답변을 경청 중입니다"}
           </p>
         </div>
       </div>
