@@ -52,13 +52,18 @@ export default function ResumePage() {
       {/* Top bar */}
       <div className="bg-white">
         <StepIndicator currentStep={1} totalSteps={3} />
-        <div className="px-5 pt-6 pb-5">
-          <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
-            자기소개서를 입력해 주세요
-          </h1>
-          <p className="mt-1.5 text-[14px] text-[var(--gray-500)]">
-            면접 질문 생성에 활용돼요
-          </p>
+        <div className="px-5 pt-8 pb-5 flex items-center justify-between relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
+              자기소개서를 입력해 주세요
+            </h1>
+            <p className="mt-1.5 text-[14px] text-[var(--gray-500)]">
+              면접 질문 생성에 활용돼요
+            </p>
+          </div>
+          <div className="w-28 h-28 -mr-6 -mt-4 -mb-8 relative z-0 flex items-center justify-center pointer-events-none">
+            <LottieAnimation src="/lottie/Young programmers working with computer.json" className="w-[150%] h-[150%]" />
+          </div>
         </div>
 
         {/* Tabs */}
@@ -125,8 +130,8 @@ export default function ResumePage() {
                 ) : (
                   <>
                     <LottieAnimation
-                      src="/lottie/Loading 51 _ Monoplane.json"
-                      className="w-24 h-24 mb-3 opacity-80"
+                      src="/lottie/search for employee.json"
+                      className="w-28 h-28 mb-1"
                     />
                     <p className="text-[14px] font-medium text-[var(--gray-700)]">
                       PDF 파일을 업로드해 주세요
