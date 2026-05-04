@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
+import { koKR } from "@clerk/localizations";
 import "./globals.css";
 import GlobalClickEffect from "@/components/GlobalClickEffect";
 import StarryBackground from "@/components/StarryBackground";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AuthHeader from "@/components/AuthHeader";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -41,15 +44,18 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
       <body>
-        <ErrorBoundary>
-          <InterviewProvider>
-            <StarryBackground />
-            <div className="relative z-10 mx-auto min-h-dvh max-w-[640px] flex flex-col bg-white shadow-2xl">
-              {children}
-            </div>
-            <GlobalClickEffect />
-          </InterviewProvider>
-        </ErrorBoundary>
+        <ClerkProvider localization={koKR}>
+          <ErrorBoundary>
+            <InterviewProvider>
+              <StarryBackground />
+              <div className="relative z-10 mx-auto min-h-dvh max-w-[640px] flex flex-col bg-white shadow-2xl">
+                <AuthHeader />
+                {children}
+              </div>
+              <GlobalClickEffect />
+            </InterviewProvider>
+          </ErrorBoundary>
+        </ClerkProvider>
       </body>
     </html>
   );
