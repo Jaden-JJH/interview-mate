@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ChatBubble from "@/components/ChatBubble";
 import TypingIndicator from "@/components/TypingIndicator";
+import LottieAnimation from "@/components/LottieAnimation";
 
 const DUMMY_QUESTIONS = [
   "자기소개서에 작성하신 프로젝트 경험에 대해 자세히 설명해 주세요.",
@@ -142,7 +143,7 @@ export default function InterviewPage() {
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-[var(--gray-200)]">
+      <div className="h-1 bg-[var(--gray-200)] shrink-0">
         <motion.div
           className="h-full bg-[var(--blue-primary)]"
           initial={{ width: 0 }}
@@ -151,13 +152,50 @@ export default function InterviewPage() {
         />
       </div>
 
-      {/* Chat */}
-      <div className="scroll-area flex-1 overflow-y-auto px-5 pt-4 pb-20 relative">
-        {messages.map((msg, i) => (
-          <ChatBubble key={i} role={msg.role} content={msg.content} />
-        ))}
-        {typing && <TypingIndicator />}
-        <div ref={chatEndRef} />
+      {/* AI Interviewer Avatar Section */}
+      <div className="bg-[var(--blue-primary)] text-white flex flex-col items-center pt-5 pb-6 shrink-0 relative overflow-hidden shadow-sm z-10">
+        <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl overflow-hidden">
+            <LottieAnimation src="/lottie/Talking Character.json" className="w-[120px] h-[120px] ml-1 mt-3" />
+          </div>
+          <h2 className="text-[15px] font-bold mt-4">AI 면접관</h2>
+          <p className="text-[12px] opacity-80 mt-1">
+            {typing ? "질문을 준비 중입니다..." : "답변을 기다리고 있어요"}
+          </p>
+        </div>
+      </div>
+
+      {/* Chat Area (Relative for overlay) */}
+      <div className="flex-1 relative flex flex-col min-h-0 bg-white">
+        <div className="scroll-area flex-1 overflow-y-auto px-5 pt-4 pb-20">
+          {messages.map((msg, i) => (
+            <ChatBubble key={i} role={msg.role} content={msg.content} />
+          ))}
+          {typing && <TypingIndicator />}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Voice Input Overlay */}
+        <AnimatePresence>
+          {isRecording && (
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute inset-0 z-40 bg-[var(--gray-900)] flex flex-col items-center justify-center pb-10"
+            >
+              <LottieAnimation src="/lottie/Audio&Voice-A-002.json" className="w-64 h-64" />
+              <p className="text-white text-[16px] font-bold mt-2 animate-pulse">
+                답변을 편하게 말씀해 주세요...
+              </p>
+              <p className="text-[var(--gray-400)] text-[13px] mt-2">
+                완료되면 하단의 마이크를 다시 눌러주세요
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Floating fade gradient */}

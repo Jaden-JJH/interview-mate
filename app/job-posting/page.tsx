@@ -128,8 +128,8 @@ export default function JobPostingPage() {
               className="flex flex-col items-center gap-2 py-4"
             >
               <LottieAnimation
-                src="/lottie/Sparkles Loop Loader ai.json"
-                className="w-16 h-16"
+                src="/lottie/Document OCR Scan.json"
+                className="w-24 h-24 mb-2"
               />
               <motion.p
                 key={loadingTextIndex}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalClickEffect from "@/components/GlobalClickEffect";
 
 export const metadata: Metadata = {
   title: "인터뷰메이트 - 면접 연습",
@@ -25,6 +26,7 @@ export default function RootLayout({
         <div className="mx-auto min-h-dvh max-w-[640px] flex flex-col bg-[var(--gray-bg)]">
           {children}
         </div>
+        <GlobalClickEffect />
       </body>
     </html>
   );
