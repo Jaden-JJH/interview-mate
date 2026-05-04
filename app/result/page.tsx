@@ -3,6 +3,7 @@
 import { useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
 import ScoreGauge from "@/components/ScoreGauge";
 import AccordionItem from "@/components/AccordionItem";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -24,6 +25,20 @@ export default function ResultPage() {
       router.replace("/");
     }
   }, [qaResults.length, router]);
+
+  // Confetti celebration when a result is shown and the score is decent.
+  useEffect(() => {
+    if (qaResults.length === 0 || overallScore < 60) return;
+    const timer = setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#4F46E5", "#818CF8", "#10B981", "#F59E0B"],
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [qaResults.length, overallScore]);
 
   const radarData = useMemo(() => {
     if (qaResults.length === 0) return [];
