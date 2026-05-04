@@ -25,6 +25,34 @@ const PARSING_TEXTS = [
 
 const PREVIEW_MAX_CHARS = 400;
 
+// Isolated so that the 900ms tick doesn't re-render the parent (and the
+// neighbouring lottie player) every cycle.
+function ParsingStatusText() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setI((v) => (v + 1) % PARSING_TEXTS.length);
+    }, 900);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="h-5 relative w-full flex items-center justify-center overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={i}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="absolute text-[12px] text-[var(--blue-primary)] font-medium"
+        >
+          {PARSING_TEXTS[i]}
+        </motion.p>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function ResumePage() {
   const router = useRouter();
   const { setResume, resume, resumeFileName } = useInterview();
@@ -39,17 +67,7 @@ export default function ResumePage() {
   const [pdfText, setPdfText] = useState<string>(
     resumeFileName ? resume : ""
   );
-  const [parsingTextIndex, setParsingTextIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!isParsingPdf) return;
-    setParsingTextIndex(0);
-    const id = setInterval(() => {
-      setParsingTextIndex((i) => (i + 1) % PARSING_TEXTS.length);
-    }, 900);
-    return () => clearInterval(id);
-  }, [isParsingPdf]);
 
   const hasInput =
     (activeTab === "pdf" && uploadedFileName !== null && pdfText.trim().length > 0) ||
@@ -152,7 +170,7 @@ export default function ResumePage() {
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                 onDragLeave={() => setIsDragOver(false)}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 py-14 text-center transition-all ${
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 text-center transition-all ${uploadedFileName ? "pt-14 pb-10" : "py-14"} ${
                   isDragOver
                     ? "border-[var(--blue-primary)] bg-[var(--blue-light)]"
                     : uploadedFileName
@@ -167,11 +185,11 @@ export default function ResumePage() {
                     className="flex flex-col items-center gap-3"
                   >
                     <LottieAnimation
-                      src={isParsingPdf ? "/lottie/scanner-lite.json" : "/lottie/login success.json"}
-                      className="w-20 h-20"
+                      src={isParsingPdf ? "/lottie/Search a file.json" : "/lottie/success confetti.json"}
+                      className="w-56 h-56 -my-12"
                       loop={isParsingPdf}
                     />
-                    <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-medium text-[var(--gray-700)] shadow-sm">
+                    <div className="flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-[15px] font-medium text-[var(--gray-700)] shadow-sm">
                       {uploadedFileName}
                       <button
                         onClick={(e) => {
@@ -185,24 +203,9 @@ export default function ResumePage() {
                         ✕
                       </button>
                     </div>
-                    {isParsingPdf && (
-                      <div className="h-5 relative w-full flex items-center justify-center overflow-hidden">
-                        <AnimatePresence mode="wait">
-                          <motion.p
-                            key={parsingTextIndex}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.25 }}
-                            className="absolute text-[12px] text-[var(--blue-primary)] font-medium"
-                          >
-                            {PARSING_TEXTS[parsingTextIndex]}
-                          </motion.p>
-                        </AnimatePresence>
-                      </div>
-                    )}
+                    {isParsingPdf && <ParsingStatusText />}
                     {!isParsingPdf && pdfText && (
-                      <p className="text-[12px] text-[var(--gray-500)]">
+                      <p className="text-[14px] font-medium text-[var(--gray-500)]">
                         {pdfText.length.toLocaleString()}자 추출 완료
                       </p>
                     )}

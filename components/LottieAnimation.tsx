@@ -1,7 +1,7 @@
 "use client";
 
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
-import { useEffect, useState, useRef } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 
 interface LottieAnimationProps {
   src: string;
@@ -11,7 +11,7 @@ interface LottieAnimationProps {
   playing?: boolean;
 }
 
-export default function LottieAnimation({
+function LottieAnimation({
   src,
   className = "",
   loop = true,
@@ -50,3 +50,8 @@ export default function LottieAnimation({
     />
   );
 }
+
+// Memoize so frequent parent re-renders (e.g. an interval-based status text
+// elsewhere on the page) don't cause the lottie player to redo prop diffing
+// and frame work, which would visibly stutter the animation.
+export default memo(LottieAnimation);
