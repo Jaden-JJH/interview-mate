@@ -20,9 +20,16 @@ interface PdfDocument {
   destroy: () => Promise<void>;
 }
 
+interface GetDocumentOpts {
+  data: ArrayBuffer;
+  cMapUrl?: string;
+  cMapPacked?: boolean;
+  standardFontDataUrl?: string;
+}
+
 interface PdfjsModule {
   GlobalWorkerOptions: { workerSrc: string };
-  getDocument: (opts: { data: ArrayBuffer }) => { promise: Promise<PdfDocument> };
+  getDocument: (opts: GetDocumentOpts) => { promise: Promise<PdfDocument> };
 }
 
 let pdfjsPromise: Promise<PdfjsModule> | null = null;
@@ -43,7 +50,14 @@ function loadPdfjs(): Promise<PdfjsModule> {
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs = await loadPdfjs();
   const buffer = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buffer }).promise;
+  const doc = await pdfjs.getDocument({
+    data: buffer,
+    // CJK glyph→Unicode tables are required to extract Korean text from PDFs
+    // produced by 한컴오피스, MS Word (Korean), and most resume builders.
+    cMapUrl: "/pdf-cmaps/",
+    cMapPacked: true,
+    standardFontDataUrl: "/pdf-standard-fonts/",
+  }).promise;
 
   const parts: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
