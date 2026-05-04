@@ -39,3 +39,13 @@ next-env.d.ts
 .playwright-mcp/
 
 /.test-pdfs/
+
+# 서비스 외 자료 (디자인 목업, PPT 에셋, 별도 워크스페이스)
+projects/
+assets-output/
+*.pptx
+*.pdf
+/*.png
+build_pptx.py
+pack_assets.py
+인터뷰메이트_에셋가이드.md

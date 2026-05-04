@@ -1,0 +1,18 @@
+# Unrelated workspace projects
+projects/
+
+# Local-only artifacts
+assets-output/
+build_pptx.py
+pack_assets.py
+*.pptx
+*.pdf
+*.png
+
+# Notes / state
+CLAUDE.md
+*.md
+!README.md
+
+# Editor / OS
+.DS_Store
