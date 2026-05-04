@@ -57,3 +57,12 @@ export async function PUT(req: Request) {
 
   return NextResponse.json({ resume: inserted });
 }
+
+export async function DELETE() {
+  const userId = await getOrCreateAppUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  await db.delete(savedResumes).where(eq(savedResumes.userId, userId));
+  return NextResponse.json({ ok: true });
+}

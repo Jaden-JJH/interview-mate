@@ -48,12 +48,6 @@ export default function AuthHeader() {
       <div className="flex items-center gap-3">
         <ClerkLoaded>
           <SignedIn>
-            <Link
-              href="/history"
-              className="text-[13px] font-medium text-[var(--gray-700)] hover:text-[var(--gray-900)]"
-            >
-              지난 면접
-            </Link>
             <CreditBadge />
           </SignedIn>
         </ClerkLoaded>
@@ -76,7 +70,29 @@ export default function AuthHeader() {
               <UserButton
                 afterSignOutUrl="/"
                 appearance={{ elements: { avatarBox: "w-8 h-8" } }}
-              />
+              >
+                <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="마이페이지"
+                    labelIcon={
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    }
+                    href="/mypage"
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
             </SignedIn>
           </ClerkLoaded>
         </div>
