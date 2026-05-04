@@ -97,14 +97,20 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Claude 추출 실패";
       console.error("[parse-pdf] claude fallback failed:", msg);
-      const isBinaryMissing =
-        primaryError &&
-        (primaryError.includes("ENOENT") || primaryError.includes("not found"));
+      const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+      const lowerMsg = msg.toLowerCase();
+      const isAuth =
+        lowerMsg.includes("authentication") ||
+        lowerMsg.includes("401") ||
+        lowerMsg.includes("invalid x-api-key");
+      const hint = !hasApiKey
+        ? "ANTHROPIC_API_KEY 환경변수가 설정되지 않음"
+        : isAuth
+        ? "ANTHROPIC_API_KEY가 잘못되었거나 권한 없음"
+        : null;
       return NextResponse.json(
         {
-          error: isBinaryMissing
-            ? "서버에 pdftotext(poppler)가 설치되지 않았고, 폴백도 실패했습니다."
-            : `PDF 추출 실패 (1차: ${primaryError ?? "빈 결과"}, 2차: ${msg})`,
+          error: `PDF 추출 실패. 1차(pdftotext): ${primaryError ?? "빈 결과"}. 2차(Claude): ${msg}${hint ? ` [원인 추정: ${hint}]` : ""}`,
         },
         { status: 500 }
       );
