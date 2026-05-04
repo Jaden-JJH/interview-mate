@@ -91,7 +91,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="relative px-6 pt-2">
+        <div className="relative px-6 pt-7">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

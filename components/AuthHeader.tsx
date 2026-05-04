@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import {
+  ClerkLoaded,
+  ClerkLoading,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/nextjs";
 
 function BrandMark() {
   return (
@@ -30,28 +37,37 @@ function BrandMark() {
   );
 }
 
+// Reserve identical width whether the user is signed-in or signed-out, and
+// while Clerk's client SDK is still loading, so hydration never shifts the
+// content below the header.
+const AUTH_SLOT = "min-w-[88px] h-8 flex items-center justify-end";
+
 export default function AuthHeader() {
   return (
-    <header className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/80 px-5 backdrop-blur-md">
       <BrandMark />
-      <div className="flex items-center gap-2">
-        <SignedOut>
-          <SignInButton mode="modal">
-            <button className="rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(27,100,218,0.45)] transition hover:brightness-110 active:scale-[0.98]">
-              로그인
-            </button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
+      <div className={AUTH_SLOT}>
+        <ClerkLoading>
+          <span
+            aria-hidden
+            className="block h-8 w-[72px] rounded-full bg-gray-100"
           />
-        </SignedIn>
+        </ClerkLoading>
+        <ClerkLoaded>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_2px_8px_-2px_rgba(27,100,218,0.45)] transition hover:brightness-110 active:scale-[0.98]">
+                로그인
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{ elements: { avatarBox: "w-8 h-8" } }}
+            />
+          </SignedIn>
+        </ClerkLoaded>
       </div>
     </header>
   );
