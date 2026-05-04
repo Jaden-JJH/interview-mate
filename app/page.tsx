@@ -91,30 +91,7 @@ export default function LandingPage() {
           />
         </div>
 
-        {/* Brand */}
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative flex items-center gap-2 px-6 pb-7"
-        >
-          <span className="relative flex items-center justify-center w-7 h-7 rounded-[8px] bg-[var(--blue-primary)] shadow-[0_4px_12px_-2px_rgba(27,100,218,0.45)]">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M3.5 5.2c0-.94.76-1.7 1.7-1.7h7.6c.94 0 1.7.76 1.7 1.7v4.6c0 .94-.76 1.7-1.7 1.7H8.6L5.4 13.9v-2.4h-.2c-.94 0-1.7-.76-1.7-1.7V5.2z"
-                fill="white"
-              />
-              <circle cx="6.6" cy="7.5" r="0.9" fill="#1B64DA" />
-              <circle cx="9" cy="7.5" r="0.9" fill="#1B64DA" />
-              <circle cx="11.4" cy="7.5" r="0.9" fill="#1B64DA" />
-            </svg>
-          </span>
-          <span className="text-[15px] font-extrabold text-[var(--gray-900)] tracking-tight">
-            인터뷰<span className="text-[var(--blue-primary)]">메이트</span>
-          </span>
-        </motion.div>
-
-        <div className="relative px-6">
+        <div className="relative px-6 pt-2">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
