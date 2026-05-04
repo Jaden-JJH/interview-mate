@@ -52,17 +52,17 @@ export default function ResumePage() {
       {/* Top bar */}
       <div className="bg-white">
         <StepIndicator currentStep={1} totalSteps={3} />
-        <div className="px-5 pt-8 pb-5 flex items-center justify-between relative overflow-hidden">
-          <div className="relative z-10">
+        <div className="px-5 pt-6 flex items-end justify-between relative bg-[#EBF1FF] mb-6 rounded-b-3xl">
+          <div className="relative z-10 pb-6 pt-2">
             <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
               자기소개서를 입력해 주세요
             </h1>
-            <p className="mt-1.5 text-[14px] text-[var(--gray-500)]">
+            <p className="mt-1.5 text-[14px] text-[var(--blue-primary)] font-medium">
               면접 질문 생성에 활용돼요
             </p>
           </div>
-          <div className="w-28 h-28 -mr-6 -mt-4 -mb-8 relative z-0 flex items-center justify-center pointer-events-none">
-            <LottieAnimation src="/lottie/Young programmers working with computer.json" className="w-[150%] h-[150%]" />
+          <div className="w-32 h-32 shrink-0 pointer-events-none flex items-end justify-end relative right-1">
+            <LottieAnimation src="/lottie/Young programmers working with computer.json" className="w-[130%] h-[130%] object-contain" />
           </div>
         </div>
 
