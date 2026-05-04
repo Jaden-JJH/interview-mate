@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GlobalClickEffect from "@/components/GlobalClickEffect";
-import AuroraBackground from "@/components/AuroraBackground";
+import StarryBackground from "@/components/StarryBackground";
 import { InterviewProvider } from "@/contexts/InterviewContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -40,13 +41,15 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
       <body>
-        <InterviewProvider>
-          <AuroraBackground />
-          <div className="relative z-10 mx-auto min-h-dvh max-w-[640px] flex flex-col bg-white shadow-2xl">
-            {children}
-          </div>
-          <GlobalClickEffect />
-        </InterviewProvider>
+        <ErrorBoundary>
+          <InterviewProvider>
+            <StarryBackground />
+            <div className="relative z-10 mx-auto min-h-dvh max-w-[640px] flex flex-col bg-white shadow-2xl">
+              {children}
+            </div>
+            <GlobalClickEffect />
+          </InterviewProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

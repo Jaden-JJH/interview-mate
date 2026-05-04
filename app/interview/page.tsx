@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ChatBubble from "@/components/ChatBubble";
 import TypingIndicator from "@/components/TypingIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
+import Toast from "@/components/Toast";
 import { useInterview, type QAResult } from "@/contexts/InterviewContext";
 
 const ANALYZING_STEPS = [
@@ -343,9 +344,6 @@ export default function InterviewPage() {
             />
           )}
           {isEvaluating && <TypingIndicator />}
-          {errorMsg && (
-            <p className="mt-2 text-[12px] text-[var(--danger)]">{errorMsg}</p>
-          )}
           <div ref={chatEndRef} />
         </div>
 
@@ -419,6 +417,8 @@ export default function InterviewPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Toast message={errorMsg} onClose={() => setErrorMsg(null)} />
 
       {/* Floating fade gradient */}
       <div className="pointer-events-none fixed bottom-[68px] left-1/2 w-full max-w-[640px] h-12 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />

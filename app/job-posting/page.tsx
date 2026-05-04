@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import BottomSheet from "@/components/BottomSheet";
+import Toast from "@/components/Toast";
 import { useInterview, type JobPostingStructured } from "@/contexts/InterviewContext";
 
 const LOADING_TEXTS = [
@@ -284,16 +285,6 @@ export default function JobPostingPage() {
             </motion.div>
           )}
 
-          {errorMsg && status !== "loading" && (
-            <motion.p
-              key="err"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[12px] text-[var(--danger)] text-center"
-            >
-              {errorMsg}
-            </motion.p>
-          )}
         </AnimatePresence>
       </div>
 
@@ -352,6 +343,19 @@ export default function JobPostingPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Toast
+        message={errorMsg && !isGenerating ? errorMsg : null}
+        onClose={() => setErrorMsg(null)}
+        onRetry={
+          status === "fallback" || status === "error"
+            ? () => {
+                setErrorMsg(null);
+                handleAnalyze();
+              }
+            : undefined
+        }
+      />
 
       {/* Floating fade gradient */}
       <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />

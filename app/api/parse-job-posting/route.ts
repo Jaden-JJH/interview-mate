@@ -126,7 +126,13 @@ async function structure(rawText: string): Promise<ParsedJobPosting> {
   const message = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 1500,
-    system: STRUCTURE_SYSTEM_PROMPT,
+    system: [
+      {
+        type: "text",
+        text: STRUCTURE_SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: [
       {
         role: "user",
