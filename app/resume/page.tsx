@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
@@ -16,6 +16,15 @@ const DUMMY_RESUME = `저는 3년 차 프론트엔드 개발자로, React와 Typ
 
 type TabType = "pdf" | "text";
 
+const PARSING_TEXTS = [
+  "PDF를 읽고 있어요...",
+  "텍스트를 추출하는 중...",
+  "한국어 인식 중...",
+  "거의 다 됐어요...",
+];
+
+const PREVIEW_MAX_CHARS = 400;
+
 export default function ResumePage() {
   const router = useRouter();
   const { setResume, resume, resumeFileName } = useInterview();
@@ -30,7 +39,17 @@ export default function ResumePage() {
   const [pdfText, setPdfText] = useState<string>(
     resumeFileName ? resume : ""
   );
+  const [parsingTextIndex, setParsingTextIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isParsingPdf) return;
+    setParsingTextIndex(0);
+    const id = setInterval(() => {
+      setParsingTextIndex((i) => (i + 1) % PARSING_TEXTS.length);
+    }, 900);
+    return () => clearInterval(id);
+  }, [isParsingPdf]);
 
   const hasInput =
     (activeTab === "pdf" && uploadedFileName !== null && pdfText.trim().length > 0) ||
@@ -167,9 +186,20 @@ export default function ResumePage() {
                       </button>
                     </div>
                     {isParsingPdf && (
-                      <p className="text-[12px] text-[var(--gray-500)]">
-                        PDF에서 텍스트를 추출하고 있어요...
-                      </p>
+                      <div className="h-5 relative w-full flex items-center justify-center overflow-hidden">
+                        <AnimatePresence mode="wait">
+                          <motion.p
+                            key={parsingTextIndex}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.25 }}
+                            className="absolute text-[12px] text-[var(--blue-primary)] font-medium"
+                          >
+                            {PARSING_TEXTS[parsingTextIndex]}
+                          </motion.p>
+                        </AnimatePresence>
+                      </div>
                     )}
                     {!isParsingPdf && pdfText && (
                       <p className="text-[12px] text-[var(--gray-500)]">
@@ -207,6 +237,41 @@ export default function ResumePage() {
                   {pdfError}
                 </p>
               )}
+
+              {/* Extraction preview card (mirrors job-posting success card) */}
+              <AnimatePresence>
+                {!isParsingPdf && pdfText && uploadedFileName && (
+                  <motion.div
+                    key="preview"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25 }}
+                    className="mt-4 rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <LottieAnimation
+                        src="/lottie/login success.json"
+                        className="w-7 h-7"
+                        loop={false}
+                      />
+                      <span className="text-[13px] font-semibold text-[#00875A]">
+                        추출 완료
+                      </span>
+                      <span className="ml-auto text-[12px] text-[var(--gray-400)] font-medium">
+                        {pdfText.length.toLocaleString()}자
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-[var(--gray-400)] mb-1.5">
+                      추출된 텍스트 미리보기
+                    </p>
+                    <p className="text-[13px] leading-[20px] text-[var(--gray-700)] whitespace-pre-line break-words">
+                      {pdfText.slice(0, PREVIEW_MAX_CHARS)}
+                      {pdfText.length > PREVIEW_MAX_CHARS && "…"}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {!uploadedFileName && (
                 <button
                   onClick={() => {
