@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatBubble from "@/components/ChatBubble";
@@ -8,6 +8,11 @@ import TypingIndicator from "@/components/TypingIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import Toast from "@/components/Toast";
 import { useInterview, type QAResult } from "@/contexts/InterviewContext";
+import {
+  CLOSING_QUESTION,
+  DEFAULT_CHARACTER_LOTTIE,
+  resolvePersona,
+} from "@/lib/personas";
 
 const ANALYZING_STEPS = [
   "답변을 수집하고 있어요",
@@ -15,13 +20,28 @@ const ANALYZING_STEPS = [
   "점수를 산출하고 있어요",
 ];
 
-const TYPING_INTERVAL_MS = 28; // per-char delay for streaming effect
+const TYPING_INTERVAL_MS = 28;
+const FOLLOW_UP_TIME_THRESHOLD_SEC = 60;
+
+interface QItem {
+  text: string;
+  isFollowUp: boolean;
+  isClosing: boolean;
+}
 
 interface ChatMessage {
   role: "ai" | "user";
   content: string;
-  questionIndex?: number;
-  isStreaming?: boolean;
+  questionNumber?: number;
+  isFollowUp?: boolean;
+  isClosing?: boolean;
+}
+
+function formatTime(sec: number): string {
+  const safe = Math.max(0, sec);
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function InterviewPage() {
@@ -33,39 +53,82 @@ export default function InterviewPage() {
     qaResults,
     appendQAResult,
     setOverall,
+    durationMinutes,
+    resolvedPersonaId,
   } = useInterview();
 
+  const persona = useMemo(
+    () => resolvePersona(resolvedPersonaId),
+    [resolvedPersonaId]
+  );
+
+  const [items, setItems] = useState<QItem[]>([]);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [streamingIndex, setStreamingIndex] = useState<number>(-1);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [questionIndex, setQuestionIndex] = useState(0);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingStep, setAnalyzingStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
+  const [hasJumpedToClosing, setHasJumpedToClosing] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const guardRef = useRef(false);
+  const totalSecondsRef = useRef(durationMinutes * 60);
+  const startTimeRef = useRef<number | null>(null);
 
   const totalQuestions = questions.length;
 
-  // Guard: if no questions, redirect back
+  // Guard: redirect if no questions
   useEffect(() => {
     if (totalQuestions === 0) {
       router.replace("/job-posting");
     }
   }, [totalQuestions, router]);
 
-  // Stream the question at `questionIndex` character-by-character.
+  // Initialize items list with closing appended
   useEffect(() => {
     if (totalQuestions === 0) return;
-    if (questionIndex >= totalQuestions) return;
+    if (items.length > 0) return;
+    const list: QItem[] = questions.map((q) => ({
+      text: q,
+      isFollowUp: false,
+      isClosing: false,
+    }));
+    list.push({ text: CLOSING_QUESTION, isFollowUp: false, isClosing: true });
+    setItems(list);
+    totalSecondsRef.current = durationMinutes * 60;
+    setSecondsLeft(totalSecondsRef.current);
+    startTimeRef.current = Date.now();
+  }, [questions, totalQuestions, items.length, durationMinutes]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (items.length === 0) return;
+    if (startTimeRef.current === null) return;
+    if (isAnalyzing) return;
+    const id = setInterval(() => {
+      const elapsed = Math.floor(
+        (Date.now() - (startTimeRef.current ?? Date.now())) / 1000
+      );
+      setSecondsLeft(Math.max(0, totalSecondsRef.current - elapsed));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [items.length, isAnalyzing]);
+
+  // Stream the current question character-by-character
+  useEffect(() => {
+    if (items.length === 0) return;
+    if (questionIndex >= items.length) return;
     if (guardRef.current) return;
     guardRef.current = true;
 
-    const text = questions[questionIndex];
+    const item = items[questionIndex];
+    const text = item.text;
     let i = 0;
     setStreamingIndex(questionIndex);
     setStreamingText("");
@@ -75,10 +138,15 @@ export default function InterviewPage() {
       setStreamingText(text.slice(0, i));
       if (i >= text.length) {
         clearInterval(id);
-        // commit to messages
         setMessages((prev) => [
           ...prev,
-          { role: "ai", content: text, questionIndex },
+          {
+            role: "ai",
+            content: text,
+            questionNumber: questionIndex + 1,
+            isFollowUp: item.isFollowUp,
+            isClosing: item.isClosing,
+          },
         ]);
         setStreamingText(null);
         setStreamingIndex(-1);
@@ -91,7 +159,7 @@ export default function InterviewPage() {
       clearInterval(id);
       guardRef.current = false;
     };
-  }, [questionIndex, questions, totalQuestions]);
+  }, [questionIndex, items]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -124,9 +192,12 @@ export default function InterviewPage() {
         );
       } catch (err) {
         const msg = err instanceof Error ? err.message : "피드백 생성 실패";
-        const fallbackScore = Math.round(
-          results.reduce((sum, r) => sum + r.score, 0) / results.length
-        );
+        const fallbackScore =
+          results.length > 0
+            ? Math.round(
+                results.reduce((sum, r) => sum + r.score, 0) / results.length
+              )
+            : 0;
         setOverall(
           fallbackScore,
           `종합 코멘트를 생성하지 못했어요(${msg}). 평균 점수는 ${fallbackScore}점입니다.`
@@ -141,8 +212,8 @@ export default function InterviewPage() {
     const text = input.trim();
     if (!text || isEvaluating || streamingText !== null) return;
 
-    const currentQ = questions[questionIndex];
-    if (!currentQ) return;
+    const currentItem = items[questionIndex];
+    if (!currentItem) return;
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
@@ -163,34 +234,48 @@ export default function InterviewPage() {
           .join("\n")
       : "";
 
+    const timeRunningOut = secondsLeft <= FOLLOW_UP_TIME_THRESHOLD_SEC;
+    const allowFollowUp =
+      !currentItem.isClosing &&
+      !currentItem.isFollowUp &&
+      !timeRunningOut;
+
     let qa: QAResult;
+    let followUpQuestion: string | null = null;
     try {
       const res = await fetch("/api/evaluate-answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: currentQ,
+          question: currentItem.text,
           answer: text,
           resume,
           jobPosting: jobPostingText,
+          personaId: persona.id,
+          allowFollowUp,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "평가 실패");
       qa = {
-        question: currentQ,
+        question: currentItem.text,
         answer: text,
         score: Number(data.score) || 0,
         feedback: String(data.feedback ?? ""),
         bestAnswer: String(data.bestAnswer ?? ""),
         keywords: Array.isArray(data.keywords) ? data.keywords : [],
       };
+      if (
+        typeof data.followUpQuestion === "string" &&
+        data.followUpQuestion.trim().length > 0
+      ) {
+        followUpQuestion = data.followUpQuestion.trim();
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "평가 실패";
       setErrorMsg(msg);
-      // Save with score 0 so the flow continues; user-facing message shows the error.
       qa = {
-        question: currentQ,
+        question: currentItem.text,
         answer: text,
         score: 0,
         feedback: `자동 평가에 실패했어요 (${msg}).`,
@@ -202,24 +287,72 @@ export default function InterviewPage() {
     const allResults = [...qaResults, qa];
     setIsEvaluating(false);
 
-    const nextIdx = questionIndex + 1;
-    if (nextIdx >= totalQuestions) {
+    if (currentItem.isClosing) {
       await finishInterview(allResults);
-    } else {
-      setQuestionIndex(nextIdx);
+      return;
     }
+
+    if (secondsLeft <= 0 && !hasJumpedToClosing) {
+      setHasJumpedToClosing(true);
+      const closingIdx = items.findIndex((it) => it.isClosing);
+      if (closingIdx >= 0 && closingIdx !== questionIndex) {
+        setQuestionIndex(closingIdx);
+      } else {
+        await finishInterview(allResults);
+      }
+      return;
+    }
+
+    if (followUpQuestion && allowFollowUp) {
+      const fq = followUpQuestion;
+      setItems((prev) => {
+        const copy = [...prev];
+        copy.splice(questionIndex + 1, 0, {
+          text: fq,
+          isFollowUp: true,
+          isClosing: false,
+        });
+        return copy;
+      });
+    }
+
+    setQuestionIndex(questionIndex + 1);
   }, [
     input,
     isEvaluating,
     streamingText,
-    questions,
+    items,
     questionIndex,
     jobPosting,
     resume,
     appendQAResult,
     qaResults,
-    totalQuestions,
     finishInterview,
+    persona.id,
+    secondsLeft,
+    hasJumpedToClosing,
+  ]);
+
+  // Time-up forced jump (when not actively answering)
+  useEffect(() => {
+    if (secondsLeft > 0) return;
+    if (hasJumpedToClosing) return;
+    if (isEvaluating || streamingText !== null) return;
+    if (items.length === 0) return;
+    const current = items[questionIndex];
+    if (!current || current.isClosing) return;
+    const closingIdx = items.findIndex((it) => it.isClosing);
+    if (closingIdx >= 0 && closingIdx !== questionIndex) {
+      setHasJumpedToClosing(true);
+      setQuestionIndex(closingIdx);
+    }
+  }, [
+    secondsLeft,
+    hasJumpedToClosing,
+    isEvaluating,
+    streamingText,
+    items,
+    questionIndex,
   ]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -234,13 +367,15 @@ export default function InterviewPage() {
       setIsRecording(false);
     } else {
       setIsRecording(true);
-      // Browser STT not wired — fallback simulation only.
       setTimeout(() => setIsRecording(false), 3000);
     }
   };
 
-  const answeredCount = qaResults.length;
-  const currentDisplayNum = Math.min(answeredCount + 1, totalQuestions);
+  const totalSeconds = totalSecondsRef.current || durationMinutes * 60;
+  const elapsedRatio = 1 - secondsLeft / totalSeconds;
+  const isTimeWarning = secondsLeft > 0 && secondsLeft <= 60;
+  const isTimeUp = secondsLeft <= 0;
+  const currentItem = items[questionIndex];
 
   return (
     <motion.div
@@ -253,35 +388,62 @@ export default function InterviewPage() {
       <div className="flex items-center justify-between bg-white px-5 py-3 border-b border-[var(--gray-200)]">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="p-1">
-            <svg className="h-5 w-5 text-[var(--gray-900)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <svg
+              className="h-5 w-5 text-[var(--gray-900)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
-          <span className="text-[15px] font-bold text-[var(--gray-900)]">면접 진행</span>
+          <span className="text-[15px] font-bold text-[var(--gray-900)]">
+            면접 진행
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] font-medium text-[var(--gray-500)]">
-            질문 {currentDisplayNum}/{totalQuestions}
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold tabular-nums transition-colors ${
+              isTimeUp
+                ? "bg-red-50 text-[var(--danger)]"
+                : isTimeWarning
+                ? "bg-orange-50 text-[var(--warning)]"
+                : "bg-[var(--blue-light)] text-[var(--blue-primary)]"
+            }`}
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+            {formatTime(secondsLeft)}
           </span>
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar (time-based) */}
       <div className="h-1 bg-[var(--gray-200)] shrink-0">
         <motion.div
-          className="h-full bg-[var(--blue-primary)]"
-          initial={{ width: 0 }}
+          className={`h-full ${
+            isTimeUp
+              ? "bg-[var(--danger)]"
+              : isTimeWarning
+              ? "bg-[var(--warning)]"
+              : "bg-[var(--blue-primary)]"
+          }`}
           animate={{
-            width: totalQuestions
-              ? `${(answeredCount / totalQuestions) * 100}%`
-              : "0%",
+            width: `${Math.min(100, Math.max(0, elapsedRatio * 100))}%`,
           }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: "linear" }}
         />
       </div>
 
-      {/* AI Interviewer Avatar Section */}
-      <div className="bg-[#1a2b4c] text-white flex flex-col items-center justify-center py-8 shrink-0 relative overflow-hidden shadow-md z-10 min-h-[300px]">
+      {/* AI Interviewer Avatar */}
+      <div
+        className="text-white flex flex-col items-center justify-center py-8 shrink-0 relative overflow-hidden shadow-md z-10 min-h-[300px]"
+        style={{ backgroundColor: persona.accentColor }}
+      >
         <div className="absolute inset-0 z-0 opacity-80 flex items-center justify-center mix-blend-screen pointer-events-none">
           <LottieAnimation
             src="/lottie/Fixed Blur.json"
@@ -289,24 +451,41 @@ export default function InterviewPage() {
           />
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#1a2b4c]/40 z-10 pointer-events-none" />
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background: `linear-gradient(to bottom, transparent, ${persona.accentColor}66)`,
+          }}
+        />
 
         <div className="relative z-20 flex flex-col items-center justify-center">
           <div className="w-48 h-48 flex items-center justify-center pointer-events-none mb-3">
-            <LottieAnimation
-              src="/lottie/Talking Character.json"
-              className="w-full h-full scale-[1.3] origin-center"
-              playing={streamingText !== null}
-            />
+            <div
+              className="w-full h-full origin-center"
+              style={{ transform: `scale(${persona.heroScale})` }}
+            >
+              <LottieAnimation
+                src={persona.characterLottie}
+                fallbackSrc={DEFAULT_CHARACTER_LOTTIE}
+                className="w-full h-full"
+                playing={streamingText !== null}
+              />
+            </div>
           </div>
 
-          <h2 className="text-[18px] font-bold z-20 drop-shadow-md">수석 채용담당자 Alex</h2>
+          <h2 className="text-[18px] font-bold z-20 drop-shadow-md">
+            {persona.name}
+          </h2>
           <p className="text-[13px] text-white/80 mt-2 z-20 font-medium bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-md">
             {streamingText !== null
               ? "질문을 말씀하고 있습니다..."
               : isEvaluating
               ? "답변을 평가하고 있어요..."
-              : "당신의 답변을 경청 중입니다"}
+              : currentItem?.isFollowUp
+              ? "꼬리질문을 던졌습니다"
+              : currentItem?.isClosing
+              ? "마지막 질문입니다"
+              : persona.speakingLine || "당신의 답변을 경청 중입니다"}
           </p>
         </div>
       </div>
@@ -319,17 +498,30 @@ export default function InterviewPage() {
             const showAvatar =
               isAI && (i === 0 || messages[i - 1].role !== "ai");
             return (
-              <ChatBubble
-                key={i}
-                role={msg.role}
-                content={msg.content}
-                showAvatar={showAvatar}
-                questionNumber={
-                  isAI && msg.questionIndex !== undefined
-                    ? msg.questionIndex + 1
-                    : undefined
-                }
-              />
+              <div key={i}>
+                {isAI && (msg.isFollowUp || msg.isClosing) && (
+                  <div className="flex items-center gap-1.5 px-1 mb-1.5 mt-3">
+                    {msg.isFollowUp && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--blue-light)] px-2 py-0.5 text-[11px] font-semibold text-[var(--blue-primary)]">
+                        ↳ 꼬리질문
+                      </span>
+                    )}
+                    {msg.isClosing && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--gray-900)] px-2 py-0.5 text-[11px] font-semibold text-white">
+                        ✦ 마지막 질문
+                      </span>
+                    )}
+                  </div>
+                )}
+                <ChatBubble
+                  role={msg.role}
+                  content={msg.content}
+                  showAvatar={showAvatar}
+                  questionNumber={isAI ? msg.questionNumber : undefined}
+                  aiName={persona.shortName}
+                  aiAccentColor={persona.accentColor}
+                />
+              </div>
             );
           })}
           {streamingText !== null && (
@@ -341,9 +533,16 @@ export default function InterviewPage() {
                 messages[messages.length - 1].role !== "ai"
               }
               questionNumber={streamingIndex + 1}
+              aiName={persona.shortName}
+              aiAccentColor={persona.accentColor}
             />
           )}
-          {isEvaluating && <TypingIndicator />}
+          {isEvaluating && (
+            <TypingIndicator
+              aiName={persona.shortName}
+              aiAccentColor={persona.accentColor}
+            />
+          )}
           <div ref={chatEndRef} />
         </div>
 
@@ -357,7 +556,10 @@ export default function InterviewPage() {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="absolute inset-0 z-40 bg-[var(--gray-900)] flex flex-col items-center justify-center pb-10"
             >
-              <LottieAnimation src="/lottie/Audio&Voice-A-002.json" className="w-64 h-64" />
+              <LottieAnimation
+                src="/lottie/Audio&Voice-A-002.json"
+                className="w-64 h-64"
+              />
               <p className="text-white text-[16px] font-bold mt-2 animate-pulse">
                 답변을 편하게 말씀해 주세요...
               </p>
@@ -368,6 +570,25 @@ export default function InterviewPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Time-up banner */}
+      <AnimatePresence>
+        {isTimeUp &&
+          !hasJumpedToClosing &&
+          currentItem &&
+          !currentItem.isClosing && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="fixed top-[58px] left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[608px] z-[60] rounded-xl bg-[var(--gray-900)] text-white px-4 py-2.5 shadow-lg flex items-center gap-2"
+            >
+              <span className="text-[12px] font-medium">
+                ⏱ 시간이 종료되어 마지막 질문으로 넘어갈게요
+              </span>
+            </motion.div>
+          )}
+      </AnimatePresence>
 
       {/* Analyzing overlay */}
       <AnimatePresence>
@@ -437,8 +658,18 @@ export default function InterviewPage() {
             {isRecording && (
               <span className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-30" />
             )}
-            <svg className="h-5 w-5 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            <svg
+              className="h-5 w-5 relative z-10"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+              />
             </svg>
           </button>
 
@@ -463,8 +694,18 @@ export default function InterviewPage() {
                 : "bg-[var(--gray-200)] text-[var(--gray-400)]"
             }`}
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 12h14M12 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>

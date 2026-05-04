@@ -28,7 +28,7 @@ interface ParseResponse {
 
 export default function JobPostingPage() {
   const router = useRouter();
-  const { resume, setJobPosting, setQuestions, jobPosting } = useInterview();
+  const { resume, setJobPosting, jobPosting } = useInterview();
 
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -37,7 +37,6 @@ export default function JobPostingPage() {
   const [fallbackText, setFallbackText] = useState("");
   const [showDirectInput, setShowDirectInput] = useState(false);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -101,7 +100,7 @@ export default function JobPostingPage() {
     setStatus("success");
   };
 
-  const handleStartInterview = async () => {
+  const handleNext = () => {
     if (!resume.trim()) {
       setErrorMsg("자기소개서가 없어요. 이전 단계에서 작성해 주세요.");
       return;
@@ -110,36 +109,7 @@ export default function JobPostingPage() {
       setErrorMsg("채용공고 정보가 없어요.");
       return;
     }
-
-    const jobPostingText = [
-      `회사: ${parsed.company}`,
-      `포지션: ${parsed.position}`,
-      `자격 요건: ${parsed.requirements}`,
-      parsed.preferredQualifications ? `우대사항: ${parsed.preferredQualifications}` : "",
-      `설명: ${parsed.description}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    setIsGenerating(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, jobPosting: jobPostingText }),
-      });
-      const data = await res.json();
-      if (!res.ok || !Array.isArray(data.questions)) {
-        throw new Error(data.error ?? "질문 생성 실패");
-      }
-      setQuestions(data.questions);
-      router.push("/interview");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "질문 생성 실패";
-      setErrorMsg(msg);
-      setIsGenerating(false);
-    }
+    router.push("/interview-prep");
   };
 
   return (
@@ -319,33 +289,8 @@ export default function JobPostingPage() {
         </div>
       </BottomSheet>
 
-      {/* Generating overlay */}
-      <AnimatePresence>
-        {isGenerating && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[640px] z-[100] bg-white flex flex-col items-center justify-center px-6"
-          >
-            <div className="w-44 h-44 flex items-center justify-center">
-              <LottieAnimation
-                src="/lottie/Sparkles Loop Loader ai.json"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h2 className="mt-1 text-[20px] font-extrabold text-[var(--gray-900)] tracking-tight text-center">
-              맞춤 질문을 생성하고 있어요
-            </h2>
-            <p className="mt-3 text-[14px] text-[var(--gray-500)] font-medium">
-              잠시만 기다려 주세요
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <Toast
-        message={errorMsg && !isGenerating ? errorMsg : null}
+        message={errorMsg}
         onClose={() => setErrorMsg(null)}
         onRetry={
           status === "fallback" || status === "error"
@@ -363,15 +308,15 @@ export default function JobPostingPage() {
       {/* Bottom CTA */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
         <button
-          disabled={!hasInput || isGenerating}
-          onClick={handleStartInterview}
+          disabled={!hasInput}
+          onClick={handleNext}
           className={`w-full rounded-2xl py-[16px] text-[16px] font-bold transition-all ${
-            hasInput && !isGenerating
+            hasInput
               ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
               : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
           }`}
         >
-          {isGenerating ? "질문 생성 중..." : "면접 시작하기"}
+          다음
         </button>
       </div>
     </motion.div>

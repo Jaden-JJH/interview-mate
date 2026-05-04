@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
+import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const SYSTEM_PROMPT = `You are a professional Korean job interviewer. Given the candidate's resume and job posting, generate exactly 7 tailored interview questions in Korean. Questions should test: technical skills (2), project experience (2), soft skills (1), motivation (1), career vision (1). Return as JSON array of strings.`;
+const BASE_SYSTEM = `You are a professional Korean job interviewer. Given the candidate's resume and job posting, generate tailored interview questions in Korean. Mix technical, project, soft-skill, motivation, and career-vision angles in proportion to the count requested. Return ONLY a JSON array of strings.`;
 
 interface Body {
   resume?: string;
   jobPosting?: string;
+  durationMinutes?: number;
+  personaId?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -28,6 +31,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const duration = findDuration(Number(body.durationMinutes) || 10);
+  const personaId = body.personaId ?? "alex";
+  const persona = resolvePersona(personaId);
+  const resolvedId = personaId === RANDOM_PERSONA_ID ? persona.id : persona.id;
+
+  // Total questions includes the fixed closing question, so generate count-1.
+  const generateCount = Math.max(2, duration.questionCount - 1);
+
+  const systemPrompt = `${BASE_SYSTEM}\n\nInterviewer persona tone: ${persona.systemAddendum}`;
+
   try {
     const message = await anthropic.messages.create({
       model: CLAUDE_MODEL,
@@ -35,14 +48,14 @@ export async function POST(req: NextRequest) {
       system: [
         {
           type: "text",
-          text: SYSTEM_PROMPT,
+          text: systemPrompt,
           cache_control: { type: "ephemeral" },
         },
       ],
       messages: [
         {
           role: "user",
-          content: `[자기소개서]\n${resume}\n\n[채용공고]\n${jobPosting}\n\n위 자기소개서와 채용공고를 바탕으로 7개의 면접 질문을 한국어로 생성하세요. 반드시 JSON 배열 형식("[", "]" 사이에 7개의 문자열)으로만 응답하세요. 다른 설명은 포함하지 마세요.`,
+          content: `[자기소개서]\n${resume}\n\n[채용공고]\n${jobPosting}\n\n위 자기소개서와 채용공고를 바탕으로 ${generateCount}개의 면접 질문을 한국어로 생성하세요. 면접관 페르소나는 "${persona.name}" (${persona.tagline}) 입니다. 톤을 자연스럽게 반영해 주세요. 반드시 JSON 배열 형식으로만 응답하고 다른 설명은 포함하지 마세요.`,
         },
       ],
     });
@@ -57,13 +70,16 @@ export async function POST(req: NextRequest) {
     const cleaned = questions
       .filter((q): q is string => typeof q === "string" && q.trim().length > 0)
       .map((q) => q.trim())
-      .slice(0, 7);
+      .slice(0, generateCount);
 
-    if (cleaned.length < 5) {
+    if (cleaned.length < 2) {
       throw new Error(`Only ${cleaned.length} valid questions returned`);
     }
 
-    return NextResponse.json({ questions: cleaned });
+    return NextResponse.json({
+      questions: cleaned,
+      resolvedPersonaId: resolvedId,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[generate-questions]", msg);

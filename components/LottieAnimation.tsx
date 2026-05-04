@@ -5,6 +5,7 @@ import { memo, useEffect, useState, useRef } from "react";
 
 interface LottieAnimationProps {
   src: string;
+  fallbackSrc?: string;
   className?: string;
   loop?: boolean;
   autoplay?: boolean;
@@ -13,6 +14,7 @@ interface LottieAnimationProps {
 
 function LottieAnimation({
   src,
+  fallbackSrc,
   className = "",
   loop = true,
   autoplay = true,
@@ -22,11 +24,28 @@ function LottieAnimation({
   const lottieRef = useRef<LottieRefCurrentProps>(null);
 
   useEffect(() => {
-    fetch(src)
-      .then((res) => res.json())
-      .then((data) => setAnimationData(data))
-      .catch(() => {});
-  }, [src]);
+    let cancelled = false;
+    const load = async (url: string) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      return res.json();
+    };
+    (async () => {
+      try {
+        const data = await load(src);
+        if (!cancelled) setAnimationData(data);
+      } catch {
+        if (!fallbackSrc) return;
+        try {
+          const data = await load(fallbackSrc);
+          if (!cancelled) setAnimationData(data);
+        } catch {}
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [src, fallbackSrc]);
 
   useEffect(() => {
     if (lottieRef.current) {

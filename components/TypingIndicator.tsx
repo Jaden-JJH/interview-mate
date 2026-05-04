@@ -3,7 +3,19 @@
 import LottieAnimation from "@/components/LottieAnimation";
 import { motion } from "framer-motion";
 
-export default function TypingIndicator() {
+interface TypingIndicatorProps {
+  aiName?: string;
+  aiInitial?: string;
+  aiAccentColor?: string;
+}
+
+export default function TypingIndicator({
+  aiName = "Alex",
+  aiInitial,
+  aiAccentColor = "var(--blue-primary)",
+}: TypingIndicatorProps) {
+  const initial = (aiInitial ?? aiName.trim().charAt(0) ?? "A").toUpperCase();
+
   return (
     <motion.div
       className="mt-3 mb-1 flex justify-start items-end"
@@ -11,8 +23,11 @@ export default function TypingIndicator() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="w-8 h-8 mr-2 shrink-0 rounded-full bg-[var(--blue-primary)] text-white text-[12px] font-bold flex items-center justify-center shadow-[0_2px_6px_-2px_rgba(27,100,218,0.45)]">
-        A
+      <div
+        className="w-8 h-8 mr-2 shrink-0 rounded-full text-white text-[12px] font-bold flex items-center justify-center shadow-[0_2px_6px_-2px_rgba(0,0,0,0.25)]"
+        style={{ backgroundColor: aiAccentColor }}
+      >
+        {initial}
       </div>
       <div className="flex items-center rounded-[4px_18px_18px_18px] bg-[var(--gray-100)] px-3 py-1">
         <LottieAnimation

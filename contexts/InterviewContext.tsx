@@ -35,6 +35,9 @@ export interface InterviewState {
   qaResults: QAResult[];
   overallScore: number;
   overallComment: string;
+  durationMinutes: number;
+  personaId: string;
+  resolvedPersonaId: string;
 }
 
 interface InterviewContextValue extends InterviewState {
@@ -46,6 +49,8 @@ interface InterviewContextValue extends InterviewState {
   setQuestions: (questions: string[]) => void;
   appendQAResult: (result: QAResult) => void;
   setOverall: (score: number, comment: string) => void;
+  setDuration: (minutes: number) => void;
+  setPersona: (id: string, resolvedId: string) => void;
   reset: () => void;
 }
 
@@ -58,6 +63,9 @@ const INITIAL: InterviewState = {
   qaResults: [],
   overallScore: 0,
   overallComment: "",
+  durationMinutes: 20,
+  personaId: "alex",
+  resolvedPersonaId: "alex",
 };
 
 const InterviewContext = createContext<InterviewContextValue | null>(null);
@@ -88,6 +96,14 @@ export function InterviewProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, overallScore, overallComment }));
   }, []);
 
+  const setDuration = useCallback((durationMinutes: number) => {
+    setState((s) => ({ ...s, durationMinutes }));
+  }, []);
+
+  const setPersona = useCallback((personaId: string, resolvedPersonaId: string) => {
+    setState((s) => ({ ...s, personaId, resolvedPersonaId }));
+  }, []);
+
   const reset = useCallback(() => setState(INITIAL), []);
 
   const value = useMemo<InterviewContextValue>(
@@ -98,9 +114,21 @@ export function InterviewProvider({ children }: { children: ReactNode }) {
       setQuestions,
       appendQAResult,
       setOverall,
+      setDuration,
+      setPersona,
       reset,
     }),
-    [state, setResume, setJobPosting, setQuestions, appendQAResult, setOverall, reset]
+    [
+      state,
+      setResume,
+      setJobPosting,
+      setQuestions,
+      appendQAResult,
+      setOverall,
+      setDuration,
+      setPersona,
+      reset,
+    ]
   );
 
   return (
