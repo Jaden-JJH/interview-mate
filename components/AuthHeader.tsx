@@ -37,23 +37,35 @@ function BrandMark() {
   );
 }
 
-// Reserve identical width whether the user is signed-in or signed-out, and
-// while Clerk's client SDK is still loading, so hydration never shifts the
-// content below the header.
-const AUTH_SLOT = "min-w-[88px] h-8 flex items-center justify-end";
+// Fixed-height slot so hydration never bumps the content below.
+const AUTH_SLOT = "h-8 flex items-center justify-end";
 
 export default function AuthHeader() {
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/80 px-5 backdrop-blur-md">
       <BrandMark />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <ClerkLoaded>
           <SignedIn>
             <Link
               href="/history"
-              className="text-[13px] font-medium text-[var(--gray-700)] hover:text-[var(--gray-900)]"
+              aria-label="지난 면접"
+              title="지난 면접"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--gray-600)] hover:bg-gray-100 hover:text-[var(--gray-900)] transition"
             >
-              지난 면접
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 7 12 12 15 14" />
+              </svg>
             </Link>
           </SignedIn>
         </ClerkLoaded>
