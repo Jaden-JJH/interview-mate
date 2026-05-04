@@ -1,44 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useTransform, animate, useInView } from "framer-motion";
 
 interface ScoreGaugeProps {
   score: number;
   size?: number;
 }
 
-function getScoreColor(score: number) {
-  if (score >= 80) return "#00B167";
-  if (score >= 50) return "#1B64DA";
-  return "#F04452";
-}
+const COLOR_DANGER = "#F04452";
+const COLOR_AMBER = "#FF8A00";
+const COLOR_SUCCESS = "#00B167";
 
 export default function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(containerRef, { once: true, margin: "-40px" });
+  const hasAnimatedRef = useRef(false);
+
   const motionScore = useMotionValue(0);
   const dashOffset = useTransform(
     motionScore,
     (v: number) => circumference - (v / 100) * circumference
   );
+  const strokeColor = useTransform(
+    motionScore,
+    [0, 49, 50, 79, 80, 100],
+    [COLOR_DANGER, COLOR_DANGER, COLOR_AMBER, COLOR_AMBER, COLOR_SUCCESS, COLOR_SUCCESS]
+  );
+  const textColor = useTransform(
+    motionScore,
+    [0, 49, 50, 79, 80, 100],
+    [COLOR_DANGER, COLOR_DANGER, COLOR_AMBER, COLOR_AMBER, COLOR_SUCCESS, COLOR_SUCCESS]
+  );
 
   const [displayScore, setDisplayScore] = useState(0);
-  const color = getScoreColor(score);
 
   useEffect(() => {
+    if (!inView || hasAnimatedRef.current) return;
+    hasAnimatedRef.current = true;
     const controls = animate(motionScore, score, {
       duration: 1.5,
       ease: "easeOut",
       onUpdate: (v) => setDisplayScore(Math.round(v)),
     });
     return controls.stop;
-  }, [score, motionScore]);
+  }, [inView, score, motionScore]);
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      ref={containerRef}
+      className="relative flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -53,7 +70,7 @@ export default function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={color}
+          stroke={strokeColor}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -61,7 +78,12 @@ export default function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-[40px] font-bold leading-none" style={{ color }}>{displayScore}</span>
+        <motion.span
+          className="text-[40px] font-bold leading-none"
+          style={{ color: textColor }}
+        >
+          {displayScore}
+        </motion.span>
         <span className="mt-1 text-[13px] text-[var(--gray-400)]">/ 100점</span>
       </div>
     </div>
