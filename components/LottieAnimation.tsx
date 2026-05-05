@@ -10,6 +10,8 @@ interface LottieAnimationProps {
   loop?: boolean;
   autoplay?: boolean;
   playing?: boolean;
+  /** Defer fetch until the element nears the viewport (good for below-fold animations) */
+  lazy?: boolean;
 }
 
 function LottieAnimation({
@@ -19,11 +21,33 @@ function LottieAnimation({
   loop = true,
   autoplay = true,
   playing = true,
+  lazy = false,
 }: LottieAnimationProps) {
   const [animationData, setAnimationData] = useState(null);
+  const [shouldLoad, setShouldLoad] = useState(!lazy);
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver: start fetch only when near viewport
+  useEffect(() => {
+    if (!lazy) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [lazy]);
 
   useEffect(() => {
+    if (!shouldLoad) return;
     let cancelled = false;
     const load = async (url: string) => {
       const res = await fetch(url);
@@ -45,7 +69,7 @@ function LottieAnimation({
     return () => {
       cancelled = true;
     };
-  }, [src, fallbackSrc]);
+  }, [src, fallbackSrc, shouldLoad]);
 
   useEffect(() => {
     if (lottieRef.current) {
@@ -57,6 +81,9 @@ function LottieAnimation({
     }
   }, [playing]);
 
+  if (lazy && !animationData) {
+    return <div ref={containerRef} className={className} aria-hidden />;
+  }
   if (!animationData) return null;
 
   return (

@@ -192,7 +192,7 @@ export default function LandingPage() {
               className="flex items-center gap-4 rounded-2xl border border-[var(--gray-200)] bg-white px-4 py-4"
             >
               <div className="w-16 h-16 shrink-0 rounded-xl bg-[var(--blue-bg)] flex items-center justify-center overflow-hidden">
-                <LottieAnimation src={step.lottie} className="w-[120%] h-[120%] object-contain" />
+                <LottieAnimation src={step.lottie} className="w-[120%] h-[120%] object-contain" lazy />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-bold text-[var(--blue-primary)] tracking-wider">
@@ -224,7 +224,7 @@ export default function LandingPage() {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--blue-bg)] to-white p-5 border border-[var(--gray-200)]"
             >
               <div className="absolute right-4 top-1/2 -translate-y-1/2 w-20 h-20 flex items-center justify-center">
-                <LottieAnimation src={f.icon} className={`${f.iconSize} object-contain`} />
+                <LottieAnimation src={f.icon} className={`${f.iconSize} object-contain`} lazy />
               </div>
               <div className="relative pr-24">
                 <div className="text-[16px] font-bold text-[var(--gray-900)]">
