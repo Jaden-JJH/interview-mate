@@ -379,7 +379,10 @@ export default function InterviewPage() {
 
   return (
     <motion.div
-      className="flex min-h-dvh flex-col bg-white"
+      // Bounded height (viewport - AuthHeader) so the inner chat area is
+      // the only thing that scrolls — top bar, persona, gradient and the
+      // input row stay pinned in place even when QA history grows long.
+      className="flex h-[calc(100dvh-56px)] flex-col bg-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
