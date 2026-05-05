@@ -133,8 +133,21 @@ export default function ResumePage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
+  const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
   const handleFileSelect = useCallback(async (file: File) => {
-    if (!(file.type === "application/pdf" || file.name.endsWith(".pdf"))) return;
+    if (!(file.type === "application/pdf" || file.name.endsWith(".pdf"))) {
+      setPdfError("PDF 파일만 업로드할 수 있어요.");
+      return;
+    }
+    if (file.size === 0) {
+      setPdfError("파일이 비어 있어요. 다른 PDF를 선택해 주세요.");
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfError("파일 크기가 10MB를 초과해요. 더 작은 PDF를 사용해 주세요.");
+      return;
+    }
     setUploadedFileName(file.name);
     setPdfError(null);
     setIsParsingPdf(true);
@@ -148,6 +161,7 @@ export default function ResumePage() {
       const msg = err instanceof Error ? err.message : "PDF 파싱 실패";
       setPdfError(`${msg}. 직접 입력 탭을 이용해 주세요.`);
       setPdfText("");
+      setUploadedFileName(null);
     } finally {
       setIsParsingPdf(false);
     }
