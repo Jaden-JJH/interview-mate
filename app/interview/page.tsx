@@ -925,32 +925,31 @@ export default function InterviewPage() {
                   exit={{ opacity: 0 }}
                   onClick={() => setShowFinishConfirm(false)}
                 />
-                <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center sm:items-center">
+                <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center px-4 pb-4 sm:items-center sm:pb-0">
                   <motion.div
-                    className="pointer-events-auto w-full max-w-[640px] rounded-t-3xl bg-white px-6 pt-7 pb-9 sm:m-4 sm:rounded-3xl"
-                    initial={{ y: 60, opacity: 0 }}
+                    className="pointer-events-auto w-full max-w-[360px] rounded-2xl bg-white px-5 pt-5 pb-5"
+                    initial={{ y: 40, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 60, opacity: 0 }}
+                    exit={{ y: 40, opacity: 0 }}
                     transition={{ type: "spring", damping: 28, stiffness: 280 }}
                   >
-                    <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
-                    <h2 className="text-[18px] font-bold text-[var(--gray-900)]">
+                    <h2 className="text-[16px] font-bold text-[var(--gray-900)]">
                       면접을 지금 끝낼까요?
                     </h2>
-                    <p className="mt-2 text-[13px] leading-[20px] text-[var(--gray-600)]">
+                    <p className="mt-1.5 text-[13px] leading-[19px] text-[var(--gray-600)]">
                       지금까지 답변하신 {qaResults.length}개 질문을 기준으로
                       결과가 생성됩니다. 남은 질문은 결과에 포함되지 않아요.
                     </p>
-                    <div className="mt-5 flex gap-2">
+                    <div className="mt-4 flex gap-2">
                       <button
                         onClick={() => setShowFinishConfirm(false)}
-                        className="flex-1 rounded-2xl border border-[var(--gray-200)] bg-white py-3 text-[14px] font-semibold text-[var(--gray-700)]"
+                        className="flex-1 rounded-xl border border-[var(--gray-200)] bg-white py-2.5 text-[13px] font-semibold text-[var(--gray-700)]"
                       >
                         계속 진행
                       </button>
                       <button
                         onClick={confirmFinishEarly}
-                        className="flex-1 rounded-2xl bg-[var(--blue-primary)] py-3 text-[14px] font-bold text-white active:scale-95"
+                        className="flex-1 rounded-xl bg-[var(--blue-primary)] py-2.5 text-[13px] font-bold text-white active:scale-95"
                       >
                         결과 보기
                       </button>
