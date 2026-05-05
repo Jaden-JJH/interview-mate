@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,6 +28,15 @@ function weightedAverage(scores: number[]): number {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(ip, "generate-feedback", RATE_LIMITS["generate-feedback"]);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   let body: Body;
   try {
     body = await req.json();
@@ -78,6 +89,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[generate-feedback]", msg);
+    captureServerError("generate-feedback", err, { ip });
     return NextResponse.json(
       { error: "종합 피드백 생성에 실패했습니다", detail: msg },
       { status: 500 }

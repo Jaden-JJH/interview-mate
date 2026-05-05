@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { spawn } from "node:child_process";
 import { anthropic, CLAUDE_HAIKU, extractText } from "@/lib/anthropic";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -60,6 +62,15 @@ async function claudePdfExtract(buf: Buffer): Promise<string> {
 type ParseMethod = "pdftotext" | "claude";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(ip, "parse-pdf", RATE_LIMITS["parse-pdf"]);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   const ab = await req.arrayBuffer();
   if (ab.byteLength === 0) {
     return NextResponse.json({ error: "빈 파일입니다" }, { status: 400 });
@@ -97,6 +108,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Claude 추출 실패";
       console.error("[parse-pdf] claude fallback failed:", msg);
+      captureServerError("parse-pdf", err, { ip, stage: "claude-fallback" });
       const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
       const lowerMsg = msg.toLowerCase();
       const isAuth =

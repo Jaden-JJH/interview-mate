@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { resolvePersona } from "@/lib/personas";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -38,6 +40,15 @@ interface Evaluation {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(ip, "evaluate-answer", RATE_LIMITS["evaluate-answer"]);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   let body: Body;
   try {
     body = await req.json();
@@ -111,6 +122,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[evaluate-answer]", msg);
+    captureServerError("evaluate-answer", err, { ip });
     return NextResponse.json(
       { error: "답변 평가에 실패했습니다", detail: msg },
       { status: 500 }

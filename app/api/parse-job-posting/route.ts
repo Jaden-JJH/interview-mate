@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -154,6 +156,15 @@ async function structure(rawText: string): Promise<ParsedJobPosting> {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(ip, "parse-job-posting", RATE_LIMITS["parse-job-posting"]);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   let body: RequestBody;
   try {
     body = await req.json();
@@ -219,6 +230,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "structuring failed";
     console.warn("[parse-job-posting] structure failed:", msg);
+    captureServerError("parse-job-posting", err, { ip, url: rawUrl });
     return NextResponse.json({
       success: false,
       fallbackRequired: true,

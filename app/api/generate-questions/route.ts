@@ -4,6 +4,8 @@ import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas"
 import { getOrCreateAppUserId } from "@/lib/db/users";
 import { consumeCredit } from "@/lib/db/credits";
 import { isGuestMode } from "@/lib/guest";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -18,6 +20,15 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = checkRateLimit(ip, "generate-questions", RATE_LIMITS["generate-questions"]);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   // In guest mode we skip both auth and the credit charge — testers run
   // the full flow without sign-in or persistent state.
   const guest = isGuestMode();
@@ -114,6 +125,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[generate-questions]", msg);
+    captureServerError("generate-questions", err, { ip });
     return NextResponse.json(
       { error: "질문 생성에 실패했습니다", detail: msg },
       { status: 500 }
