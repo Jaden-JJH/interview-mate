@@ -16,7 +16,7 @@ const PLANS = [
   {
     label: "크레딧 패키지",
     price: "9,900원",
-    description: "1회 결제, 기간 제한 없음",
+    description: "1회 결제 · 기간 제한 없음 · 부가세(VAT) 포함",
     features: [
       "AI 모의 면접 8회",
       "AI 도움받기 무제한",
