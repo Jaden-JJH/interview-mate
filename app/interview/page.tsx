@@ -938,7 +938,7 @@ export default function InterviewPage() {
                     </h2>
                     <p className="mt-1.5 text-[13px] leading-[19px] text-[var(--gray-600)]">
                       지금까지 답변하신 {qaResults.length}개 질문을 기준으로
-                      결과가 생성됩니다. 남은 질문은 결과에 포함되지 않아요.
+                      결과가 생성됩니다.
                     </p>
                     <div className="mt-4 flex gap-2">
                       <button
