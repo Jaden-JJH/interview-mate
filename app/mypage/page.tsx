@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { resolvePersona } from "@/lib/personas";
 import PremiumGenerateButton from "@/components/PremiumGenerateButton";
 import ResumeGenerateModal from "@/components/ResumeGenerateModal";
@@ -59,6 +59,8 @@ export default function MyPage() {
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +110,25 @@ export default function MyPage() {
       }
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    setIsWithdrawing(true);
+    try {
+      const res = await fetch("/api/me/delete", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? "탈퇴 처리 중 오류가 발생했습니다.");
+        return;
+      }
+      // Clerk 세션이 무효화되므로 홈으로 이동하면 자동 로그아웃
+      router.replace("/");
+    } catch {
+      alert("탈퇴 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsWithdrawing(false);
+      setShowWithdrawConfirm(false);
     }
   };
 
@@ -336,6 +357,63 @@ export default function MyPage() {
         onClose={() => setShowGenerateModal(false)}
         existingResume={resumes?.[0]?.content}
       />
+
+      {/* 회원 탈퇴 */}
+      <div className="px-5 pb-10 pt-2">
+        <button
+          onClick={() => setShowWithdrawConfirm(true)}
+          className="text-[12px] text-[var(--gray-400)] underline underline-offset-2 hover:text-red-400 transition-colors"
+        >
+          회원 탈퇴
+        </button>
+      </div>
+
+      {/* 탈퇴 확인 시트 */}
+      <AnimatePresence>
+        {showWithdrawConfirm && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isWithdrawing && setShowWithdrawConfirm(false)}
+            />
+            <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center px-4 pb-4 sm:items-center sm:pb-0">
+              <motion.div
+                className="pointer-events-auto w-full max-w-[360px] rounded-2xl bg-white px-5 pt-5 pb-5"
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              >
+                <h2 className="text-[16px] font-bold text-[var(--gray-900)]">
+                  정말 탈퇴하시겠어요?
+                </h2>
+                <p className="mt-1.5 text-[13px] leading-[19px] text-[var(--gray-600)]">
+                  이력서, 면접 기록, 크레딧이 모두 삭제되며 복구할 수 없습니다.
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => setShowWithdrawConfirm(false)}
+                    disabled={isWithdrawing}
+                    className="flex-1 rounded-xl border border-[var(--gray-200)] bg-white py-2.5 text-[13px] font-semibold text-[var(--gray-700)] disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleWithdraw}
+                    disabled={isWithdrawing}
+                    className="flex-1 rounded-xl bg-red-500 py-2.5 text-[13px] font-bold text-white disabled:opacity-50"
+                  >
+                    {isWithdrawing ? "처리 중..." : "탈퇴하기"}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
