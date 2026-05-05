@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import LottieAnimation from "./LottieAnimation";
+import { openCheckout } from "@/lib/billing/checkout";
 
 interface Balance {
   free: number;
@@ -12,11 +14,10 @@ interface Balance {
 
 export default function CreditBadge() {
   const pathname = usePathname();
+  const { user } = useUser();
   const [balance, setBalance] = useState<Balance | null>(null);
 
-  // Refetch when the user lands on a page where the count may have changed
-  // (after starting an interview, after coming back to /resume, etc.).
-  useEffect(() => {
+  const fetchBalance = useCallback(() => {
     let cancelled = false;
     fetch("/api/me/credits", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -27,7 +28,27 @@ export default function CreditBadge() {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, []);
+
+  // Refetch when the user lands on a page where the count may have changed
+  // (after starting an interview, after coming back to /resume, etc.).
+  useEffect(() => fetchBalance(), [pathname, fetchBalance]);
+
+  // 결제 완료 후 webhook 반영되면 잔액 refetch.
+  useEffect(() => {
+    const handler = () => fetchBalance();
+    window.addEventListener("paddle:checkout-completed", handler);
+    return () =>
+      window.removeEventListener("paddle:checkout-completed", handler);
+  }, [fetchBalance]);
+
+  const handleClick = () => {
+    if (!user) return;
+    openCheckout({
+      clerkUserId: user.id,
+      email: user.primaryEmailAddress?.emailAddress,
+    });
+  };
 
   // While the balance is loading, render an identically-sized skeleton so
   // the header doesn't reflow when the number arrives a tick later.
@@ -42,9 +63,11 @@ export default function CreditBadge() {
 
   const low = balance.total <= 1;
   return (
-    <span
-      title={`무료 ${balance.free} · 결제 ${balance.paid}`}
-      className="inline-flex items-center leading-none tabular-nums"
+    <button
+      type="button"
+      onClick={handleClick}
+      title={`무료 ${balance.free} · 결제 ${balance.paid} · 클릭하여 충전`}
+      className="inline-flex items-center leading-none tabular-nums rounded-full px-1 transition hover:bg-gray-100 active:scale-[0.98]"
     >
       <LottieAnimation
         src="/lottie/Coin.json"
@@ -58,6 +81,6 @@ export default function CreditBadge() {
       >
         {balance.total}
       </span>
-    </span>
+    </button>
   );
 }

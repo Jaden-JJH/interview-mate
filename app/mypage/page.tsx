@@ -13,6 +13,7 @@ import {
   isGuestMode,
   loadGuestResumes,
 } from "@/lib/guest-resume-store";
+import { openCheckout } from "@/lib/billing/checkout";
 
 interface Balance {
   free: number;
@@ -91,6 +92,29 @@ export default function MyPage() {
       cancelled = true;
     };
   }, []);
+
+  // 결제 완료 후 webhook이 DB에 반영되면 잔액 refetch
+  useEffect(() => {
+    const handler = () => {
+      fetch("/api/me/credits", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((b) => {
+          if (b) setBalance(b);
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("paddle:checkout-completed", handler);
+    return () =>
+      window.removeEventListener("paddle:checkout-completed", handler);
+  }, []);
+
+  const handlePurchase = () => {
+    if (!user) return;
+    openCheckout({
+      clerkUserId: user.id,
+      email: user.primaryEmailAddress?.emailAddress,
+    });
+  };
 
   const handleDeleteResume = async (id: string) => {
     if (!confirm("이 이력서를 삭제할까요?")) return;
@@ -200,11 +224,11 @@ export default function MyPage() {
               </div>
             </div>
             <button
-              disabled
-              className="mt-4 w-full rounded-xl bg-[var(--blue-primary)] py-3 text-[14px] font-bold text-white opacity-60"
-              title="결제는 곧 출시됩니다"
+              onClick={handlePurchase}
+              disabled={!user}
+              className="mt-4 w-full rounded-xl bg-[var(--blue-primary)] py-3 text-[14px] font-bold text-white transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
             >
-              패키지 구매 (준비중)
+              패키지 구매
             </button>
           </div>
         </section>

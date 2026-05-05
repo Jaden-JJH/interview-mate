@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import { openCheckout } from "@/lib/billing/checkout";
 
 type PaywallReason = "credit" | "ai-assist";
 
@@ -39,10 +41,26 @@ export default function PaywallModal({
   reason = "credit",
 }: PaywallModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handlePurchase = async () => {
+    if (!user || purchasing) return;
+    setPurchasing(true);
+    try {
+      await openCheckout({
+        clerkUserId: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+      });
+    } finally {
+      // overlay가 떠있는 동안에도 버튼은 다시 누를 수 있어야 하므로 즉시 해제
+      setPurchasing(false);
+    }
+  };
 
   // Rendered via portal to document.body so the backdrop and sheet
   // are anchored to the viewport — framer-motion parents apply
@@ -103,11 +121,11 @@ export default function PaywallModal({
                 닫기
               </button>
               <button
-                disabled
-                className="flex-1 rounded-xl bg-[var(--blue-primary)] py-2.5 text-[13px] font-bold text-white opacity-60"
-                title="결제는 곧 출시됩니다"
+                onClick={handlePurchase}
+                disabled={!user || purchasing}
+                className="flex-1 rounded-xl bg-[var(--blue-primary)] py-2.5 text-[13px] font-bold text-white transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
               >
-                구매하기 (준비중)
+                {purchasing ? "결제창 여는 중…" : "구매하기"}
               </button>
             </div>
             </motion.div>
