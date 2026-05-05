@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "가격정책 | 인터뷰메이트",
-  description: "인터뷰메이트의 요금제와 환불 정책을 확인하세요.",
+  title: "가격정책",
+  description:
+    "인터뷰메이트 요금제 안내. 가입 즉시 무료 체험 1회, 9,900원 패키지로 면접 8회와 AI 도움받기 무제한 이용. 14일 사유 불문 전액 환불.",
+  alternates: { canonical: "/legal/pricing" },
 };
 
 const PLANS = [

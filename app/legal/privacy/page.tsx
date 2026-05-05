@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "개인정보처리방침 | 인터뷰메이트",
-  description: "인터뷰메이트가 수집·이용하는 개인정보 처리 방침을 확인하세요.",
+  title: "개인정보처리방침",
+  description:
+    "인터뷰메이트가 수집·이용·보관하는 개인정보 항목과 처리 목적, 보유기간, 제3자 제공 및 이용자 권리를 안내합니다.",
+  alternates: { canonical: "/legal/privacy" },
 };
 
 const SECTIONS = [

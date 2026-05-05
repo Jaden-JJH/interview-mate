@@ -57,11 +57,20 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE_URL,
     siteName: "인터뷰메이트",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "인터뷰메이트 - AI 모의 면접",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "인터뷰메이트 - AI 기반 모의 면접",
     description: "5분이면 첫 면접 리포트가 나옵니다",
+    images: ["/og.png"],
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,

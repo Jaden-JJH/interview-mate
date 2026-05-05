@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "이용약관 | 인터뷰메이트",
-  description: "인터뷰메이트 서비스 이용약관을 확인하세요.",
+  title: "이용약관",
+  description:
+    "인터뷰메이트(운영자: Trust) 서비스 이용약관. 만 14세 이상 이용 가능, 크레딧 결제 및 환불 정책, 면책 조항 등을 안내합니다.",
+  alternates: { canonical: "/legal/terms" },
 };
 
 const SECTIONS = [
