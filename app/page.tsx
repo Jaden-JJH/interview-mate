@@ -273,7 +273,7 @@ export default function LandingPage() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="px-6 pb-14">
+      <section className="px-6 pb-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -299,10 +299,6 @@ export default function LandingPage() {
             </button>
           </div>
         </motion.div>
-
-        <p className="mt-6 text-center text-[11px] text-[var(--gray-400)]">
-          © 2026 인터뷰메이트
-        </p>
       </section>
     </motion.div>
   );
