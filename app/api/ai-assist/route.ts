@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { resolvePersona } from "@/lib/personas";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";

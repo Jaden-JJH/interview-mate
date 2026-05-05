@@ -6,10 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const STORAGE_KEY = "resumeGenerateUsed";
 
-function hasUsedFree(): boolean {
-  if (typeof window === "undefined") return false;
-  try { return window.localStorage.getItem(STORAGE_KEY) === "true"; } catch { return false; }
-}
 function markUsed(): void {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(STORAGE_KEY, "true"); } catch {}
