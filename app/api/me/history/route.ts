@@ -3,8 +3,12 @@ import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { interviewHistory } from "@/lib/db/schema";
 import { getOrCreateAppUserId } from "@/lib/db/users";
+import { isGuestMode } from "@/lib/guest";
 
 export async function GET() {
+  if (isGuestMode()) {
+    return NextResponse.json({ items: [] });
+  }
   const userId = await getOrCreateAppUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

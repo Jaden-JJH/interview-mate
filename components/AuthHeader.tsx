@@ -10,6 +10,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import CreditBadge from "./CreditBadge";
+import { isGuestMode } from "@/lib/guest";
 
 function BrandMark() {
   return (
@@ -42,10 +43,19 @@ function BrandMark() {
 const AUTH_SLOT = "h-8 flex items-center justify-end";
 
 export default function AuthHeader() {
+  const guest = isGuestMode();
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-100 bg-white/80 px-5 backdrop-blur-md">
       <BrandMark />
       <div className="flex items-center gap-3">
+        {guest && (
+          <span
+            className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold tracking-tight text-amber-800"
+            title="NEXT_PUBLIC_GUEST_MODE — 인증/저장 없이 동작합니다"
+          >
+            테스트 모드
+          </span>
+        )}
         <ClerkLoaded>
           <SignedIn>
             <CreditBadge />

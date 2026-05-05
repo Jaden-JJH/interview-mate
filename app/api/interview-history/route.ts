@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { interviewHistory } from "@/lib/db/schema";
 import { getOrCreateAppUserId } from "@/lib/db/users";
+import { isGuestMode } from "@/lib/guest";
 
 interface QAResultPayload {
   question: string;
@@ -23,6 +24,11 @@ interface SaveBody {
 }
 
 export async function POST(req: Request) {
+  if (isGuestMode()) {
+    // Memory-only — no DB write. Return a synthetic id so the client can
+    // proceed with /result rendering without erroring.
+    return NextResponse.json({ ok: true, id: "guest" });
+  }
   const userId = await getOrCreateAppUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

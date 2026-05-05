@@ -3,11 +3,15 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { interviewHistory } from "@/lib/db/schema";
 import { getOrCreateAppUserId } from "@/lib/db/users";
+import { isGuestMode } from "@/lib/guest";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  if (isGuestMode()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   const userId = await getOrCreateAppUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

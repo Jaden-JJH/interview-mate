@@ -3,6 +3,7 @@ import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/a
 import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas";
 import { getOrCreateAppUserId } from "@/lib/db/users";
 import { consumeCredit } from "@/lib/db/credits";
+import { isGuestMode } from "@/lib/guest";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,9 +18,15 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getOrCreateAppUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // In guest mode we skip both auth and the credit charge — testers run
+  // the full flow without sign-in or persistent state.
+  const guest = isGuestMode();
+  let userId: string | null = null;
+  if (!guest) {
+    userId = await getOrCreateAppUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   let body: Body;
@@ -50,13 +57,18 @@ export async function POST(req: NextRequest) {
 
   // Charge before the (expensive) Claude call so abandoned interviews still
   // pay for the question-generation cost we incurred. Atomic UPDATE handles
-  // race conditions; null = out of credits.
-  const balance = await consumeCredit(userId);
-  if (!balance) {
-    return NextResponse.json(
-      { error: "insufficient_credits" },
-      { status: 402 }
-    );
+  // race conditions; null = out of credits. Skipped in guest mode.
+  let balance: { free: number; paid: number } | null = null;
+  if (!guest && userId) {
+    balance = await consumeCredit(userId);
+    if (!balance) {
+      return NextResponse.json(
+        { error: "insufficient_credits" },
+        { status: 402 }
+      );
+    }
+  } else {
+    balance = { free: 999, paid: 0 };
   }
 
   try {

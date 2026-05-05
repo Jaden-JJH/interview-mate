@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { isGuestMode } from "@/lib/guest";
 
 // Routes that require an authenticated user. Public landing, sign-in/up,
 // and the Clerk webhook endpoint stay open.
@@ -20,6 +21,10 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Guest mode bypasses auth entirely so testers can run the full flow
+  // without sign-in. User-bound API routes return memory/no-op responses
+  // — see lib/guest.ts and individual route handlers.
+  if (isGuestMode()) return;
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
