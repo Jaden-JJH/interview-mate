@@ -87,6 +87,9 @@ export default function InterviewPage() {
   const [streamingIndex, setStreamingIndex] = useState<number>(-1);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [sttSupported, setSttSupported] = useState(true);
+  const [sttUnsupportedMsg, setSttUnsupportedMsg] = useState<string | null>(null);
+  const recognitionRef = useRef<unknown>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzingStep, setAnalyzingStep] = useState(0);
@@ -478,12 +481,61 @@ export default function InterviewPage() {
   };
 
   const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false);
-    } else {
-      setIsRecording(true);
-      setTimeout(() => setIsRecording(false), 3000);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSttSupported(false);
+      setSttUnsupportedMsg("이 브라우저는 음성 입력을 지원하지 않아요. Chrome을 사용해 주세요.");
+      setTimeout(() => setSttUnsupportedMsg(null), 3000);
+      return;
     }
+
+    if (isRecording) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (recognitionRef.current as any)?.stop();
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new SpeechRecognition() as any;
+    recognition.lang = "ko-KR";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognitionRef.current = recognition;
+    setIsRecording(true);
+
+    const baseText = inputRef.current?.value ?? "";
+
+    recognition.onresult = (e: { results: { isFinal: boolean; [i: number]: { transcript: string } }[]; resultIndex: number }) => {
+      let interim = "";
+      let final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      const next = (baseText + (baseText && (final || interim) ? " " : "") + (final || interim)).trimStart();
+      setInput(next);
+      const ta = inputRef.current;
+      if (ta) {
+        ta.style.height = "auto";
+        ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
+      }
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+      inputRef.current?.focus();
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
   };
 
   const totalSeconds = totalSecondsRef.current || durationMinutes * 60;
@@ -782,6 +834,7 @@ export default function InterviewPage() {
       </AnimatePresence>
 
       <Toast message={errorMsg} onClose={() => setErrorMsg(null)} />
+      <Toast message={sttUnsupportedMsg} onClose={() => setSttUnsupportedMsg(null)} />
 
       {/* Floating fade gradient */}
       <div className="pointer-events-none fixed bottom-[68px] left-1/2 w-full max-w-[640px] h-12 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />
@@ -836,10 +889,13 @@ export default function InterviewPage() {
           <button
             onClick={toggleRecording}
             disabled={isAiAssisting}
+            title={sttSupported ? (isRecording ? "녹음 중지" : "음성 입력") : "이 브라우저는 음성 입력을 지원하지 않아요 (Chrome 권장)"}
             className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full transition-all relative disabled:opacity-50 ${
               isRecording
                 ? "bg-red-50 text-red-500"
-                : "bg-[var(--gray-100)] text-[var(--gray-500)] hover:bg-[var(--gray-200)]"
+                : sttSupported
+                ? "bg-[var(--gray-100)] text-[var(--gray-500)] hover:bg-[var(--gray-200)]"
+                : "bg-[var(--gray-100)] text-[var(--gray-300)] cursor-not-allowed"
             }`}
           >
             {isRecording && (
