@@ -37,7 +37,7 @@ export async function getOrCreateAppUserId(): Promise<string | null> {
 
   await db
     .insert(credits)
-    .values({ userId: inserted.id })
+    .values({ userId: inserted.id, freeRemaining: 1 })
     .onConflictDoNothing({ target: credits.userId });
 
   return inserted.id;

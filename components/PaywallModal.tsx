@@ -12,7 +12,7 @@ interface PaywallModalProps {
   freeRemaining?: number;
   paidRemaining?: number;
   // What triggered the paywall — drives the headline + first paragraph.
-  // Both reasons sell the same 9,900원 / 10회 패키지.
+  // Both reasons sell the same 9,900원 / 8회 패키지.
   reason?: PaywallReason;
 }
 
@@ -84,14 +84,14 @@ export default function PaywallModal({
             <div className="mt-4 rounded-xl border border-[var(--gray-200)] px-3.5 py-3">
               <div className="flex items-baseline justify-between">
                 <span className="text-[13px] font-semibold text-[var(--gray-900)]">
-                  10회 패키지
+                  8회 패키지
                 </span>
                 <span className="text-[16px] font-extrabold text-[var(--blue-primary)]">
                   9,900원
                 </span>
               </div>
               <p className="mt-0.5 text-[11px] text-[var(--gray-500)]">
-                면접 10회 · AI 도움받기 무제한
+                면접 8회 · AI 도움받기 무제한
               </p>
             </div>
 

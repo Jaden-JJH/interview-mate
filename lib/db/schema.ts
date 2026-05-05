@@ -20,7 +20,7 @@ export const credits = pgTable("credits", {
   userId: uuid("user_id")
     .primaryKey()
     .references(() => users.id, { onDelete: "cascade" }),
-  freeRemaining: integer("free_remaining").default(2).notNull(),
+  freeRemaining: integer("free_remaining").default(1).notNull(),
   paidRemaining: integer("paid_remaining").default(0).notNull(),
   totalUsed: integer("total_used").default(0).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

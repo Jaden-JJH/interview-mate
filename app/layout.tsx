@@ -25,7 +25,7 @@ const JSON_LD = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "KRW",
-    description: "무료 체험 2회 제공",
+    description: "무료 체험 1회 제공",
   },
 };
 

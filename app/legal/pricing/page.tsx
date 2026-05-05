@@ -11,14 +11,14 @@ const PLANS = [
     label: "무료 체험",
     price: "0원",
     description: "가입 즉시 제공",
-    features: ["AI 모의 면접 2회", "맞춤 질문 생성", "점수 및 상세 피드백"],
+    features: ["AI 모의 면접 1회", "맞춤 질문 생성", "점수 및 상세 피드백"],
   },
   {
     label: "크레딧 패키지",
     price: "9,900원",
     description: "1회 결제, 기간 제한 없음",
     features: [
-      "AI 모의 면접 10회",
+      "AI 모의 면접 8회",
       "AI 도움받기 무제한",
       "맞춤 질문 생성",
       "점수 및 상세 피드백",

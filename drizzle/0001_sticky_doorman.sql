@@ -1,0 +1,1 @@
+ALTER TABLE "credits" ALTER COLUMN "free_remaining" SET DEFAULT 1;

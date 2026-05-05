@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       if (inserted) {
         await db
           .insert(credits)
-          .values({ userId: inserted.id })
+          .values({ userId: inserted.id, freeRemaining: 1 })
           .onConflictDoNothing({ target: credits.userId });
       }
     } catch (err) {
