@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatBubble from "@/components/ChatBubble";
@@ -113,6 +114,13 @@ export default function InterviewPage() {
   const [isAiAssisting, setIsAiAssisting] = useState(false);
   const [showAiAssistPaywall, setShowAiAssistPaywall] = useState(false);
   const aiPauseAtRef = useRef<number | null>(null);
+  // Early-finish — lets the user end the interview mid-flow and see
+  // results based on whatever QAs have been recorded so far.
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [portalMounted, setPortalMounted] = useState(false);
+  useEffect(() => {
+    setPortalMounted(true);
+  }, []);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const guardRef = useRef(false);
@@ -430,6 +438,21 @@ export default function InterviewPage() {
     }, AI_ASSIST_SIMULATED_LATENCY_MS);
   }, [isAiAssisting, streamingText, isEvaluating, currentItem]);
 
+  // Early finish is allowed only when the user has at least one answered
+  // question (otherwise the result page has nothing to grade) and we're
+  // not in the middle of streaming/evaluating/AI-assisting.
+  const canFinishEarly =
+    qaResults.length > 0 &&
+    !isEvaluating &&
+    !isAnalyzing &&
+    streamingText === null &&
+    !isAiAssisting;
+
+  const confirmFinishEarly = useCallback(() => {
+    setShowFinishConfirm(false);
+    finishInterview(qaResults);
+  }, [finishInterview, qaResults]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter sends; Shift+Enter inserts a newline.
     // Guard against IME composition (Korean) so the Enter that confirms
@@ -489,6 +512,16 @@ export default function InterviewPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Early finish — lets the user end the interview mid-flow and
+              see feedback based on whatever they've answered so far.
+              Disabled until at least one answer is recorded. */}
+          <button
+            onClick={() => setShowFinishConfirm(true)}
+            disabled={!canFinishEarly}
+            className="rounded-full border border-[var(--gray-200)] px-3 py-1 text-[12px] font-medium text-[var(--gray-600)] transition-colors hover:bg-[var(--gray-100)] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            끝내기
+          </button>
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold tabular-nums transition-colors ${
               isTimeUp
@@ -876,6 +909,59 @@ export default function InterviewPage() {
         onClose={() => setShowAiAssistPaywall(false)}
         reason="ai-assist"
       />
+
+      {/* Early-finish confirm sheet — portaled to body so framer-motion
+          ancestors don't capture the fixed positioning. Same visual
+          pattern as PaywallModal. */}
+      {portalMounted &&
+        createPortal(
+          <AnimatePresence>
+            {showFinishConfirm && (
+              <>
+                <motion.div
+                  className="fixed inset-0 z-50 bg-black/40"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowFinishConfirm(false)}
+                />
+                <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center sm:items-center">
+                  <motion.div
+                    className="pointer-events-auto w-full max-w-[640px] rounded-t-3xl bg-white px-6 pt-7 pb-9 sm:m-4 sm:rounded-3xl"
+                    initial={{ y: 60, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 60, opacity: 0 }}
+                    transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                  >
+                    <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
+                    <h2 className="text-[18px] font-bold text-[var(--gray-900)]">
+                      면접을 지금 끝낼까요?
+                    </h2>
+                    <p className="mt-2 text-[13px] leading-[20px] text-[var(--gray-600)]">
+                      지금까지 답변하신 {qaResults.length}개 질문을 기준으로
+                      결과가 생성됩니다. 남은 질문은 결과에 포함되지 않아요.
+                    </p>
+                    <div className="mt-5 flex gap-2">
+                      <button
+                        onClick={() => setShowFinishConfirm(false)}
+                        className="flex-1 rounded-2xl border border-[var(--gray-200)] bg-white py-3 text-[14px] font-semibold text-[var(--gray-700)]"
+                      >
+                        계속 진행
+                      </button>
+                      <button
+                        onClick={confirmFinishEarly}
+                        className="flex-1 rounded-2xl bg-[var(--blue-primary)] py-3 text-[14px] font-bold text-white active:scale-95"
+                      >
+                        결과 보기
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </motion.div>
   );
 }
