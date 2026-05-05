@@ -499,23 +499,27 @@ export default function InterviewPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognition = new SpeechRecognition() as any;
     recognition.lang = "ko-KR";
-    recognition.continuous = false;
+    recognition.continuous = true;   // 명시적으로 stop() 호출 전까지 유지
     recognition.interimResults = true;
 
     recognitionRef.current = recognition;
     setIsRecording(true);
 
     const baseText = inputRef.current?.value ?? "";
+    // continuous=true 환경에서는 onresult가 여러 번 호출되므로
+    // finalTranscript를 클로저로 누적
+    let finalTranscript = "";
 
     recognition.onresult = (e: { results: { isFinal: boolean; [i: number]: { transcript: string } }[]; resultIndex: number }) => {
       let interim = "";
-      let final = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) final += t;
+        if (e.results[i].isFinal) finalTranscript += t;
         else interim += t;
       }
-      const next = (baseText + (baseText && (final || interim) ? " " : "") + (final || interim)).trimStart();
+      const combined = finalTranscript + interim;
+      const sep = baseText && combined ? " " : "";
+      const next = (baseText + sep + combined).trimStart();
       setInput(next);
       const ta = inputRef.current;
       if (ta) {
@@ -530,9 +534,12 @@ export default function InterviewPage() {
       inputRef.current?.focus();
     };
 
-    recognition.onerror = () => {
-      setIsRecording(false);
-      recognitionRef.current = null;
+    recognition.onerror = (e: { error: string }) => {
+      // 'aborted'는 stop() 직후 정상 발생 — 무시
+      if (e.error !== "aborted") {
+        setIsRecording(false);
+        recognitionRef.current = null;
+      }
     };
 
     recognition.start();
