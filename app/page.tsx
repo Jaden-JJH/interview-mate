@@ -82,7 +82,7 @@ export default function LandingPage() {
       transition={{ duration: 0.4 }}
     >
       {/* HERO */}
-      <section className="relative overflow-hidden pt-5 pb-10">
+      <section className="relative overflow-hidden pt-2 pb-10">
         {/* Ambient blur */}
         <div className="pointer-events-none absolute inset-0 -top-10 opacity-70">
           <LottieAnimation
@@ -91,7 +91,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="relative px-6 pt-7">
+        <div className="relative px-6 pt-4">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -99,7 +99,7 @@ export default function LandingPage() {
             className="inline-flex items-center gap-1.5 rounded-full bg-[var(--blue-light)] px-3 py-1 text-[12px] font-semibold text-[var(--blue-primary)]"
           >
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--blue-primary)] animate-pulse" />
-            AI 기반 모의 면접 서비스
+            24종 빅데이터 AI 페르소나 면접
           </motion.div>
 
           <motion.h1
