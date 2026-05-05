@@ -27,7 +27,7 @@ const COPY: Record<PaywallReason, { title: string; body: (free?: number, paid?: 
   "ai-assist": {
     title: "AI 도움받기는 무료 1회까지예요",
     body: () =>
-      "무료 1회를 모두 사용하셨어요. 10회 패키지를 구매하시면 AI 도움받기를 면접 중 무제한으로 사용하실 수 있어요.",
+      "패키지 구매하면 AI 도움받기를 무제한 사용할 수 있어요.",
   },
 };
 
@@ -65,47 +65,46 @@ export default function PaywallModal({
           {/* Sheet wrapper — uses inset-x-0 + flex justify-center instead of
               `left-1/2 -translate-x-1/2`, because framer-motion writes its
               own `transform` on motion.div and overrides Tailwind's translate. */}
-          <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center sm:items-center">
+          <div className="pointer-events-none fixed inset-0 z-[51] flex items-center justify-center px-4">
             <motion.div
-              className="pointer-events-auto w-full max-w-[640px] rounded-t-3xl bg-white px-6 pt-7 pb-9 sm:m-4 sm:rounded-3xl"
-              initial={{ y: 60, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 60, opacity: 0 }}
-              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="pointer-events-auto w-full max-w-[360px] rounded-2xl bg-white px-5 pt-5 pb-5"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
               onClick={(e) => e.stopPropagation()}
             >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
-            <h2 className="text-[18px] font-bold text-[var(--gray-900)]">
+            <h2 className="text-[16px] font-bold text-[var(--gray-900)]">
               {COPY[reason].title}
             </h2>
-            <p className="mt-2 text-[13px] leading-[20px] text-[var(--gray-600)]">
+            <p className="mt-1.5 text-[12px] leading-[18px] text-[var(--gray-600)]">
               {COPY[reason].body(freeRemaining, paidRemaining)}
             </p>
 
-            <div className="mt-5 rounded-2xl border border-[var(--gray-200)] p-4">
+            <div className="mt-4 rounded-xl border border-[var(--gray-200)] px-3.5 py-3">
               <div className="flex items-baseline justify-between">
-                <span className="text-[14px] font-semibold text-[var(--gray-900)]">
+                <span className="text-[13px] font-semibold text-[var(--gray-900)]">
                   10회 패키지
                 </span>
-                <span className="text-[18px] font-extrabold text-[var(--blue-primary)]">
+                <span className="text-[16px] font-extrabold text-[var(--blue-primary)]">
                   9,900원
                 </span>
               </div>
-              <p className="mt-1 text-[12px] text-[var(--gray-500)]">
-                면접 10회 · AI 도움받기 무제한 · 사용 전 7일 내 환불 가능
+              <p className="mt-0.5 text-[11px] text-[var(--gray-500)]">
+                면접 10회 · AI 도움받기 무제한
               </p>
             </div>
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 rounded-2xl border border-[var(--gray-200)] bg-white py-3 text-[14px] font-semibold text-[var(--gray-700)]"
+                className="flex-1 rounded-xl border border-[var(--gray-200)] bg-white py-2.5 text-[13px] font-semibold text-[var(--gray-700)]"
               >
                 닫기
               </button>
               <button
                 disabled
-                className="flex-1 rounded-2xl bg-[var(--blue-primary)] py-3 text-[14px] font-bold text-white opacity-60"
+                className="flex-1 rounded-xl bg-[var(--blue-primary)] py-2.5 text-[13px] font-bold text-white opacity-60"
                 title="결제는 곧 출시됩니다"
               >
                 구매하기 (준비중)

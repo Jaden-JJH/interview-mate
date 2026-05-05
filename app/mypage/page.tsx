@@ -7,6 +7,12 @@ import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { resolvePersona } from "@/lib/personas";
 import PremiumGenerateButton from "@/components/PremiumGenerateButton";
+import ResumeGenerateModal from "@/components/ResumeGenerateModal";
+import {
+  deleteGuestResume,
+  isGuestMode,
+  loadGuestResumes,
+} from "@/lib/guest-resume-store";
 
 interface Balance {
   free: number;
@@ -15,10 +21,13 @@ interface Balance {
 }
 
 interface SavedResume {
+  id: string;
   content: string;
   fileName: string | null;
   updatedAt: string;
 }
+
+const MAX_SLOTS = 3;
 
 interface HistoryItem {
   id: string;
@@ -34,27 +43,35 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const RESUME_PREVIEW = 200;
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+const RESUME_PREVIEW = 160;
 
 export default function MyPage() {
   const router = useRouter();
   const { isSignedIn, user } = useUser();
 
   const [balance, setBalance] = useState<Balance | null>(null);
-  const [resume, setResume] = useState<SavedResume | null>(null);
-  const [resumeLoaded, setResumeLoaded] = useState(false);
+  const [resumes, setResumes] = useState<SavedResume[] | null>(null);
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    const guest = isGuestMode();
     Promise.all([
       fetch("/api/me/credits", { cache: "no-store" }).then((r) =>
         r.ok ? r.json() : null
       ),
-      fetch("/api/me/resume", { cache: "no-store" }).then((r) =>
-        r.ok ? r.json() : null
-      ),
+      guest
+        ? Promise.resolve({ resumes: loadGuestResumes() })
+        : fetch("/api/me/resume", { cache: "no-store" }).then((r) =>
+            r.ok ? r.json() : null
+          ),
       fetch("/api/me/history", { cache: "no-store" }).then((r) =>
         r.ok ? r.json() : null
       ),
@@ -62,26 +79,35 @@ export default function MyPage() {
       .then(([b, r, h]) => {
         if (cancelled) return;
         if (b) setBalance(b);
-        setResume(r?.resume ?? null);
-        setResumeLoaded(true);
+        setResumes(r?.resumes ?? []);
         setHistory(h?.items ?? []);
       })
       .catch(() => {
-        if (!cancelled) setResumeLoaded(true);
+        if (!cancelled) setResumes([]);
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const handleDeleteResume = async () => {
-    if (!confirm("저장된 이력서를 삭제할까요? 다음 면접 시 다시 입력해야 해요.")) return;
-    setDeleting(true);
+  const handleDeleteResume = async (id: string) => {
+    if (!confirm("이 이력서를 삭제할까요?")) return;
+    setDeletingId(id);
     try {
-      const res = await fetch("/api/me/resume", { method: "DELETE" });
-      if (res.ok) setResume(null);
+      if (isGuestMode()) {
+        deleteGuestResume(id);
+        setResumes((prev) => (prev ?? []).filter((r) => r.id !== id));
+      } else {
+        const res = await fetch(
+          `/api/me/resume?id=${encodeURIComponent(id)}`,
+          { method: "DELETE" }
+        );
+        if (res.ok) {
+          setResumes((prev) => (prev ?? []).filter((r) => r.id !== id));
+        }
+      }
     } finally {
-      setDeleting(false);
+      setDeletingId(null);
     }
   };
 
@@ -164,10 +190,18 @@ export default function MyPage() {
 
         {/* Section: 이력서 관리 */}
         <section>
-          <h2 className="text-[14px] font-bold text-[var(--gray-900)] mb-3">
-            이력서 관리
-          </h2>
-          {resumeLoaded && !resume && (
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[14px] font-bold text-[var(--gray-900)]">
+              이력서 관리
+            </h2>
+            {resumes && resumes.length > 0 && (
+              <span className="text-[12px] font-medium text-[var(--gray-400)]">
+                {resumes.length}/{MAX_SLOTS}
+              </span>
+            )}
+          </div>
+
+          {resumes !== null && resumes.length === 0 && (
             <div className="rounded-2xl border border-dashed border-[var(--gray-200)] p-5 text-center">
               <p className="text-[13px] text-[var(--gray-500)]">
                 저장된 이력서가 없어요.
@@ -179,43 +213,68 @@ export default function MyPage() {
                 이력서 등록하기
               </Link>
               <div className="mt-5">
-                <PremiumGenerateButton />
+                <PremiumGenerateButton onClick={() => setShowGenerateModal(true)} />
               </div>
             </div>
           )}
-          {resume && (
-            <div className="rounded-2xl border border-[var(--gray-200)] p-4">
-              {resume.fileName && (
-                <p className="text-[12px] font-semibold text-[var(--gray-700)] mb-2">
-                  {resume.fileName}
-                </p>
-              )}
-              <p className="text-[12px] leading-[18px] text-[var(--gray-600)] whitespace-pre-line">
-                {resume.content.slice(0, RESUME_PREVIEW)}
-                {resume.content.length > RESUME_PREVIEW && "…"}
-              </p>
-              <p className="mt-3 text-[11px] text-[var(--gray-400)]">
-                업데이트: {formatDate(resume.updatedAt)}
-              </p>
-              <div className="mt-3 flex gap-2">
+
+          {resumes && resumes.length > 0 && (
+            <>
+              <ul className="space-y-2">
+                {resumes.map((r) => (
+                  <li
+                    key={r.id}
+                    className="rounded-2xl border border-[var(--gray-200)] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-[var(--gray-900)] truncate">
+                          {r.fileName ?? "직접 입력"}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-[var(--gray-400)]">
+                          {formatShortDate(r.updatedAt)} 업데이트
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteResume(r.id)}
+                        disabled={deletingId === r.id}
+                        className="shrink-0 rounded-xl border border-red-200 px-3 py-1.5 text-[12px] font-semibold text-red-500 disabled:opacity-50"
+                      >
+                        {deletingId === r.id ? "삭제 중..." : "삭제"}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[12px] leading-[18px] text-[var(--gray-600)] whitespace-pre-line line-clamp-3 break-words">
+                      {r.content.slice(0, RESUME_PREVIEW)}
+                      {r.content.length > RESUME_PREVIEW && "…"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              {resumes.length < MAX_SLOTS ? (
                 <Link
                   href="/resume"
-                  className="flex-1 rounded-xl border border-[var(--gray-200)] py-2 text-center text-[13px] font-semibold text-[var(--gray-700)]"
+                  className="mt-3 block w-full rounded-2xl border border-dashed border-[var(--gray-300)] py-3 text-center text-[13px] font-semibold text-[var(--gray-700)] hover:border-[var(--blue-primary)] hover:text-[var(--blue-primary)] transition-colors"
                 >
-                  수정하기
+                  + 새 이력서 등록
                 </Link>
-                <button
-                  onClick={handleDeleteResume}
-                  disabled={deleting}
-                  className="flex-1 rounded-xl border border-red-200 py-2 text-[13px] font-semibold text-red-500 disabled:opacity-50"
-                >
-                  {deleting ? "삭제 중..." : "삭제"}
-                </button>
+              ) : (
+                <div className="mt-3 rounded-2xl bg-[var(--gray-100)] px-4 py-3 text-[12px] text-[var(--gray-600)] text-center leading-[18px]">
+                  이력서는 {MAX_SLOTS}개까지 등록 가능해요.
+                  <br />
+                  새로 등록하려면 기존 이력서를 삭제해 주세요.
+                </div>
+              )}
+
+              <div className="mt-4">
+                <PremiumGenerateButton
+                  variant="compact"
+                  onClick={() => setShowGenerateModal(true)}
+                  disabled={resumes.length >= MAX_SLOTS}
+                  disabledReason="기존 이력서를 삭제해 주세요"
+                />
               </div>
-              <div className="mt-3">
-                <PremiumGenerateButton variant="compact" />
-              </div>
-            </div>
+            </>
           )}
         </section>
 
@@ -271,6 +330,12 @@ export default function MyPage() {
           )}
         </section>
       </div>
+
+      <ResumeGenerateModal
+        open={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        existingResume={resumes?.[0]?.content}
+      />
     </div>
   );
 }

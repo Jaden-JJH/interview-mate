@@ -8,12 +8,16 @@ interface PremiumGenerateButtonProps {
   variant?: "card" | "compact";
   onClick?: () => void;
   className?: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export default function PremiumGenerateButton({
   variant = "card",
   onClick,
   className = "",
+  disabled = false,
+  disabledReason,
 }: PremiumGenerateButtonProps) {
   const [showToast, setShowToast] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -23,6 +27,7 @@ export default function PremiumGenerateButton({
   }, []);
 
   const handleClick = () => {
+    if (disabled) return;
     if (onClick) {
       onClick();
       return;
@@ -38,7 +43,12 @@ export default function PremiumGenerateButton({
       <button
         type="button"
         onClick={handleClick}
-        className={`group relative inline-flex w-full overflow-hidden rounded-2xl p-[1.5px] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/30 focus:ring-offset-2 active:scale-[0.99] transition-transform ${className}`}
+        disabled={disabled}
+        title={disabled ? disabledReason : undefined}
+        aria-disabled={disabled}
+        className={`group relative inline-flex w-full overflow-hidden rounded-2xl p-[1.5px] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/30 focus:ring-offset-2 transition-transform ${
+          disabled ? "opacity-50 cursor-not-allowed" : "active:scale-[0.99]"
+        } ${className}`}
       >
         {/* Animated conic gradient border */}
         <span
