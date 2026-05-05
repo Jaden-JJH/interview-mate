@@ -7,6 +7,7 @@ import ChatBubble from "@/components/ChatBubble";
 import TypingIndicator from "@/components/TypingIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import Toast from "@/components/Toast";
+import PaywallModal from "@/components/PaywallModal";
 import { useInterview, type QAResult } from "@/contexts/InterviewContext";
 import {
   CLOSING_QUESTION,
@@ -22,6 +23,37 @@ const ANALYZING_STEPS = [
 
 const TYPING_INTERVAL_MS = 28;
 const FOLLOW_UP_TIME_THRESHOLD_SEC = 60;
+const AI_ASSIST_USED_KEY = "aiAssistUsed";
+const AI_ASSIST_SIMULATED_LATENCY_MS = 1500;
+
+// Local-only metering simulation. Real account-bound metering will move
+// to the server once the policy is finalized.
+function readAiAssistUsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(AI_ASSIST_USED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+function writeAiAssistUsed(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(AI_ASSIST_USED_KEY, "true");
+  } catch {}
+}
+
+// Demo placeholder shown when the user invokes AI 도움받기. Real generation
+// will replace this; for now we make it editable and clearly labeled as
+// demo so users don't mistake it for a finished answer.
+function buildDemoAnswer(question: string): string {
+  const hint = question.replace(/[?？.!,\s]+/g, " ").trim().slice(0, 18);
+  return `안녕하세요. ${hint ? `"${hint}…" 라는 질문에 대해 ` : ""}답변드리겠습니다.
+
+저는 관련 경험을 ○○ 프로젝트에서 직접 수행하며, [구체적인 상황]에서 [본인의 역할과 행동]을 통해 [성과]를 얻을 수 있었습니다. 이 과정에서 [배운 점]을 얻었고, 앞으로의 업무에도 적용할 수 있다고 생각합니다.
+
+(이 답변은 AI 도움받기 데모 텍스트입니다. 실제 답변 생성은 곧 연동돼요. 자유롭게 편집해 주세요.)`;
+}
 
 interface QItem {
   text: string;
@@ -75,13 +107,20 @@ export default function InterviewPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const [hasJumpedToClosing, setHasJumpedToClosing] = useState(false);
+  // AI 도움받기 — local UI state. Pauses countdown while a response is
+  // being "generated" (currently a simulated wait), then injects a demo
+  // answer into the textarea. Second invocation opens the paywall.
+  const [isAiAssisting, setIsAiAssisting] = useState(false);
+  const [showAiAssistPaywall, setShowAiAssistPaywall] = useState(false);
+  const aiPauseAtRef = useRef<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const guardRef = useRef(false);
   const totalSecondsRef = useRef(durationMinutes * 60);
   const startTimeRef = useRef<number | null>(null);
 
   const totalQuestions = questions.length;
+  const currentItem = items[questionIndex];
 
   // Guard: redirect if no questions
   useEffect(() => {
@@ -111,6 +150,9 @@ export default function InterviewPage() {
     if (items.length === 0) return;
     if (startTimeRef.current === null) return;
     if (isAnalyzing) return;
+    // Pause while AI 도움받기 is generating — startTimeRef is shifted
+    // forward on resume so elapsed time picks up where it was.
+    if (isAiAssisting) return;
     const id = setInterval(() => {
       const elapsed = Math.floor(
         (Date.now() - (startTimeRef.current ?? Date.now())) / 1000
@@ -118,7 +160,7 @@ export default function InterviewPage() {
       setSecondsLeft(Math.max(0, totalSecondsRef.current - elapsed));
     }, 1000);
     return () => clearInterval(id);
-  }, [items.length, isAnalyzing]);
+  }, [items.length, isAnalyzing, isAiAssisting]);
 
   // Stream the current question character-by-character
   useEffect(() => {
@@ -217,6 +259,7 @@ export default function InterviewPage() {
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     setIsEvaluating(true);
     setErrorMsg(null);
 
@@ -355,8 +398,45 @@ export default function InterviewPage() {
     questionIndex,
   ]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleAiAssist = useCallback(() => {
+    if (isAiAssisting) return;
+    if (streamingText !== null || isEvaluating) return;
+    if (!currentItem) return;
+    if (readAiAssistUsed()) {
+      setShowAiAssistPaywall(true);
+      return;
+    }
+    aiPauseAtRef.current = Date.now();
+    setIsAiAssisting(true);
+    window.setTimeout(() => {
+      const demo = buildDemoAnswer(currentItem.text);
+      setInput(demo);
+      const ta = inputRef.current;
+      if (ta) {
+        ta.style.height = "auto";
+        ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
+        ta.focus();
+        // Place caret at the end so the user can immediately edit.
+        ta.setSelectionRange(demo.length, demo.length);
+      }
+      writeAiAssistUsed();
+      // Resume countdown by shifting the start anchor forward by the
+      // amount of wall time spent paused.
+      if (startTimeRef.current !== null && aiPauseAtRef.current !== null) {
+        startTimeRef.current += Date.now() - aiPauseAtRef.current;
+      }
+      aiPauseAtRef.current = null;
+      setIsAiAssisting(false);
+    }, AI_ASSIST_SIMULATED_LATENCY_MS);
+  }, [isAiAssisting, streamingText, isEvaluating, currentItem]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter sends; Shift+Enter inserts a newline.
+    // Guard against IME composition (Korean) so the Enter that confirms
+    // a composing character doesn't accidentally submit.
+    const isComposing =
+      (e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229;
+    if (e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();
       handleSend();
     }
@@ -375,7 +455,6 @@ export default function InterviewPage() {
   const elapsedRatio = 1 - secondsLeft / totalSeconds;
   const isTimeWarning = secondsLeft > 0 && secondsLeft <= 60;
   const isTimeUp = secondsLeft <= 0;
-  const currentItem = items[questionIndex];
 
   return (
     <motion.div
@@ -419,7 +498,22 @@ export default function InterviewPage() {
                 : "bg-[var(--blue-light)] text-[var(--blue-primary)]"
             }`}
           >
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+            {isAiAssisting ? (
+              // Pause indicator while AI 도움받기 is generating —
+              // signals to the user that the timer is genuinely held,
+              // not just lagging.
+              <svg
+                className="h-3 w-3"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-label="일시정지"
+              >
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+            )}
             {formatTime(secondsLeft)}
           </span>
         </div>
@@ -649,10 +743,55 @@ export default function InterviewPage() {
 
       {/* Input */}
       <div className="bg-white px-4 py-3 border-t border-[var(--gray-200)] relative z-50">
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
+          {/* AI 도움받기 — pauses the countdown, simulates a response, then
+              fills the textarea. Lifetime-free 1회 metered via localStorage
+              for now; second click opens the paywall. */}
+          <button
+            onClick={handleAiAssist}
+            disabled={
+              isAiAssisting || streamingText !== null || isEvaluating
+            }
+            aria-label="AI 도움받기"
+            className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full transition-all relative disabled:opacity-50 ${
+              isAiAssisting
+                ? "bg-[var(--blue-light)] text-[var(--blue-primary)]"
+                : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[var(--gray-200)]"
+            }`}
+          >
+            {isAiAssisting ? (
+              <svg
+                className="h-5 w-5 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M12 2v4" strokeLinecap="round" />
+                <path d="M12 18v4" strokeLinecap="round" opacity="0.6" />
+                <path d="M4.93 4.93l2.83 2.83" strokeLinecap="round" opacity="0.4" />
+                <path d="M16.24 16.24l2.83 2.83" strokeLinecap="round" opacity="0.7" />
+                <path d="M2 12h4" strokeLinecap="round" opacity="0.5" />
+                <path d="M18 12h4" strokeLinecap="round" opacity="0.8" />
+                <path d="M4.93 19.07l2.83-2.83" strokeLinecap="round" opacity="0.3" />
+                <path d="M16.24 7.76l2.83-2.83" strokeLinecap="round" opacity="0.9" />
+              </svg>
+            ) : (
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2l1.9 4.6L18.5 8.5l-4.6 1.9L12 15l-1.9-4.6L5.5 8.5l4.6-1.9z" />
+                <path d="M19 14l.95 2.3L22.25 17.25l-2.3.95L19 20.5l-.95-2.3L15.75 17.25l2.3-.95z" opacity="0.7" />
+              </svg>
+            )}
+          </button>
+
           <button
             onClick={toggleRecording}
-            className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full transition-all relative ${
+            disabled={isAiAssisting}
+            className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-full transition-all relative disabled:opacity-50 ${
               isRecording
                 ? "bg-red-50 text-red-500"
                 : "bg-[var(--gray-100)] text-[var(--gray-500)] hover:bg-[var(--gray-200)]"
@@ -676,23 +815,41 @@ export default function InterviewPage() {
             </svg>
           </button>
 
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-grow up to ~6 lines, then scroll inside the textarea.
+              const ta = e.target;
+              ta.style.height = "auto";
+              ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
+            }}
             onKeyDown={handleKeyDown}
             placeholder={
-              streamingText !== null ? "질문 표시 중..." : "답변을 입력하세요"
+              isAiAssisting
+                ? "AI가 답변을 작성하고 있어요..."
+                : streamingText !== null
+                ? "질문 표시 중..."
+                : "답변을 입력하세요"
             }
-            disabled={streamingText !== null || isEvaluating}
-            className="flex-1 rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none transition-all disabled:opacity-50"
+            disabled={streamingText !== null || isEvaluating || isAiAssisting}
+            className="flex-1 resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[20px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none transition-all disabled:opacity-50 max-h-[144px]"
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || streamingText !== null || isEvaluating}
+            disabled={
+              !input.trim() ||
+              streamingText !== null ||
+              isEvaluating ||
+              isAiAssisting
+            }
             className={`flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-xl transition-all ${
-              input.trim() && streamingText === null && !isEvaluating
+              input.trim() &&
+              streamingText === null &&
+              !isEvaluating &&
+              !isAiAssisting
                 ? "bg-[var(--blue-primary)] text-white active:scale-95"
                 : "bg-[var(--gray-200)] text-[var(--gray-400)]"
             }`}
@@ -713,6 +870,12 @@ export default function InterviewPage() {
           </button>
         </div>
       </div>
+
+      <PaywallModal
+        open={showAiAssistPaywall}
+        onClose={() => setShowAiAssistPaywall(false)}
+        reason="ai-assist"
+      />
     </motion.div>
   );
 }

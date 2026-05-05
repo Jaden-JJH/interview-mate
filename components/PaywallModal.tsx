@@ -4,18 +4,39 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
+type PaywallReason = "credit" | "ai-assist";
+
 interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
   freeRemaining?: number;
   paidRemaining?: number;
+  // What triggered the paywall — drives the headline + first paragraph.
+  // Both reasons sell the same 9,900원 / 10회 패키지.
+  reason?: PaywallReason;
 }
+
+const COPY: Record<PaywallReason, { title: string; body: (free?: number, paid?: number) => string }> = {
+  credit: {
+    title: "크레딧이 부족해요",
+    body: (free, paid) =>
+      `면접 1회당 1 크레딧이 사용됩니다. 무료 크레딧${
+        typeof free === "number" ? ` (남은 무료 ${free}회, 결제 ${paid ?? 0}회)` : ""
+      }를 모두 사용하면 패키지를 구매해 이어 사용할 수 있어요.`,
+  },
+  "ai-assist": {
+    title: "AI 도움받기는 무료 1회까지예요",
+    body: () =>
+      "무료 1회를 모두 사용하셨어요. 10회 패키지를 구매하시면 AI 도움받기를 면접 중 무제한으로 사용하실 수 있어요.",
+  },
+};
 
 export default function PaywallModal({
   open,
   onClose,
   freeRemaining,
   paidRemaining,
+  reason = "credit",
 }: PaywallModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -55,14 +76,10 @@ export default function PaywallModal({
             >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
             <h2 className="text-[18px] font-bold text-[var(--gray-900)]">
-              크레딧이 부족해요
+              {COPY[reason].title}
             </h2>
             <p className="mt-2 text-[13px] leading-[20px] text-[var(--gray-600)]">
-              면접 1회당 1 크레딧이 사용됩니다. 무료 크레딧
-              {typeof freeRemaining === "number"
-                ? ` (남은 무료 ${freeRemaining}회, 결제 ${paidRemaining ?? 0}회)`
-                : ""}
-              를 모두 사용하면 패키지를 구매해 이어 사용할 수 있어요.
+              {COPY[reason].body(freeRemaining, paidRemaining)}
             </p>
 
             <div className="mt-5 rounded-2xl border border-[var(--gray-200)] p-4">
@@ -75,7 +92,7 @@ export default function PaywallModal({
                 </span>
               </div>
               <p className="mt-1 text-[12px] text-[var(--gray-500)]">
-                면접 10회 · 사용 전 7일 내 환불 가능
+                면접 10회 · AI 도움받기 무제한 · 사용 전 7일 내 환불 가능
               </p>
             </div>
 
