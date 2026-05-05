@@ -154,7 +154,7 @@ async function handleAdjustmentCreated(
       return;
     }
 
-    // 미사용 크레딧만 회수. 이미 소진된 분은 차감 불가 (정책: 사용 후 환불 X이지만 안전장치).
+    // 14일 무조건 환불 정책. 이미 사용한 크레딧은 차감 불가하므로 음수 방지.
     await tx.execute(sql`
       UPDATE ${credits}
       SET paid_remaining = GREATEST(paid_remaining - ${CREDITS_PER_PACKAGE}, 0),

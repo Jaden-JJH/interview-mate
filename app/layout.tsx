@@ -7,6 +7,7 @@ import StarryBackground from "@/components/StarryBackground";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AuthHeader from "@/components/AuthHeader";
+import Footer from "@/components/Footer";
 import PostHogProvider from "@/components/PostHogProvider";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -106,7 +107,8 @@ export default function RootLayout({
                 <div className="relative z-10 flex justify-center">
                   <div className="w-full max-w-[640px] min-h-dvh flex flex-col bg-white shadow-2xl">
                     <AuthHeader />
-                    {children}
+                    <div className="flex-1">{children}</div>
+                    <Footer />
                   </div>
                 </div>
                 <GlobalClickEffect />
