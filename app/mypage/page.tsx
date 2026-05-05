@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { resolvePersona } from "@/lib/personas";
+import PremiumGenerateButton from "@/components/PremiumGenerateButton";
 
 interface Balance {
   free: number;
@@ -177,6 +178,9 @@ export default function MyPage() {
               >
                 이력서 등록하기
               </Link>
+              <div className="mt-5">
+                <PremiumGenerateButton />
+              </div>
             </div>
           )}
           {resume && (
@@ -207,6 +211,9 @@ export default function MyPage() {
                 >
                   {deleting ? "삭제 중..." : "삭제"}
                 </button>
+              </div>
+              <div className="mt-3">
+                <PremiumGenerateButton variant="compact" />
               </div>
             </div>
           )}

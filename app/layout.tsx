@@ -48,9 +48,15 @@ export default function RootLayout({
           <ErrorBoundary>
             <InterviewProvider>
               <StarryBackground />
-              <div className="relative z-10 mx-auto min-h-dvh max-w-[640px] flex flex-col bg-white shadow-2xl">
-                <AuthHeader />
-                {children}
+              {/* Outer flex centers the app container regardless of any
+                  ancestor that might otherwise leave `mx-auto` ineffective.
+                  Centers consistently with viewport-anchored fixed
+                  elements (toasts, modals) rendered via portal. */}
+              <div className="relative z-10 flex justify-center">
+                <div className="w-full max-w-[640px] min-h-dvh flex flex-col bg-white shadow-2xl">
+                  <AuthHeader />
+                  {children}
+                </div>
               </div>
               <GlobalClickEffect />
             </InterviewProvider>

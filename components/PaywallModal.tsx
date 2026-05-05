@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PaywallModalProps {
@@ -15,24 +17,42 @@ export default function PaywallModal({
   freeRemaining,
   paidRemaining,
 }: PaywallModalProps) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Rendered via portal to document.body so the backdrop and sheet
+  // are anchored to the viewport — framer-motion parents apply
+  // `transform`, which would otherwise re-anchor fixed children.
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
+        <>
+          {/* Backdrop — full viewport so the dim covers everything,
+              including space outside the 640px app container. */}
           <motion.div
-            className="w-full max-w-[640px] rounded-t-3xl bg-white px-6 pt-7 pb-9 sm:rounded-3xl sm:m-4"
-            initial={{ y: 60 }}
-            animate={{ y: 0 }}
-            exit={{ y: 60 }}
-            transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+            className="fixed inset-0 z-50 bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          {/* Sheet wrapper — uses inset-x-0 + flex justify-center instead of
+              `left-1/2 -translate-x-1/2`, because framer-motion writes its
+              own `transform` on motion.div and overrides Tailwind's translate. */}
+          <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center sm:items-center">
+            <motion.div
+              className="pointer-events-auto w-full max-w-[640px] rounded-t-3xl bg-white px-6 pt-7 pb-9 sm:m-4 sm:rounded-3xl"
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
             <h2 className="text-[18px] font-bold text-[var(--gray-900)]">
               크레딧이 부족해요
@@ -74,9 +94,11 @@ export default function PaywallModal({
                 구매하기 (준비중)
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+            </motion.div>
+          </div>
+        </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

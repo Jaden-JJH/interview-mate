@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
+import PremiumGenerateButton from "@/components/PremiumGenerateButton";
 import { useInterview } from "@/contexts/InterviewContext";
 import { extractPdfText } from "@/lib/pdf";
 
@@ -210,11 +211,18 @@ export default function ResumePage() {
               transition={{ duration: 0.2 }}
             >
               <div
-                onDrop={handleDrop}
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDrop={uploadedFileName ? undefined : handleDrop}
+                onDragOver={(e) => {
+                  if (uploadedFileName) return;
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
                 onDragLeave={() => setIsDragOver(false)}
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 text-center transition-all ${uploadedFileName ? "pt-14 pb-10" : "py-14"} ${
+                onClick={() => {
+                  if (uploadedFileName) return;
+                  fileInputRef.current?.click();
+                }}
+                className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 text-center transition-all ${uploadedFileName ? "pt-14 pb-10 cursor-default" : "py-14 cursor-pointer"} ${
                   isDragOver
                     ? "border-[var(--blue-primary)] bg-[var(--blue-light)]"
                     : uploadedFileName
@@ -236,12 +244,20 @@ export default function ResumePage() {
                     <div className="flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-[15px] font-medium text-[var(--gray-700)] shadow-sm">
                       {uploadedFileName}
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setUploadedFileName(null);
                           setPdfText("");
                           setPdfError(null);
+                          // Reset the hidden input so re-selecting the same
+                          // file fires onChange again.
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
                         }}
+                        aria-label="파일 제거"
                         className="text-[var(--gray-400)] hover:text-[var(--danger)]"
                       >
                         ✕
@@ -320,15 +336,20 @@ export default function ResumePage() {
                 )}
               </AnimatePresence>
               {!uploadedFileName && (
-                <button
-                  onClick={() => {
-                    setUploadedFileName("이력서_샘플.pdf");
-                    setPdfText(DUMMY_RESUME);
-                  }}
-                  className="mt-4 w-full text-center text-[12px] text-[var(--gray-400)] underline underline-offset-2"
-                >
-                  데모용 샘플로 테스트하기
-                </button>
+                <>
+                  <div className="mt-5">
+                    <PremiumGenerateButton />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUploadedFileName("이력서_샘플.pdf");
+                      setPdfText(DUMMY_RESUME);
+                    }}
+                    className="mt-4 w-full text-center text-[12px] text-[var(--gray-400)] underline underline-offset-2"
+                  >
+                    데모용 샘플로 테스트하기
+                  </button>
+                </>
               )}
             </motion.div>
           ) : (
@@ -358,6 +379,11 @@ export default function ResumePage() {
                   </button>
                 )}
               </div>
+              {!textContent && (
+                <div className="mt-5">
+                  <PremiumGenerateButton />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

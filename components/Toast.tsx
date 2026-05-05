@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface ToastProps {
@@ -9,19 +11,32 @@ interface ToastProps {
 }
 
 export default function Toast({ message, onClose, onRetry }: ToastProps) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Rendered via portal to document.body so `position: fixed` is
+  // anchored to the viewport — framer-motion parents apply `transform`,
+  // which would otherwise re-anchor fixed children to the parent.
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {message && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 12 }}
-          transition={{ duration: 0.2 }}
-          className="fixed bottom-[110px] left-1/2 -translate-x-1/2 z-[200] w-[calc(100%-32px)] max-w-[480px]"
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-[110px] z-[200] flex justify-center px-4"
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-start gap-3 rounded-2xl bg-[var(--gray-900)] text-white px-4 py-3 shadow-lg">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2 }}
+            className="pointer-events-auto flex w-full max-w-[480px] items-start gap-3 rounded-2xl bg-[var(--gray-900)] text-white px-4 py-3 shadow-lg"
+          >
             <svg
               className="h-5 w-5 flex-shrink-0 text-[var(--danger)] mt-0.5"
               fill="none"
@@ -55,9 +70,10 @@ export default function Toast({ message, onClose, onRetry }: ToastProps) {
                 </button>
               )}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

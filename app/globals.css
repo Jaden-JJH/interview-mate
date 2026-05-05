@@ -29,12 +29,28 @@ body {
   background-color: var(--gray-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Reserve scrollbar space so the body's available width never shifts
+     between pages — keeps the centered app container aligned with
+     viewport-anchored fixed elements (toasts, modals). */
+  scrollbar-gutter: stable;
+}
+
+html {
+  /* Some pages don't overflow vertically; without this the centered
+     container can sit slightly off-center vs. fixed toasts. */
+  overflow-y: scroll;
 }
 
 /* Custom scrollbar */
 .scroll-area::-webkit-scrollbar {
   width: 0;
   display: none;
+}
+
+/* Premium button border spin */
+@keyframes premiumSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Typing dots */
