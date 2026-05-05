@@ -583,13 +583,19 @@ export default function InterviewPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Early finish — lets the user end the interview mid-flow and
-              see feedback based on whatever they've answered so far.
-              Disabled until at least one answer is recorded. */}
           <button
-            onClick={() => setShowFinishConfirm(true)}
-            disabled={!canFinishEarly}
-            className="rounded-full border border-[var(--gray-200)] px-3 py-1 text-[12px] font-medium text-[var(--gray-600)] transition-colors hover:bg-[var(--gray-100)] disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              if (canFinishEarly) {
+                setShowFinishConfirm(true);
+              } else {
+                setErrorMsg("질문 1개 이상 답변하면 중간 종료할 수 있어요.");
+              }
+            }}
+            className={`rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+              canFinishEarly
+                ? "border-[var(--gray-200)] text-[var(--gray-600)] hover:bg-[var(--gray-100)]"
+                : "border-[var(--gray-200)] text-[var(--gray-400)] opacity-50"
+            }`}
           >
             끝내기
           </button>
