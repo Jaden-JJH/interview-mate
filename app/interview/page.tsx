@@ -25,10 +25,7 @@ const ANALYZING_STEPS = [
 const TYPING_INTERVAL_MS = 28;
 const FOLLOW_UP_TIME_THRESHOLD_SEC = 60;
 const AI_ASSIST_USED_KEY = "aiAssistUsed";
-const AI_ASSIST_SIMULATED_LATENCY_MS = 1500;
 
-// Local-only metering simulation. Real account-bound metering will move
-// to the server once the policy is finalized.
 function readAiAssistUsed(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -42,18 +39,6 @@ function writeAiAssistUsed(): void {
   try {
     window.localStorage.setItem(AI_ASSIST_USED_KEY, "true");
   } catch {}
-}
-
-// Demo placeholder shown when the user invokes AI 도움받기. Real generation
-// will replace this; for now we make it editable and clearly labeled as
-// demo so users don't mistake it for a finished answer.
-function buildDemoAnswer(question: string): string {
-  const hint = question.replace(/[?？.!,\s]+/g, " ").trim().slice(0, 18);
-  return `안녕하세요. ${hint ? `"${hint}…" 라는 질문에 대해 ` : ""}답변드리겠습니다.
-
-저는 관련 경험을 ○○ 프로젝트에서 직접 수행하며, [구체적인 상황]에서 [본인의 역할과 행동]을 통해 [성과]를 얻을 수 있었습니다. 이 과정에서 [배운 점]을 얻었고, 앞으로의 업무에도 적용할 수 있다고 생각합니다.
-
-(이 답변은 AI 도움받기 데모 텍스트입니다. 실제 답변 생성은 곧 연동돼요. 자유롭게 편집해 주세요.)`;
 }
 
 interface QItem {
@@ -406,7 +391,7 @@ export default function InterviewPage() {
     questionIndex,
   ]);
 
-  const handleAiAssist = useCallback(() => {
+  const handleAiAssist = useCallback(async () => {
     if (isAiAssisting) return;
     if (streamingText !== null || isEvaluating) return;
     if (!currentItem) return;
@@ -416,27 +401,54 @@ export default function InterviewPage() {
     }
     aiPauseAtRef.current = Date.now();
     setIsAiAssisting(true);
-    window.setTimeout(() => {
-      const demo = buildDemoAnswer(currentItem.text);
-      setInput(demo);
-      const ta = inputRef.current;
-      if (ta) {
-        ta.style.height = "auto";
-        ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
-        ta.focus();
-        // Place caret at the end so the user can immediately edit.
-        ta.setSelectionRange(demo.length, demo.length);
+
+    const jobPostingText = jobPosting
+      ? [
+          `회사: ${jobPosting.company}`,
+          `포지션: ${jobPosting.position}`,
+          jobPosting.requirements ? `자격 요건: ${jobPosting.requirements}` : "",
+          jobPosting.description ? `설명: ${jobPosting.description}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "";
+
+    try {
+      const res = await fetch("/api/ai-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: currentItem.text,
+          resume: resume || undefined,
+          jobPosting: jobPostingText || undefined,
+          personaId: persona.id,
+        }),
+      });
+      const data = await res.json();
+      const answer = res.ok && data.answer ? String(data.answer) : null;
+
+      if (answer) {
+        setInput(answer);
+        const ta = inputRef.current;
+        if (ta) {
+          ta.style.height = "auto";
+          ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
+          ta.focus();
+          ta.setSelectionRange(answer.length, answer.length);
+        }
+        writeAiAssistUsed();
       }
-      writeAiAssistUsed();
-      // Resume countdown by shifting the start anchor forward by the
-      // amount of wall time spent paused.
-      if (startTimeRef.current !== null && aiPauseAtRef.current !== null) {
-        startTimeRef.current += Date.now() - aiPauseAtRef.current;
-      }
-      aiPauseAtRef.current = null;
-      setIsAiAssisting(false);
-    }, AI_ASSIST_SIMULATED_LATENCY_MS);
-  }, [isAiAssisting, streamingText, isEvaluating, currentItem]);
+    } catch {
+      // Silently ignore — user can just type manually
+    }
+
+    // Resume countdown by shifting the start anchor forward by the pause duration
+    if (startTimeRef.current !== null && aiPauseAtRef.current !== null) {
+      startTimeRef.current += Date.now() - aiPauseAtRef.current;
+    }
+    aiPauseAtRef.current = null;
+    setIsAiAssisting(false);
+  }, [isAiAssisting, streamingText, isEvaluating, currentItem, jobPosting, resume, persona.id]);
 
   // Early finish is allowed only when the user has at least one answered
   // question (otherwise the result page has nothing to grade) and we're
