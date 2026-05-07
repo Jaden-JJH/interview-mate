@@ -79,6 +79,11 @@ export default function ResumePage() {
   const router = useRouter();
   const { setResume } = useInterview();
 
+  // Warm next-route chunk while user fills the form.
+  useEffect(() => {
+    router.prefetch("/job-posting");
+  }, [router]);
+
   // null while loading. [] = no saved slots. otherwise list of slots (newest first).
   const [slots, setSlots] = useState<SavedResume[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);

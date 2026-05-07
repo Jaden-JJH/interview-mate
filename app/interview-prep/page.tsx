@@ -19,6 +19,7 @@ import {
 export default function InterviewPrepPage() {
   const router = useRouter();
   const {
+    hydrated,
     resume,
     jobPosting,
     setQuestions,
@@ -39,6 +40,22 @@ export default function InterviewPrepPage() {
     total: number;
   } | null>(null);
 
+  // Warm next-route chunk while user picks duration / persona.
+  useEffect(() => {
+    router.prefetch("/interview");
+  }, [router]);
+
+  // After context hydrates, sync local selections to whatever the user
+  // had picked previously (if anything). Default-only initialization at
+  // useState time would otherwise stick on a refresh.
+  useEffect(() => {
+    if (!hydrated) return;
+    setSelectedDuration(durationMinutes);
+    setSelectedPersonaId(personaId);
+    // intentionally only on hydration transition
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
   // Pre-flight: load credit balance so we can short-circuit before the
   // expensive Claude call when the user is already out.
   useEffect(() => {
@@ -54,12 +71,14 @@ export default function InterviewPrepPage() {
     };
   }, []);
 
-  // Guard: redirect if no job posting / resume
+  // Guard: redirect if no job posting / resume. Wait for context hydration
+  // — otherwise a refresh bounces to step 2 before stored state lands.
   useEffect(() => {
+    if (!hydrated) return;
     if (!resume.trim() || !jobPosting) {
       router.replace("/job-posting");
     }
-  }, [resume, jobPosting, router]);
+  }, [hydrated, resume, jobPosting, router]);
 
   // The "hero" persona: if random selected, show a 🎲 placeholder; else the chosen one
   const heroPersona = useMemo(() => {

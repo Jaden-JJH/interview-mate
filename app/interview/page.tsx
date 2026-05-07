@@ -11,6 +11,11 @@ import Toast from "@/components/Toast";
 import PaywallModal from "@/components/PaywallModal";
 import { useInterview, type QAResult } from "@/contexts/InterviewContext";
 import {
+  clearProgress,
+  loadProgress,
+  saveProgress,
+} from "@/lib/interviewStorage";
+import {
   CLOSING_QUESTION,
   DEFAULT_CHARACTER_LOTTIE,
   resolvePersona,
@@ -55,6 +60,14 @@ interface ChatMessage {
   isClosing?: boolean;
 }
 
+interface ProgressSnapshot {
+  items: QItem[];
+  questionIndex: number;
+  messages: ChatMessage[];
+  secondsLeft: number;
+  hasJumpedToClosing: boolean;
+}
+
 function formatTime(sec: number): string {
   const safe = Math.max(0, sec);
   const m = Math.floor(safe / 60);
@@ -65,6 +78,7 @@ function formatTime(sec: number): string {
 export default function InterviewPage() {
   const router = useRouter();
   const {
+    hydrated,
     questions,
     resume,
     jobPosting,
@@ -114,19 +128,71 @@ export default function InterviewPage() {
   const guardRef = useRef(false);
   const totalSecondsRef = useRef(durationMinutes * 60);
   const startTimeRef = useRef<number | null>(null);
+  // Restore flow — when the user lands with a saved in-flight interview,
+  // we hold initialization until they pick "이어서" vs "처음부터".
+  const [pendingRestore, setPendingRestore] = useState<ProgressSnapshot | null>(
+    null
+  );
+  const [restoreChecked, setRestoreChecked] = useState(false);
+  // Skips the next character-by-character stream when we hydrate a question
+  // that was already shown before the refresh.
+  const skipNextStreamRef = useRef(false);
 
   const totalQuestions = questions.length;
   const currentItem = items[questionIndex];
 
-  // Guard: redirect if no questions
+  // One-shot restore detection on mount.
   useEffect(() => {
+    const saved = loadProgress<ProgressSnapshot>();
+    if (
+      saved &&
+      Array.isArray(saved.items) &&
+      saved.items.length > 0 &&
+      saved.questionIndex < saved.items.length
+    ) {
+      setPendingRestore(saved);
+    }
+    setRestoreChecked(true);
+  }, []);
+
+  const applyRestore = useCallback((snap: ProgressSnapshot) => {
+    setItems(snap.items);
+    setQuestionIndex(snap.questionIndex);
+    setMessages(snap.messages);
+    setHasJumpedToClosing(snap.hasJumpedToClosing);
+    totalSecondsRef.current = Math.max(1, snap.secondsLeft);
+    setSecondsLeft(snap.secondsLeft);
+    startTimeRef.current = Date.now();
+    // If the AI message for the current question is already in messages
+    // (typical case — refresh happened mid-answer), don't re-stream it.
+    const alreadyShown = snap.messages.some(
+      (m) => m.role === "ai" && m.questionNumber === snap.questionIndex + 1
+    );
+    if (alreadyShown) skipNextStreamRef.current = true;
+    setPendingRestore(null);
+  }, []);
+
+  const discardRestore = useCallback(() => {
+    clearProgress();
+    setPendingRestore(null);
+  }, []);
+
+  // Guard: redirect if no questions. Wait for context hydration first —
+  // on a refresh the questions array is restored asynchronously, and
+  // bouncing before that defeats the whole resume-in-flight flow.
+  useEffect(() => {
+    if (!hydrated) return;
     if (totalQuestions === 0) {
       router.replace("/job-posting");
     }
-  }, [totalQuestions, router]);
+  }, [hydrated, totalQuestions, router]);
 
-  // Initialize items list with closing appended
+  // Initialize items list with closing appended. Held until the restore
+  // check has run (and any pending modal is dismissed) so we don't stomp
+  // on a freshly-restored items array.
   useEffect(() => {
+    if (!restoreChecked) return;
+    if (pendingRestore) return;
     if (totalQuestions === 0) return;
     if (items.length > 0) return;
     const list: QItem[] = questions.map((q) => ({
@@ -139,7 +205,14 @@ export default function InterviewPage() {
     totalSecondsRef.current = durationMinutes * 60;
     setSecondsLeft(totalSecondsRef.current);
     startTimeRef.current = Date.now();
-  }, [questions, totalQuestions, items.length, durationMinutes]);
+  }, [
+    questions,
+    totalQuestions,
+    items.length,
+    durationMinutes,
+    restoreChecked,
+    pendingRestore,
+  ]);
 
   // Countdown timer
   useEffect(() => {
@@ -162,6 +235,13 @@ export default function InterviewPage() {
   useEffect(() => {
     if (items.length === 0) return;
     if (questionIndex >= items.length) return;
+    if (skipNextStreamRef.current) {
+      // Hydrated mid-question — message is already in `messages`, just
+      // settle the cursor and let the user keep typing.
+      skipNextStreamRef.current = false;
+      inputRef.current?.focus();
+      return;
+    }
     if (guardRef.current) return;
     guardRef.current = true;
 
@@ -212,8 +292,56 @@ export default function InterviewPage() {
     return () => clearInterval(id);
   }, [isAnalyzing]);
 
+  // Persist progress on meaningful state changes. We deliberately don't
+  // depend on `secondsLeft` (1Hz tick would write every second) — instead
+  // a beforeunload handler below grabs the latest tick on tab close. The
+  // tradeoff: an idle user who refreshes mid-question keeps the time they
+  // had as of the last event (lean user-friendly).
+  useEffect(() => {
+    if (!restoreChecked || pendingRestore) return;
+    if (items.length === 0) return;
+    if (isAnalyzing) return;
+    saveProgress<ProgressSnapshot>({
+      items,
+      questionIndex,
+      messages,
+      secondsLeft,
+      hasJumpedToClosing,
+    });
+    // secondsLeft intentionally read fresh inside, not in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    items,
+    questionIndex,
+    messages,
+    hasJumpedToClosing,
+    restoreChecked,
+    pendingRestore,
+    isAnalyzing,
+  ]);
+
+  // Snapshot the latest secondsLeft on tab close / refresh so the user
+  // doesn't get back a stale timer value from the last message event.
+  useEffect(() => {
+    const handler = () => {
+      if (items.length === 0) return;
+      saveProgress<ProgressSnapshot>({
+        items,
+        questionIndex,
+        messages,
+        secondsLeft,
+        hasJumpedToClosing,
+      });
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [items, questionIndex, messages, secondsLeft, hasJumpedToClosing]);
+
   const finishInterview = useCallback(
     async (results: QAResult[]) => {
+      // Interview is wrapping up — clear the in-flight snapshot so a
+      // refresh on /result doesn't offer to "이어서" a finished session.
+      clearProgress();
       setIsAnalyzing(true);
       setAnalyzingStep(0);
       try {
@@ -986,6 +1114,57 @@ export default function InterviewPage() {
         onClose={() => setShowAiAssistPaywall(false)}
         reason="ai-assist"
       />
+
+      {/* Resume-in-flight modal — surfaces when the user lands on /interview
+          and a non-stale snapshot exists. Held above the rest of the UI
+          (which is gated by `pendingRestore` so it doesn't initialize). */}
+      {portalMounted &&
+        createPortal(
+          <AnimatePresence>
+            {pendingRestore && (
+              <>
+                <motion.div
+                  className="fixed inset-0 z-50 bg-black/40"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                />
+                <div className="pointer-events-none fixed inset-0 z-[51] flex items-end justify-center px-4 pb-4 sm:items-center sm:pb-0">
+                  <motion.div
+                    className="pointer-events-auto w-full max-w-[360px] rounded-2xl bg-white px-5 pt-5 pb-5"
+                    initial={{ y: 40, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 40, opacity: 0 }}
+                    transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                  >
+                    <h2 className="text-[16px] font-bold text-[var(--gray-900)]">
+                      진행 중이던 면접을 이어서 볼까요?
+                    </h2>
+                    <p className="mt-1.5 text-[13px] leading-[19px] text-[var(--gray-600)]">
+                      마지막 진행 시점부터 다시 시작할 수 있어요.
+                      {`(${pendingRestore.questionIndex + 1}/${pendingRestore.items.length} · 남은 시간 ${formatTime(pendingRestore.secondsLeft)})`}
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={discardRestore}
+                        className="flex-1 rounded-xl border border-[var(--gray-200)] bg-white py-2.5 text-[13px] font-semibold text-[var(--gray-700)]"
+                      >
+                        처음부터
+                      </button>
+                      <button
+                        onClick={() => applyRestore(pendingRestore)}
+                        className="flex-1 rounded-xl bg-[var(--blue-primary)] py-2.5 text-[13px] font-bold text-white active:scale-95"
+                      >
+                        이어서 진행
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
 
       {/* Early-finish confirm sheet — portaled to body so framer-motion
           ancestors don't capture the fixed positioning. Same visual

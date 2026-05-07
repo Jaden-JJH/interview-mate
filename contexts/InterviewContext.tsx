@@ -4,10 +4,16 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import {
+  clearAll as clearStoredInterview,
+  loadContext as loadStoredContext,
+  saveContext as saveStoredContext,
+} from "@/lib/interviewStorage";
 
 export interface JobPostingStructured {
   company: string;
@@ -41,6 +47,7 @@ export interface InterviewState {
 }
 
 interface InterviewContextValue extends InterviewState {
+  hydrated: boolean;
   setResume: (resume: string, fileName?: string) => void;
   setJobPosting: (
     jobPosting: JobPostingStructured | null,
@@ -72,6 +79,22 @@ const InterviewContext = createContext<InterviewContextValue | null>(null);
 
 export function InterviewProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<InterviewState>(INITIAL);
+  // Hydration runs once on mount — until then we don't write back, otherwise
+  // the empty INITIAL would clobber whatever the user had stored. We also
+  // expose this as a reactive flag so pages can hold their redirect guards
+  // until hydration completes (otherwise a refresh bounces to step 1).
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const stored = loadStoredContext<InterviewState>();
+    if (stored) setState({ ...INITIAL, ...stored });
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveStoredContext(state);
+  }, [state, hydrated]);
 
   const setResume = useCallback((resume: string, fileName?: string) => {
     setState((s) => ({ ...s, resume, resumeFileName: fileName }));
@@ -104,11 +127,15 @@ export function InterviewProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, personaId, resolvedPersonaId }));
   }, []);
 
-  const reset = useCallback(() => setState(INITIAL), []);
+  const reset = useCallback(() => {
+    clearStoredInterview();
+    setState(INITIAL);
+  }, []);
 
   const value = useMemo<InterviewContextValue>(
     () => ({
       ...state,
+      hydrated,
       setResume,
       setJobPosting,
       setQuestions,
@@ -120,6 +147,7 @@ export function InterviewProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      hydrated,
       setResume,
       setJobPosting,
       setQuestions,

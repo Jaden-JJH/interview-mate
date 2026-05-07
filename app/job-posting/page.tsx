@@ -30,6 +30,11 @@ export default function JobPostingPage() {
   const router = useRouter();
   const { resume, setJobPosting, jobPosting } = useInterview();
 
+  // Warm next-route chunk while user pastes URL / waits for parse.
+  useEffect(() => {
+    router.prefetch("/interview-prep");
+  }, [router]);
+
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -45,6 +50,16 @@ export default function JobPostingPage() {
     }, 800);
     return () => clearInterval(interval);
   }, [status]);
+
+  // Context hydrates from localStorage asynchronously (after mount), so
+  // `useState(jobPosting)` initializes to null on a refresh. Pick up the
+  // restored value once it arrives so the success block renders.
+  useEffect(() => {
+    if (jobPosting && !parsed) {
+      setParsed(jobPosting);
+      setStatus("success");
+    }
+  }, [jobPosting, parsed]);
 
   const hasInput =
     (status === "success" && parsed !== null) ||

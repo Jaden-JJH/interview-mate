@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -73,6 +74,11 @@ const STATS = [
 
 export default function LandingPage() {
   const router = useRouter();
+
+  // Warm next-route chunk so the CTA "시작하기" navigates instantly.
+  useEffect(() => {
+    router.prefetch("/resume");
+  }, [router]);
 
   return (
     <motion.div

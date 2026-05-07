@@ -9,6 +9,7 @@ import AccordionItem from "@/components/AccordionItem";
 import LottieAnimation from "@/components/LottieAnimation";
 import RadarChart from "@/components/RadarChart";
 import { useInterview } from "@/contexts/InterviewContext";
+import { clearProgress } from "@/lib/interviewStorage";
 
 function safeAvg(values: number[]): number {
   if (values.length === 0) return 0;
@@ -34,6 +35,13 @@ export default function ResultPage() {
       router.replace("/");
     }
   }, [qaResults.length, router]);
+
+  // Defense-in-depth: finishInterview already clears, but if the user lands
+  // on /result via direct navigation we make absolutely sure no stale
+  // progress prompts them to "이어서" a finished interview.
+  useEffect(() => {
+    clearProgress();
+  }, []);
 
   // Persist this completed interview once. Guard with a ref so React's
   // double-invoke (StrictMode dev) and confetti re-renders can't double-save.
