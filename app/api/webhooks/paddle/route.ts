@@ -99,11 +99,14 @@ async function handleTransactionCompleted(
       );
     }
 
+    // UPSERT — credits row가 없는 엣지 케이스(Clerk webhook 부분 실패 등)에서도
+    // 결제분이 묵묵히 사라지지 않도록 보장. 기존 row면 paid_remaining만 누적.
     await tx.execute(sql`
-      UPDATE ${credits}
-      SET paid_remaining = paid_remaining + ${CREDITS_PER_PACKAGE},
+      INSERT INTO ${credits} (user_id, paid_remaining)
+      VALUES (${user.id}, ${CREDITS_PER_PACKAGE})
+      ON CONFLICT (user_id) DO UPDATE
+      SET paid_remaining = ${credits}.paid_remaining + ${CREDITS_PER_PACKAGE},
           updated_at = NOW()
-      WHERE user_id = ${user.id}
     `);
 
     const totalStr = txn.details?.totals?.total ?? "0";
