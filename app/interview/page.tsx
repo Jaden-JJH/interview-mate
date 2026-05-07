@@ -1013,7 +1013,7 @@ export default function InterviewPage() {
           >
             <motion.div
               className="rounded-xl bg-white px-3.5 py-3"
-              style={{ border: `1.5px solid ${persona.accentColor}` }}
+              style={{  }}
               // 일정한 패턴 글로우 펄스 — 2.4초 주기로 약/강 사이를 ease-in-out
               // 왕복. 색은 페르소나 accentColor + 알파 8자리 hex로 강도 조절.
               animate={{
