@@ -44,10 +44,9 @@ export async function openCheckout(opts: {
   paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     customData: { clerkUserId: opts.clerkUserId },
-    customer: {
-      ...(opts.email ? { email: opts.email } : {}),
-      address: { countryCode: "KR" },
-    },
+    customer: opts.email
+      ? { email: opts.email, address: { countryCode: "KR" } }
+      : undefined,
     settings: {
       displayMode: "overlay",
       locale: "ko",
