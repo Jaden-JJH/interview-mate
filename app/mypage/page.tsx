@@ -7,7 +7,6 @@ import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { resolvePersona } from "@/lib/personas";
 import PremiumGenerateButton from "@/components/PremiumGenerateButton";
-import ResumeGenerateModal from "@/components/ResumeGenerateModal";
 import {
   deleteGuestResume,
   isGuestMode,
@@ -59,7 +58,6 @@ export default function MyPage() {
   const [resumes, setResumes] = useState<SavedResume[] | null>(null);
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
@@ -258,7 +256,7 @@ export default function MyPage() {
                 이력서 등록하기
               </Link>
               <div className="mt-5">
-                <PremiumGenerateButton onClick={() => setShowGenerateModal(true)} />
+                <PremiumGenerateButton />
               </div>
             </div>
           )}
@@ -314,9 +312,6 @@ export default function MyPage() {
               <div className="mt-4">
                 <PremiumGenerateButton
                   variant="compact"
-                  onClick={() => setShowGenerateModal(true)}
-                  disabled={resumes.length >= MAX_SLOTS}
-                  disabledReason="기존 이력서를 삭제해 주세요"
                 />
               </div>
             </>
@@ -375,12 +370,6 @@ export default function MyPage() {
           )}
         </section>
       </div>
-
-      <ResumeGenerateModal
-        open={showGenerateModal}
-        onClose={() => setShowGenerateModal(false)}
-        existingResume={resumes?.[0]?.content}
-      />
 
       {/* 회원 탈퇴 */}
       <div className="px-5 pb-10 pt-2">
