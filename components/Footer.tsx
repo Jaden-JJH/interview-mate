@@ -25,10 +25,10 @@ export default function Footer() {
         </Link>
         <span aria-hidden>·</span>
         <a
-          href="mailto:interviewmate@gmail.com"
+          href="mailto:interviewmate2026@gmail.com"
           className="transition hover:text-[var(--gray-800)]"
         >
-          interviewmate@gmail.com
+          interviewmate2026@gmail.com
         </a>
       </nav>
       <p className="mt-2 text-[11px] text-[var(--gray-400)]">

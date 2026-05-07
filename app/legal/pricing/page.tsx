@@ -33,7 +33,7 @@ const SECTIONS = [
     title: "환불 정책",
     body: [
       "결제 후 14일 이내 사유 불문 전액 환불이 가능합니다.",
-      "환불 요청은 interviewmate@gmail.com 로 주문 번호와 함께 이메일을 보내주세요. 접수 후 3영업일 이내 처리됩니다.",
+      "환불 요청은 interviewmate2026@gmail.com 로 주문 번호와 함께 이메일을 보내주세요. 접수 후 3영업일 이내 처리됩니다.",
     ],
   },
   {
@@ -41,7 +41,7 @@ const SECTIONS = [
     body: [
       "모든 결제는 Paddle을 통해 안전하게 처리되며, 카드 정보는 인터뷰메이트 서버에 저장되지 않습니다.",
       "원화(KRW) 기준으로 표시된 금액이 청구되며, 해외 카드 사용 시 카드사 정책에 따라 환율 수수료가 발생할 수 있습니다.",
-      "결제 관련 문의는 interviewmate@gmail.com 로 연락해 주세요.",
+      "결제 관련 문의는 interviewmate2026@gmail.com 로 연락해 주세요.",
     ],
   },
   {
@@ -131,10 +131,10 @@ export default function PricingPage() {
         <p className="text-[13px] text-[var(--gray-500)]">
           결제·환불 문의:{" "}
           <a
-            href="mailto:interviewmate@gmail.com"
+            href="mailto:interviewmate2026@gmail.com"
             className="text-[var(--blue-primary)] underline underline-offset-2"
           >
-            interviewmate@gmail.com
+            interviewmate2026@gmail.com
           </a>
         </p>
       </div>
