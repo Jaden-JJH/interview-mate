@@ -134,7 +134,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative mt-2 mx-auto w-full max-w-[360px] aspect-square"
+            className="pointer-events-none relative mt-2 mx-auto w-full max-w-[360px] aspect-square"
           >
             <LottieAnimation
               src="/lottie/Talking Character.json"
@@ -146,7 +146,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col gap-2.5 -mt-8"
+            className="relative z-10 flex flex-col gap-2.5 -mt-8"
           >
             <button
               onClick={() => router.push("/resume")}
