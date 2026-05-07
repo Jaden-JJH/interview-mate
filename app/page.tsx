@@ -88,7 +88,7 @@ export default function LandingPage() {
       transition={{ duration: 0.4 }}
     >
       {/* HERO */}
-      <section className="relative overflow-hidden pt-2 pb-10">
+      <section className="relative overflow-hidden pt-2 pb-6">
         {/* Ambient blur */}
         <div className="pointer-events-none absolute inset-0 -top-10 opacity-70">
           <LottieAnimation
@@ -146,7 +146,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col gap-2.5"
+            className="flex flex-col gap-2.5 -mt-8"
           >
             <button
               onClick={() => router.push("/resume")}
@@ -154,9 +154,6 @@ export default function LandingPage() {
             >
               무료로 면접 준비 시작하기
             </button>
-            <p className="text-center text-[12px] text-[var(--gray-400)]">
-              회원가입 없이 바로 사용 · 약 5분 소요
-            </p>
           </motion.div>
         </div>
       </section>
