@@ -3,6 +3,29 @@
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { memo, useEffect, useState, useRef } from "react";
 
+// Dedupe fetches across instances. Same src used in multiple places (e.g.
+// Talking Character on hero + STEP 03, Coin in CreditBadge across pages)
+// shares one network request and one parsed JSON.
+const jsonCache = new Map<string, Promise<unknown>>();
+
+function loadJson(url: string): Promise<unknown> {
+  let p = jsonCache.get(url);
+  if (!p) {
+    p = fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        return res.json();
+      })
+      .catch((err) => {
+        // Drop failed entry so a later mount can retry.
+        jsonCache.delete(url);
+        throw err;
+      });
+    jsonCache.set(url, p);
+  }
+  return p;
+}
+
 interface LottieAnimationProps {
   src: string;
   fallbackSrc?: string;
@@ -25,20 +48,15 @@ function LottieAnimation({
 
   useEffect(() => {
     let cancelled = false;
-    const load = async (url: string) => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      return res.json();
-    };
     (async () => {
       try {
-        const data = await load(src);
-        if (!cancelled) setAnimationData(data);
+        const data = await loadJson(src);
+        if (!cancelled) setAnimationData(data as null);
       } catch {
         if (!fallbackSrc) return;
         try {
-          const data = await load(fallbackSrc);
-          if (!cancelled) setAnimationData(data);
+          const data = await loadJson(fallbackSrc);
+          if (!cancelled) setAnimationData(data as null);
         } catch {}
       }
     })();
