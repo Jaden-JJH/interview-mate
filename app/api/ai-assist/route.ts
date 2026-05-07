@@ -3,6 +3,9 @@ import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { resolvePersona } from "@/lib/personas";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { captureServerError } from "@/lib/posthog-server";
+import { getOrCreateAppUserId } from "@/lib/db/users";
+import { claimAiAssist } from "@/lib/db/credits";
+import { isGuestMode } from "@/lib/guest";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -51,6 +54,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "question is required" }, { status: 400 });
   }
 
+  // Auth + entitlement — 검증 통과 후에 claim해 invalid body로 무료 1회를
+  // 태우지 않게 한다. 게스트 모드는 generate-questions 등 다른 라우트와
+  // 동일하게 우회 (테스트용 무인증 흐름 유지).
+  // unlimited는 클라가 localStorage 1회 게이트를 건너뛸지 판단하는 신호.
+  const guest = isGuestMode();
+  let unlimited = guest;
+  if (!guest) {
+    const userId = await getOrCreateAppUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const claim = await claimAiAssist(userId);
+    if (!claim) {
+      return NextResponse.json(
+        { error: "ai_assist_exhausted" },
+        { status: 402 }
+      );
+    }
+    unlimited = claim === "unlimited";
+  }
+
   const resume = body.resume?.trim() ?? "";
   const jobPosting = body.jobPosting?.trim() ?? "";
   const persona = resolvePersona(body.personaId ?? "alex");
@@ -86,7 +110,7 @@ export async function POST(req: NextRequest) {
     const answer = extractText(message).trim();
     if (!answer) throw new Error("Empty response from model");
 
-    return NextResponse.json({ answer });
+    return NextResponse.json({ answer, unlimited });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[ai-assist]", msg);

@@ -1,0 +1,1 @@
+ALTER TABLE "credits" ADD COLUMN "ai_assist_used" boolean DEFAULT false NOT NULL;

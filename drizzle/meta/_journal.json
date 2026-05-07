@@ -15,6 +15,13 @@
       "when": 1777993651755,
       "tag": "0001_sticky_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778152276504,
+      "tag": "0002_closed_nuke",
+      "breakpoints": true
     }
   ]
 }

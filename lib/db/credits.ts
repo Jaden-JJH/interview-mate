@@ -28,6 +28,39 @@ export async function getBalance(userId: string): Promise<CreditBalance> {
 // WHERE clause on (free OR paid > 0) guarantees we never go negative even
 // under concurrent requests — Postgres serializes row updates behind the
 // row lock that UPDATE acquires.
+// AI 도움받기 사용 권한 검증.
+// - paidRemaining > 0  → "unlimited" (사용 기록 남기지 않음)
+// - aiAssistUsed=false → "consumed"  (단일 UPDATE로 atomic 마킹)
+// - 그 외             → null        (소진/거부)
+//
+// 무료 사용을 atomic UPDATE의 WHERE 절로 막아 두 요청이 동시에 무료 1회를
+// 소비하는 경쟁 상태를 방지한다.
+export async function claimAiAssist(
+  userId: string
+): Promise<"unlimited" | "consumed" | null> {
+  const rows = await db
+    .select({
+      paid: credits.paidRemaining,
+      used: credits.aiAssistUsed,
+    })
+    .from(credits)
+    .where(eq(credits.userId, userId))
+    .limit(1);
+  if (rows.length === 0) return null;
+  const { paid, used } = rows[0];
+  if (paid > 0) return "unlimited";
+  if (used) return null;
+
+  const result = await db.execute(sql`
+    UPDATE ${credits}
+    SET ai_assist_used = TRUE, updated_at = NOW()
+    WHERE user_id = ${userId} AND ai_assist_used = FALSE
+    RETURNING ai_assist_used
+  `);
+  const updated = (result.rows ?? []).length > 0;
+  return updated ? "consumed" : null;
+}
+
 export async function consumeCredit(
   userId: string
 ): Promise<CreditBalance | null> {

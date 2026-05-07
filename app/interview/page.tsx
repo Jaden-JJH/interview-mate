@@ -110,11 +110,15 @@ export default function InterviewPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const [hasJumpedToClosing, setHasJumpedToClosing] = useState(false);
-  // AI 도움받기 — local UI state. Pauses countdown while a response is
-  // being "generated" (currently a simulated wait), then injects a demo
-  // answer into the textarea. Second invocation opens the paywall.
+  // AI 도움받기 — 모범답안 모드. API 호출 중엔 카운트다운 일시정지,
+  // 응답 받으면 비차단 카드로 답변 노출. 카드의 [답변에 옮기기] 버튼을
+  // 눌러야 textarea에 채워짐 — 베끼기에 미세한 friction을 주고 답변
+  // 주체성을 사용자에게 둔다. 두 번째 호출(무료 1회 소진)은 paywall —
+  // 단, 서버가 unlimited=true를 돌려준 유료 사용자는 localStorage
+  // 마킹을 건너뛴다.
   const [isAiAssisting, setIsAiAssisting] = useState(false);
   const [showAiAssistPaywall, setShowAiAssistPaywall] = useState(false);
+  const [aiAnswer, setAiAnswer] = useState<string | null>(null);
   const aiPauseAtRef = useRef<number | null>(null);
   // Early-finish — lets the user end the interview mid-flow and see
   // results based on whatever QAs have been recorded so far.
@@ -384,6 +388,9 @@ export default function InterviewPage() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     if (inputRef.current) inputRef.current.style.height = "auto";
+    // 다음 질문이 들어오기 전에 모범답안 카드를 자동으로 닫는다 —
+    // 이전 질문의 답안이 새 질문 위에 남아 혼동되는 걸 방지.
+    setAiAnswer(null);
     setIsEvaluating(true);
     setErrorMsg(null);
 
@@ -556,18 +563,16 @@ export default function InterviewPage() {
         }),
       });
       const data = await res.json();
-      const answer = res.ok && data.answer ? String(data.answer) : null;
+      const answer =
+        res.ok && typeof data.answer === "string" && data.answer.trim().length > 0
+          ? data.answer.trim()
+          : null;
 
       if (answer) {
-        setInput(answer);
-        const ta = inputRef.current;
-        if (ta) {
-          ta.style.height = "auto";
-          ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
-          ta.focus();
-          ta.setSelectionRange(answer.length, answer.length);
-        }
-        writeAiAssistUsed();
+        setAiAnswer(answer);
+        // unlimited(유료 패키지 보유자)면 localStorage 1회 게이트를
+        // 건너뛴다 — 그래야 두 번째 클릭에서 페이월이 잘못 뜨지 않음.
+        if (!data.unlimited) writeAiAssistUsed();
       }
     } catch {
       // Silently ignore — user can just type manually
@@ -580,6 +585,21 @@ export default function InterviewPage() {
     aiPauseAtRef.current = null;
     setIsAiAssisting(false);
   }, [isAiAssisting, streamingText, isEvaluating, currentItem, jobPosting, resume, persona.id]);
+
+  // 모범답안 카드 [답변에 옮기기] — textarea로 답안 텍스트 이동 후 카드 닫기.
+  // 사용자는 옮긴 뒤 직접 편집해서 제출. 기존 textarea 내용은 덮어쓴다.
+  const handleApplyAiAnswer = useCallback(() => {
+    if (!aiAnswer) return;
+    setInput(aiAnswer);
+    const ta = inputRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.height = `${Math.min(ta.scrollHeight, 144)}px`;
+      ta.focus();
+      ta.setSelectionRange(aiAnswer.length, aiAnswer.length);
+    }
+    setAiAnswer(null);
+  }, [aiAnswer]);
 
   // Early finish is allowed only when the user has at least one answered
   // question (otherwise the result page has nothing to grade) and we're
@@ -976,6 +996,103 @@ export default function InterviewPage() {
       {/* Floating fade gradient */}
       <div className="pointer-events-none fixed bottom-[68px] left-1/2 w-full max-w-[640px] h-12 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />
 
+      {/* 모범답안 카드 — 비차단. 호출 중엔 pulse 스켈레톤, 응답 받으면
+          답변 텍스트 + [답변에 옮기기] 버튼. 옮기기 누르면 textarea로
+          채워지고 카드는 닫힘. 사용자가 X로 직접 닫을 수도 있음. send
+          시 handleSend가 자동으로 닫는다.
+          애니메이션 + animate-pulse는 iOS/안드로이드 웹 모두에서 동일하게
+          렌더링 — 별도 플랫폼 분기 불필요. */}
+      <AnimatePresence>
+        {(isAiAssisting || aiAnswer) && (
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="bg-white border-t border-[var(--gray-200)] px-4 pt-3 pb-1 relative z-40"
+          >
+            <motion.div
+              className="rounded-xl bg-white px-3.5 py-3"
+              style={{ border: `1.5px solid ${persona.accentColor}` }}
+              // 일정한 패턴 글로우 펄스 — 2.4초 주기로 약/강 사이를 ease-in-out
+              // 왕복. 색은 페르소나 accentColor + 알파 8자리 hex로 강도 조절.
+              animate={{
+                boxShadow: [
+                  `0 0 6px ${persona.accentColor}33`,
+                  `0 0 18px ${persona.accentColor}99`,
+                  `0 0 6px ${persona.accentColor}33`,
+                ],
+              }}
+              transition={{
+                duration: 2.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <svg
+                    className="h-4 w-4"
+                    style={{ color: persona.accentColor }}
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 2l1.9 4.6L18.5 8.5l-4.6 1.9L12 15l-1.9-4.6L5.5 8.5l4.6-1.9z" />
+                  </svg>
+                  <span className="text-[12px] font-bold text-[var(--gray-900)]">
+                    {isAiAssisting && !aiAnswer ? "모범답안 작성 중" : "모범답안"}
+                  </span>
+                </div>
+                {aiAnswer && (
+                  <button
+                    onClick={() => setAiAnswer(null)}
+                    aria-label="모범답안 닫기"
+                    className="text-[var(--gray-400)] hover:text-[var(--gray-700)] p-0.5"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {isAiAssisting && !aiAnswer ? (
+                // Pulse skeleton — 4줄, 마지막은 짧게 줄여 자연스러운 단락 모방
+                <div className="space-y-1.5 mb-3" aria-busy="true">
+                  <div className="h-3 rounded bg-[var(--gray-200)] animate-pulse w-full" />
+                  <div className="h-3 rounded bg-[var(--gray-200)] animate-pulse w-[95%]" />
+                  <div className="h-3 rounded bg-[var(--gray-200)] animate-pulse w-[90%]" />
+                  <div className="h-3 rounded bg-[var(--gray-200)] animate-pulse w-[60%]" />
+                </div>
+              ) : aiAnswer ? (
+                <>
+                  <p className="text-[13px] leading-[20px] text-[var(--gray-800)] whitespace-pre-wrap mb-3">
+                    {aiAnswer}
+                  </p>
+                  <button
+                    onClick={handleApplyAiAnswer}
+                    className="w-full rounded-lg py-2 text-[13px] font-bold text-white transition active:scale-[0.98]"
+                    style={{ backgroundColor: persona.accentColor }}
+                  >
+                    답변에 옮기기
+                  </button>
+                </>
+              ) : null}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input */}
       <div className="bg-white px-4 py-3 border-t border-[var(--gray-200)] relative z-50">
         <div className="flex items-end gap-2">
@@ -1067,7 +1184,7 @@ export default function InterviewPage() {
             onKeyDown={handleKeyDown}
             placeholder={
               isAiAssisting
-                ? "AI가 답변을 작성하고 있어요..."
+                ? "AI가 모범답안을 작성하고 있어요..."
                 : streamingText !== null
                 ? "질문 표시 중..."
                 : "답변을 입력하세요"

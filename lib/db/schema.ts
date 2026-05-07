@@ -5,6 +5,7 @@ import {
   integer,
   timestamp,
   jsonb,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -23,6 +24,8 @@ export const credits = pgTable("credits", {
   freeRemaining: integer("free_remaining").default(1).notNull(),
   paidRemaining: integer("paid_remaining").default(0).notNull(),
   totalUsed: integer("total_used").default(0).notNull(),
+  // Lifetime free 1회 사용 여부. paidRemaining > 0이면 무시(무제한).
+  aiAssistUsed: boolean("ai_assist_used").default(false).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
