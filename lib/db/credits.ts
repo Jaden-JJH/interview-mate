@@ -48,7 +48,19 @@ export async function claimAiAssist(
     .limit(1);
   if (rows.length === 0) return null;
   const { paid, used } = rows[0];
-  if (paid > 0) return "unlimited";
+  if (paid > 0) {
+    // 유료 크레딧 보유자가 도움받기를 쓸 때 무료 1회 슬롯을 같이 흡수해 둔다.
+    // 그래야 크레딧 0 도달 후 무료 1회가 살아남아 정책("크레딧 0이면 페이월")과
+    // 어긋나는 엣지케이스가 사라진다.
+    if (!used) {
+      await db.execute(sql`
+        UPDATE ${credits}
+        SET ai_assist_used = TRUE, updated_at = NOW()
+        WHERE user_id = ${userId} AND ai_assist_used = FALSE
+      `);
+    }
+    return "unlimited";
+  }
   if (used) return null;
 
   const result = await db.execute(sql`

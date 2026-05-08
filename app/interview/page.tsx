@@ -29,22 +29,6 @@ const ANALYZING_STEPS = [
 
 const TYPING_INTERVAL_MS = 28;
 const FOLLOW_UP_TIME_THRESHOLD_SEC = 60;
-const AI_ASSIST_USED_KEY = "aiAssistUsed";
-
-function readAiAssistUsed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(AI_ASSIST_USED_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-function writeAiAssistUsed(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(AI_ASSIST_USED_KEY, "true");
-  } catch {}
-}
 
 interface QItem {
   text: string;
@@ -533,10 +517,6 @@ export default function InterviewPage() {
     if (isAiAssisting) return;
     if (streamingText !== null || isEvaluating) return;
     if (!currentItem) return;
-    if (readAiAssistUsed()) {
-      setShowAiAssistPaywall(true);
-      return;
-    }
     aiPauseAtRef.current = Date.now();
     setIsAiAssisting(true);
 
@@ -562,17 +542,18 @@ export default function InterviewPage() {
           personaId: persona.id,
         }),
       });
-      const data = await res.json();
-      const answer =
-        res.ok && typeof data.answer === "string" && data.answer.trim().length > 0
-          ? data.answer.trim()
-          : null;
-
-      if (answer) {
-        setAiAnswer(answer);
-        // unlimited(유료 패키지 보유자)면 localStorage 1회 게이트를
-        // 건너뛴다 — 그래야 두 번째 클릭에서 페이월이 잘못 뜨지 않음.
-        if (!data.unlimited) writeAiAssistUsed();
+      // 서버를 단일 진실 원천으로 — 402(ai_assist_exhausted)면 페이월,
+      // 200이면 카드 표시. 클라 캐시(localStorage)는 결제 상태를 못
+      // 따라가서 제거함.
+      if (res.status === 402) {
+        setShowAiAssistPaywall(true);
+      } else {
+        const data = await res.json();
+        const answer =
+          res.ok && typeof data.answer === "string" && data.answer.trim().length > 0
+            ? data.answer.trim()
+            : null;
+        if (answer) setAiAnswer(answer);
       }
     } catch {
       // Silently ignore — user can just type manually
