@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080" />
+  <title>인터뷰메이트 카드뉴스</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      width: 1080px;
+      height: 1350px;
+      position: relative;
+      background: #0F1C45;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* 배경 장식 원들 */
+    .bg-circle-1 {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      pointer-events: none;
+    }
+
+    .bg-circle-2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(30, 58, 138, 0.4) 0%, transparent 70%);
+      bottom: -150px;
+      left: -100px;
+      pointer-events: none;
+    }
+
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* 상단 헤더 */
+    .header {
+      position: relative;
+      z-index: 10;
+      padding: 60px 80px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #1E40AF, #3B82F6);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-icon svg {
+      width: 30px;
+      height: 30px;
+    }
+
+    .brand-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-sub {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .episode-badge {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 100px;
+      padding: 10px 22px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #93C5FD;
+      letter-spacing: 0.5px;
+    }
+
+    /* 메인 콘텐츠 */
+    .content {
+      position: relative;
+      z-index: 10;
+      padding: 0 80px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .category-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+
+    .category-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3B82F6;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+    }
+
+    .category-text {
+      font-size: 18px;
+      font-weight: 500;
+      color: #60A5FA;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .title {
+      font-size: 68px;
+      font-weight: 900;
+      color: #FFFFFF;
+      line-height: 1.15;
+      letter-spacing: -2px;
+      margin-bottom: 48px;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      /* 최대 40자, 2줄 기준 */
+    }
+
+    .title-highlight {
+      background: linear-gradient(90deg, #3B82F6, #60A5FA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .divider {
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #1E40AF, #3B82F6);
+      border-radius: 2px;
+      margin-bottom: 48px;
+    }
+
+    .body-text {
+      font-size: 34px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.65;
+      letter-spacing: -0.5px;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      /* 최대 120자, 3줄 기준 */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 하단 영역 */
+    .footer {
+      position: relative;
+      z-index: 10;
+      padding: 0 80px 60px;
+    }
+
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    .tag {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 100px;
+      padding: 10px 22px;
+      font-size: 22px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.3px;
+    }
+
+    .footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 36px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #1E40AF, #3B82F6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer-logo-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .footer-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .footer-cta {
+      font-size: 20px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.3px;
+    }
+
+    /* 강조 코너 라인 */
+    .corner-tl {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 60px;
+      height: 60px;
+      border-top: 3px solid rgba(59, 130, 246, 0.4);
+      border-left: 3px solid rgba(59, 130, 246, 0.4);
+      pointer-events: none;
+    }
+
+    .corner-br {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-bottom: 3px solid rgba(59, 130, 246, 0.4);
+      border-right: 3px solid rgba(59, 130, 246, 0.4);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- 배경 장식 -->
+    <div class="bg-circle-1"></div>
+    <div class="bg-circle-2"></div>
+    <div class="bg-grid"></div>
+    <div class="corner-tl"></div>
+    <div class="corner-br"></div>
+
+    <!-- 상단 헤더 -->
+    <div class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <!-- 마이크 아이콘 -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+            <path d="M5 11C5 14.866 8.13401 18 12 18C15.866 18 19 14.866 19 11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">인터뷰메이트</div>
+          <div class="brand-sub">AI Interview</div>
+        </div>
+      </div>
+      <div class="episode-badge" id="badge">면접 팁</div>
+    </div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="content">
+      <div class="category-label">
+        <div class="category-dot"></div>
+        <div class="category-text">Interview Tip</div>
+      </div>
+      <h1 class="title" id="title">제목이 여기에 들어갑니다</h1>
+      <div class="divider"></div>
+      <p class="body-text" id="body">
+        본문 내용이 여기에 표시됩니다. 최대 3줄까지 노출되며 그 이상은 잘립니다.
+      </p>
+    </div>
+
+    <!-- 하단 해시태그 + 워터마크 -->
+    <div class="footer">
+      <div class="tags-row" id="tags">
+        <!-- JS로 주입 -->
+      </div>
+      <div class="footer-bar">
+        <div class="footer-brand">
+          <div class="footer-logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+              <path d="M5 11C5 14.866 8.13401 18 12 18C15.866 18 19 14.866 19 11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="footer-name">interviewmate.kr</span>
+        </div>
+        <span class="footer-cta">팔로우하고 더 많은 팁 받기</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 서버에서 data-* 속성이나 query param으로 주입 가능하나,
+    // card-renderer.ts에서 page.evaluate()로 직접 DOM 조작함.
+    // 이 스크립트는 직접 브라우저 미리보기용 fallback.
+    const params = new URLSearchParams(window.location.search);
+    const title = params.get('title');
+    const body = params.get('body');
+    const tags = params.get('tags');
+
+    if (title) document.getElementById('title').textContent = title;
+    if (body) document.getElementById('body').textContent = body;
+    if (tags) {
+      const tagsEl = document.getElementById('tags');
+      tags.split(',').forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = t.trim().startsWith('#') ? t.trim() : '#' + t.trim();
+        tagsEl.appendChild(span);
+      });
+    }
+  </script>
+</body>
+</html>

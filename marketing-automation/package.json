@@ -1,0 +1,25 @@
+{
+  "name": "marketing-automation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "인터뷰메이트 SNS 콘텐츠 팩토리 — Threads/IG 자동 발행",
+  "type": "module",
+  "scripts": {
+    "db:init": "tsx scripts/db-init.ts",
+    "seed": "tsx scripts/seed-content.ts",
+    "publish": "tsx scripts/run-publisher.ts",
+    "queue:list": "tsx scripts/queue-list.ts"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.3.3",
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.7",
+    "puppeteer": "^24.43.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
