@@ -41,15 +41,32 @@ export async function renderCardToBuffer(data: CardData): Promise<Buffer> {
 
     // 구글 웹폰트 로드 대기 (networkidle0로도 놓칠 수 있어 문서 폰트 명시 대기)
     await page.evaluate(async () => {
-      if (document.fonts?.ready) await document.fonts.ready;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const doc = (globalThis as any).document as { fonts?: { ready?: Promise<unknown> } };
+      if (doc.fonts?.ready) await doc.fonts.ready;
     });
 
     // DOM에 데이터 주입
+    // page.evaluate 콜백은 브라우저 컨텍스트에서 실행되므로 document가 존재.
+    // tsconfig lib에 dom이 없어 타입 에러가 발생하므로 any 캐스팅으로 우회.
     await page.evaluate(
       (cardData: CardData) => {
-        const titleEl = document.getElementById("title");
-        const bodyEl = document.getElementById("body");
-        const tagsEl = document.getElementById("tags");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const doc = (globalThis as any).document as {
+          getElementById: (id: string) => {
+            textContent: string | null;
+            innerHTML: string;
+            appendChild: (el: unknown) => void;
+          } | null;
+          createElement: (tag: string) => {
+            className: string;
+            textContent: string | null;
+          };
+        };
+
+        const titleEl = doc.getElementById("title");
+        const bodyEl = doc.getElementById("body");
+        const tagsEl = doc.getElementById("tags");
 
         if (titleEl) titleEl.textContent = cardData.title;
         if (bodyEl) bodyEl.textContent = cardData.body;
@@ -57,7 +74,7 @@ export async function renderCardToBuffer(data: CardData): Promise<Buffer> {
         if (tagsEl) {
           tagsEl.innerHTML = "";
           cardData.tags.forEach((t) => {
-            const span = document.createElement("span");
+            const span = doc.createElement("span");
             span.className = "tag";
             const tag = t.trim();
             span.textContent = tag.startsWith("#") ? tag : `#${tag}`;
