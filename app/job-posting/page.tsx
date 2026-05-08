@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StepIndicator from "@/components/StepIndicator";
@@ -8,6 +8,14 @@ import LottieAnimation from "@/components/LottieAnimation";
 import BottomSheet from "@/components/BottomSheet";
 import Toast from "@/components/Toast";
 import { useInterview, type JobPostingStructured } from "@/contexts/InterviewContext";
+import { usePostHog } from "posthog-js/react";
+import { useUser } from "@clerk/nextjs";
+
+const TABS = [
+  { key: "url" as const, label: "URL 입력" },
+  { key: "image" as const, label: "이미지" },
+  { key: "search" as const, label: "채용공고 검색" },
+];
 
 const LOADING_TEXTS = [
   "회사 정보를 가져오는 중...",
@@ -42,6 +50,18 @@ export default function JobPostingPage() {
   const [fallbackText, setFallbackText] = useState("");
   const [showDirectInput, setShowDirectInput] = useState(false);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+  const ph = usePostHog();
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = useState<"url" | "image" | "search">("url");
+  const [notifyRequested, setNotifyRequested] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setNotifyRequested(!!localStorage.getItem(`job_search_notify_${user.id}`));
+  }, [user?.id]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -115,6 +135,58 @@ export default function JobPostingPage() {
     setStatus("success");
   };
 
+  const handleNotifyRequest = () => {
+    if (!user?.id) {
+      router.push("/sign-in");
+      return;
+    }
+    if (notifyRequested) return;
+    localStorage.setItem(`job_search_notify_${user.id}`, "1");
+    setNotifyRequested(true);
+    ph?.capture("job_search_notify_requested", { userId: user.id });
+  };
+
+  const handleTabChange = (tab: "url" | "image" | "search") => {
+    setActiveTab(tab);
+    if (tab === "search") ph?.capture("job_search_interest_clicked");
+    if (status !== "success") {
+      setStatus("idle");
+      setErrorMsg(null);
+    }
+  };
+
+  const handleImageAnalyze = async () => {
+    if (!imageFile) return;
+    setStatus("loading");
+    setErrorMsg(null);
+    setLoadingTextIndex(0);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+      const res = await fetch("/api/parse-job-posting-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl.split(",")[1], mimeType: imageFile.type }),
+      });
+      const data: ParseResponse = await res.json();
+      if (data.success && data.data) {
+        setParsed(data.data);
+        setJobPosting(data.data, data.raw ?? "");
+        setStatus("success");
+        return;
+      }
+      setStatus("error");
+      setErrorMsg(data.error ?? "이미지 분석에 실패했어요.");
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg(err instanceof Error ? err.message : "네트워크 오류");
+    }
+  };
+
   const handleNext = () => {
     if (!resume.trim()) {
       setErrorMsg("자기소개서가 없어요. 이전 단계에서 작성해 주세요.");
@@ -156,34 +228,141 @@ export default function JobPostingPage() {
 
       {/* Content */}
       <div className="flex-1 px-5 pt-5 pb-28 space-y-4">
-        {/* URL */}
-        <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5">
-          <label className="text-[13px] font-semibold text-[var(--gray-700)] mb-2 block">
-            채용공고 URL
-          </label>
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="wanted.co.kr/wd/..."
-            className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20 transition-all"
-            disabled={status === "loading"}
-          />
-          <button
-            onClick={handleAnalyze}
-            disabled={!url.trim() || status === "loading"}
-            className={`mt-3 w-full rounded-xl py-3 text-[14px] font-semibold transition-all ${
-              url.trim() && status !== "loading"
-                ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
-                : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
-            }`}
-          >
-            {status === "loading" ? "분석 중..." : "분석하기"}
-          </button>
+        {/* Tabs */}
+        <div className="flex rounded-xl bg-[var(--gray-100)] p-1 gap-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              disabled={status === "loading"}
+              className={`flex-1 rounded-lg py-2 text-[12px] font-semibold transition-all ${
+                activeTab === tab.key
+                  ? "bg-white text-[var(--blue-primary)] shadow-sm"
+                  : "text-[var(--gray-500)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Direct input link */}
-        {!showDirectInput && status !== "success" && status !== "loading" && (
+        {/* URL Tab */}
+        {activeTab === "url" && (
+          <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5">
+            <label className="text-[13px] font-semibold text-[var(--gray-700)] mb-2 block">
+              채용공고 URL
+            </label>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="wanted.co.kr/wd/..."
+              className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20 transition-all"
+              disabled={status === "loading"}
+            />
+            <button
+              onClick={handleAnalyze}
+              disabled={!url.trim() || status === "loading"}
+              className={`mt-3 w-full rounded-xl py-3 text-[14px] font-semibold transition-all ${
+                url.trim() && status !== "loading"
+                  ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
+                  : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
+              }`}
+            >
+              {status === "loading" ? "분석 중..." : "분석하기"}
+            </button>
+          </div>
+        )}
+
+        {/* Image Tab */}
+        {activeTab === "image" && (
+          <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5">
+            <label className="text-[13px] font-semibold text-[var(--gray-700)] mb-2 block">
+              채용공고 이미지
+            </label>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setImageFile(file);
+                const reader = new FileReader();
+                reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+                reader.readAsDataURL(file);
+              }}
+            />
+            {imagePreview ? (
+              <div className="relative mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="미리보기" className="w-full rounded-xl object-contain max-h-48" />
+                <button
+                  onClick={() => { setImageFile(null); setImagePreview(null); }}
+                  className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 text-[11px] flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (!file || !file.type.startsWith("image/")) return;
+                  setImageFile(file);
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+                  reader.readAsDataURL(file);
+                }}
+                className="w-full rounded-xl border-2 border-dashed border-[var(--gray-200)] pt-0 pb-3 flex flex-col items-center gap-1 hover:border-[var(--blue-primary)]/40 transition-colors"
+              >
+                <LottieAnimation src="/lottie/Search a file.json" className="w-44 h-44 -my-6" />
+                <span className="text-[13px] text-[var(--gray-700)]">이미지를 끌어다 놓거나 클릭해서 업로드</span>
+                <span className="text-[11px] text-[var(--gray-500)]">PNG · JPG · WEBP · 최대 5MB</span>
+              </button>
+            )}
+            <button
+              onClick={handleImageAnalyze}
+              disabled={!imageFile || status === "loading"}
+              className={`mt-3 w-full rounded-xl py-3 text-[14px] font-semibold transition-all ${
+                imageFile && status !== "loading"
+                  ? "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
+                  : "bg-[var(--gray-200)] text-[var(--gray-400)] cursor-not-allowed"
+              }`}
+            >
+              {status === "loading" ? "분석 중..." : "분석하기"}
+            </button>
+          </div>
+        )}
+
+        {/* Search Tab (fake door) */}
+        {activeTab === "search" && (
+          <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5 flex flex-col items-center gap-3 py-10">
+            <LottieAnimation src="/lottie/Loading 51 _ Monoplane.json" className="w-16 h-16" />
+            <p className="text-[15px] font-bold text-[var(--gray-900)]">채용공고 검색</p>
+            <p className="text-[13px] text-[var(--gray-500)] text-center leading-[20px]">
+              곧 출시 예정이에요.<br />알림 신청하시면 오픈 후 이메일 알림을 드릴게요.
+            </p>
+            <button
+              onClick={handleNotifyRequest}
+              disabled={notifyRequested}
+              className={`mt-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                notifyRequested
+                  ? "bg-[var(--gray-100)] text-[var(--gray-400)] cursor-default"
+                  : "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
+              }`}
+            >
+              {notifyRequested ? "알림 신청 완료 ✓" : "오픈 알림받기"}
+            </button>
+          </div>
+        )}
+
+        {/* Direct input link — URL tab only */}
+        {activeTab === "url" && !showDirectInput && status !== "success" && status !== "loading" && (
           <button
             onClick={() => setShowDirectInput(true)}
             className="w-full text-center text-[13px] text-[var(--gray-500)]"
