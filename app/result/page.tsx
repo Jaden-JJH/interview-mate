@@ -10,6 +10,7 @@ import LottieAnimation from "@/components/LottieAnimation";
 import RadarChart from "@/components/RadarChart";
 import { useInterview } from "@/contexts/InterviewContext";
 import { clearProgress } from "@/lib/interviewStorage";
+import { resolvePersona } from "@/lib/personas";
 
 function safeAvg(values: number[]): number {
   if (values.length === 0) return 0;
@@ -113,6 +114,8 @@ export default function ResultPage() {
     };
   }, [qaResults]);
 
+  const persona = resolvePersona(resolvedPersonaId || personaId || "alex");
+
   const handleRestart = () => {
     reset();
     router.push("/");
@@ -191,6 +194,21 @@ export default function ResultPage() {
                 <p className="mt-1 text-[18px] font-bold text-[var(--gray-900)]">{stat.value}</p>
               </motion.div>
             ))}
+          </div>
+        </div>
+
+        {/* Persona badge */}
+        <div className="px-5 pb-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-[var(--gray-200)] bg-white px-4 py-3">
+            <div className="w-10 h-10 overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <div style={{ transform: `scale(${persona.cardScale})`, transformOrigin: "center" }}>
+                <LottieAnimation src={persona.characterLottie} className="w-10 h-10" />
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] text-[var(--gray-400)]">이번 면접관</p>
+              <p className="text-[14px] font-bold" style={{ color: persona.accentColor }}>{persona.name}</p>
+            </div>
           </div>
         </div>
 
