@@ -15,6 +15,7 @@
     "render-cta": "tsx scripts/render-cta-cards.ts",
     "approve": "tsx scripts/approve-and-queue.ts",
     "build-shorts": "tsx scripts/build-shorts.ts",
+    "youtube-auth": "tsx scripts/youtube-auth.ts",
     "hitl-server": "tsx server/hitl-server.ts"
   },
   "dependencies": {

@@ -42,6 +42,9 @@ export const env = {
   },
   youtube: {
     apiKey: optional("YOUTUBE_API_KEY"),
+    clientId: optional("YOUTUBE_CLIENT_ID"),
+    clientSecret: optional("YOUTUBE_CLIENT_SECRET"),
+    refreshToken: optional("YOUTUBE_REFRESH_TOKEN"),
   },
   openai: {
     apiKey: optional("OPENAI_API_KEY"),
