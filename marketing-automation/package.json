@@ -8,9 +8,12 @@
     "db:init": "tsx scripts/db-init.ts",
     "seed": "tsx scripts/seed-content.ts",
     "publish": "tsx scripts/run-publisher.ts",
-    "queue:list": "tsx scripts/queue-list.ts"
+    "queue:list": "tsx scripts/queue-list.ts",
+    "collect": "tsx scripts/collect-sources.ts",
+    "pipeline": "tsx scripts/run-pipeline.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
     "@vercel/blob": "^2.3.3",
     "better-sqlite3": "^11.7.0",
     "dotenv": "^16.4.7",
