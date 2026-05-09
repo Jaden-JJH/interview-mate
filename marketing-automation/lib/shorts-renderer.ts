@@ -20,7 +20,7 @@ function buildHtml(scene: ShortsScene, totalScenes: number): string {
     : scene.narration;
   html = html.replace("{{narrationHint}}", hint);
 
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 4; i++) {
     html = html.replace(
       `{{dot${i}}}`,
       i <= totalScenes && i === scene.sceneNumber ? "active" : "",
