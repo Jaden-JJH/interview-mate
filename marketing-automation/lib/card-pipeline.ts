@@ -40,6 +40,10 @@ function checkForbiddenWords(data: CardData): void {
   }
 }
 
+const COUNT_IG_PUBLISHED = db.prepare<[], { cnt: number }>(`
+  SELECT COUNT(*) AS cnt FROM published_log WHERE channel = 'instagram'
+`);
+
 const INSERT_QUEUE = db.prepare(`
   INSERT INTO content_queue
     (account, channel, text, media_url, format, scheduled_at)
@@ -66,6 +70,10 @@ export async function queueCardPost(
 ): Promise<{ queueId: number; imageUrl: string }> {
   // 1. 금지어 검사
   checkForbiddenWords(data);
+
+  // IG 발행 수 기반 색 인덱스 자동 결정 (0=파랑, 1=보라, 2=주황)
+  const { cnt } = COUNT_IG_PUBLISHED.get()!;
+  data = { ...data, colorIndex: (Math.floor(cnt / 3) % 3) as 0 | 1 | 2 };
 
   // caption도 금지어 검사
   const captionCheck: CardData = { title: caption, body: "", tags: [] };
