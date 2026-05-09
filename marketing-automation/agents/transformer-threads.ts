@@ -1,3 +1,6 @@
+// [DEPRECATED 2026-05-09] W3 정책 = Threads는 IG carousel 클론으로 통일.
+// 이 파일은 향후 long-form Threads 트랙(텍스트 reply chain) 부활 가능성 대비 백업.
+// run-pipeline.ts에서 호출 제거됨.
 // W2 Threads 변환기 — Sonnet으로 Master Content → Threads 2~3편 생성 + DB 저장
 
 import Anthropic from "@anthropic-ai/sdk";

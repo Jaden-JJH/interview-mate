@@ -10,7 +10,9 @@
     "publish": "tsx scripts/run-publisher.ts",
     "queue:list": "tsx scripts/queue-list.ts",
     "collect": "tsx scripts/collect-sources.ts",
-    "pipeline": "tsx scripts/run-pipeline.ts"
+    "pipeline": "tsx scripts/run-pipeline.ts",
+    "render-cta": "tsx scripts/render-cta-cards.ts",
+    "approve": "tsx scripts/approve-and-queue.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",

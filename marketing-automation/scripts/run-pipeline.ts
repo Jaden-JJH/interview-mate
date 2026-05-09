@@ -3,11 +3,13 @@
 import "../lib/env.js";
 import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collector.js";
 import { writeMasterContent } from "../agents/master-writer.js";
-import { transformToThreads } from "../agents/transformer-threads.js";
 import { transformToIg } from "../agents/transformer-ig.js";
 import { runQualityGate } from "../guards/quality-gate.js";
 import { sendSlack } from "../lib/slack.js";
 import { db } from "../lib/db.js";
+
+// 정책: Threads = IG carousel 클론. 별도 텍스트 변환(transformer-threads)은 비활성화.
+// IG variant 생성 후 carousel-pipeline에서 IG/Threads 큐 동시 적재.
 
 async function main() {
   console.log("🚀 W2 파이프라인 시작:", new Date().toISOString());
@@ -37,22 +39,14 @@ async function main() {
   // Master 저장 성공 — 이제 dedup_index 등록(24h 재발행 차단).
   registerDedupSlug(topic.slug);
 
-  // Step 3: Threads 변환 (Sonnet)
-  console.log("\n[Step 3] Threads 변환 (Sonnet)");
-  const threadsPosts = await transformToThreads(master);
-  console.log(`  ✓ Threads ${threadsPosts.length}편 생성`);
-
-  // Step 4: IG 변환 (Sonnet)
-  console.log("\n[Step 4] Instagram 변환 (Sonnet)");
+  // Step 3: IG 변환 (Sonnet) — Threads는 carousel 클론으로 동시 발행되므로 별도 변환 없음
+  console.log("\n[Step 3] Instagram 변환 (Sonnet)");
   const igVariant = await transformToIg(master);
   console.log(igVariant ? `  ✓ IG 캡션 + 카드 ${igVariant.cards.length}장` : "  · IG 변환 실패");
 
-  // Step 5: 품질 게이트 (Haiku)
-  console.log("\n[Step 5] 품질 게이트 (Haiku)");
-  const allTexts = [
-    ...threadsPosts.map((p) => p.text),
-    ...(igVariant ? [igVariant.caption] : []),
-  ];
+  // Step 4: 품질 게이트 (Haiku)
+  console.log("\n[Step 4] 품질 게이트 (Haiku)");
+  const allTexts = igVariant ? [igVariant.caption] : [];
 
   let allPass = true;
   for (const text of allTexts) {
@@ -82,9 +76,9 @@ async function main() {
 
   console.log(`\n  품질 게이트: ${allPass ? "✓ 전체 통과" : "✗ 일부 실패"}`);
 
-  // Step 6: Slack HITL 알림
-  const threadsPreview = threadsPosts
-    .map((p, i) => `편 ${i + 1}: ${p.text.slice(0, 80)}${p.text.length > 80 ? "..." : ""}`)
+  // Step 5: Slack HITL 알림
+  const cardsPreview = (igVariant?.cards ?? [])
+    .map((c, i) => `${i + 1}. [${c.type}] ${c.title} — ${c.body.slice(0, 40)}`)
     .join("\n");
 
   const slackMsg = [
@@ -92,12 +86,13 @@ async function main() {
     `*주제:* ${master.headline}`,
     `*슬러그:* ${topic.slug}  |  *master_id:* ${master.id}`,
     "",
-    `*Threads ${threadsPosts.length}편:*`,
-    threadsPreview,
+    `*IG 캡션:* ${igVariant?.caption.slice(0, 200) ?? "생성 실패"}${(igVariant?.caption.length ?? 0) > 200 ? "..." : ""}`,
     "",
-    `*IG 캡션:* ${igVariant?.caption.slice(0, 100) ?? "생성 실패"}${(igVariant?.caption.length ?? 0) > 100 ? "..." : ""}`,
+    `*카드 ${igVariant?.cards.length ?? 0}장 + CTA:*`,
+    cardsPreview || "(생성 실패)",
     "",
-    `확인: \`npx tsx scripts/queue-list.ts\``,
+    `발행 정책: IG carousel 4장 → Threads 동일 클론`,
+    `승인 후: \`npx tsx scripts/approve-and-queue.ts ${master.id}\``,
   ].join("\n");
 
   await sendSlack(slackMsg);

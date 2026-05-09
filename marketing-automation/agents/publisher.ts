@@ -1,6 +1,25 @@
 import { db, type QueueRow } from "../lib/db.js";
-import { publishImage } from "../lib/instagram.js";
-import { publishText, publishImage as publishThreadsImage } from "../lib/threads.js";
+import { publishImage, publishCarousel } from "../lib/instagram.js";
+import {
+  publishText,
+  publishImage as publishThreadsImage,
+  publishCarousel as publishThreadsCarousel,
+} from "../lib/threads.js";
+
+/** media_url이 JSON 배열이면 carousel용 URL 배열, 단일 string이면 null. */
+function tryParseCarouselUrls(media_url: string | null): string[] | null {
+  if (!media_url) return null;
+  if (!media_url.trim().startsWith("[")) return null;
+  try {
+    const parsed = JSON.parse(media_url);
+    if (Array.isArray(parsed) && parsed.length >= 2 && parsed.every((u) => typeof u === "string")) {
+      return parsed;
+    }
+  } catch {
+    // JSON 파싱 실패 — 단일 URL 처리
+  }
+  return null;
+}
 
 const PICK_DUE = db.prepare<{ now: string }, QueueRow>(`
   SELECT * FROM content_queue
@@ -55,15 +74,24 @@ export async function runPublisherOnce(): Promise<PublisherResult> {
   try {
     let result: { mediaId: string; permalink: string | null };
 
+    const carouselUrls = tryParseCarouselUrls(row.media_url);
+
     if (row.channel === "threads") {
-      result = row.media_url
-        ? await publishThreadsImage(row.text, row.media_url)
-        : await publishText(row.text);
+      if (carouselUrls) {
+        result = await publishThreadsCarousel(row.text, carouselUrls);
+      } else if (row.media_url) {
+        result = await publishThreadsImage(row.text, row.media_url);
+      } else {
+        result = await publishText(row.text);
+      }
     } else if (row.channel === "instagram") {
-      if (!row.media_url) {
+      if (carouselUrls) {
+        result = await publishCarousel(row.text, carouselUrls);
+      } else if (row.media_url) {
+        result = await publishImage(row.text, row.media_url);
+      } else {
         throw new Error("instagram 채널은 media_url 필수 (텍스트 단독 발행 불가)");
       }
-      result = await publishImage(row.text, row.media_url);
     } else {
       throw new Error(`미지원 채널: ${row.channel}`);
     }

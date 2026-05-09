@@ -25,13 +25,13 @@ export type IgVariant = {
 export async function transformToIg(master: MasterContent): Promise<IgVariant | null> {
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1536,
+    max_tokens: 1024,
     system: [
       {
         type: "text",
         text: `@intv_mate Instagram 카드뉴스 크리에이터입니다.
-규칙: 캡션 150-200자 + 해시태그. 카드 5-7장. 각 카드 핵심 문구 30자 이내.
-절대 금지 단어: 자동화, 봇, 테스트, 시스템, publisher, 에이전트, 큐, API, dev`,
+규칙: 캡션 150-200자 + 해시태그. 카드뉴스는 carousel 4장 고정 (cover 1 + insight 2 + cta 1).
+각 카드 핵심 문구 30자 이내. 절대 금지 단어: 자동화, 봇, 테스트, 시스템, publisher, 에이전트, 큐, API, dev`,
         cache_control: { type: "ephemeral" },
       },
     ],
@@ -45,8 +45,10 @@ export async function transformToIg(master: MasterContent): Promise<IgVariant | 
 
 IG 캡션과 카드 스펙 작성:
 - caption: 첫 줄 강한 훅 + 핵심 2-3줄 + 해시태그 5-8개 (#면접준비 #취업 #커리어 등)
-- cards: cover 1장 → insight 4-5장 → cta 1장
-- 각 카드의 tags: 카드 주제와 어울리는 해시태그 2-3개 (# 없이 단어만)
+- cards 정확히 3장 출력 (cta 카드는 사전 자산 재사용이라 제외):
+  · 1장 cover: 강한 훅·질문·반전
+  · 2장 insight: 본문 핵심 인사이트 2개를 각 카드 1개씩
+- 각 카드 tags: 2-3개 (# 없이 단어만)
 
 JSON으로만 응답:
 {
@@ -54,7 +56,7 @@ JSON으로만 응답:
   "cards": [
     {"cardNumber": 1, "title": "제목 20자 이내", "body": "본문 30자 이내", "tags": ["면접준비", "취업"], "type": "cover"},
     {"cardNumber": 2, "title": "...", "body": "...", "tags": ["...", "..."], "type": "insight"},
-    {"cardNumber": 7, "title": "팔로우하면 면접 꿀팁 매일!", "body": "@intv_mate", "tags": ["intv_mate"], "type": "cta"}
+    {"cardNumber": 3, "title": "...", "body": "...", "tags": ["...", "..."], "type": "insight"}
   ]
 }`,
       },
@@ -67,14 +69,18 @@ JSON으로만 응답:
     const { caption, cards } = parsed;
     if (!caption || !cards || !Array.isArray(cards)) return null;
 
-    // tags 누락 카드는 master.keywords로 fallback (card-renderer 빈 태그 방지)
+    // 3장(cover+insight×2)만 검증. cta 카드는 carousel-pipeline에서 사전 자산 URL로 부착.
+    if (cards.length < 3) {
+      console.error(`  · transformer-ig 카드 부족: ${cards.length}장 (필요 3장)`);
+      return null;
+    }
     const fallbackTags = master.keywords.slice(0, 3);
-    const normalized: IgCard[] = (cards as Partial<IgCard>[]).map((c, i) => ({
+    const normalized: IgCard[] = (cards as Partial<IgCard>[]).slice(0, 3).map((c, i) => ({
       cardNumber: c.cardNumber ?? i + 1,
       title: c.title ?? "",
       body: c.body ?? "",
       tags: Array.isArray(c.tags) && c.tags.length > 0 ? c.tags : fallbackTags,
-      type: c.type ?? "insight",
+      type: c.type ?? (i === 0 ? "cover" : "insight"),
     }));
 
     const check = checkForbiddenWords(caption);

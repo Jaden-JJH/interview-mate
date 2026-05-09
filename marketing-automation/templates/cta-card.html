@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080" />
+  <title>인터뷰메이트 CTA</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0A1530;
+      --accent: #4F8EF7;
+      --glow:   rgba(59, 130, 246, 0.12);
+    }
+
+    html, body {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      width: 1080px;
+      height: 1350px;
+      position: relative;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 1100px;
+      height: 1100px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--glow) 0%, transparent 65%);
+      top: -350px;
+      right: -260px;
+      pointer-events: none;
+    }
+
+    .brand {
+      position: absolute;
+      top: 64px;
+      left: 72px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 30px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+
+    /* 중앙: Lottie + 슬로건 */
+    .content {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 80px;
+      gap: 40px;
+    }
+
+    .lottie-wrap {
+      width: 480px;
+      height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #lottie-alex {
+      width: 100%;
+      height: 100%;
+    }
+
+    .slogan {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slogan-line-1 {
+      font-size: 56px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+      letter-spacing: -1.5px;
+      line-height: 1.25;
+    }
+
+    .slogan-line-2 {
+      font-size: 80px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -2.5px;
+      line-height: 1.15;
+    }
+
+    /* 하단 큰 CTA 링크 */
+    .cta-link {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      font-size: 56px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -1px;
+      background: var(--accent);
+      border-radius: 100px;
+      padding: 32px 80px;
+      box-shadow: 0 16px 48px var(--glow);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="bg-glow"></div>
+
+    <div class="brand">
+      <img class="logo" src="../../public/icon-512.png" alt="인터뷰메이트" />
+      <span class="brand-name">인터뷰메이트</span>
+    </div>
+
+    <div class="content">
+      <div class="lottie-wrap">
+        <div id="lottie-alex"></div>
+      </div>
+      <div class="slogan">
+        <div class="slogan-line-1">합격에 가까워지는</div>
+        <div class="slogan-line-2">가장 빠른 면접 연습</div>
+      </div>
+    </div>
+
+    <div class="cta-link">interview-mate.com</div>
+  </div>
+
+  <script>
+    // Lottie 로드 — alex.json. autoplay 후 중간 프레임 정지(스크린샷 안정).
+    const anim = lottie.loadAnimation({
+      container: document.getElementById('lottie-alex'),
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: '../../public/lottie/alex.json',
+    });
+
+    window.__lottieReady = false;
+    anim.addEventListener('DOMLoaded', () => {
+      // 600프레임 애니메이션의 중간(300) 프레임에서 정지 — 자연스러운 포즈
+      anim.goToAndStop(300, true);
+      window.__lottieReady = true;
+    });
+    anim.addEventListener('data_failed', () => {
+      // 로드 실패 시에도 ready 처리해 렌더 진행
+      window.__lottieReady = true;
+    });
+  </script>
+</body>
+</html>

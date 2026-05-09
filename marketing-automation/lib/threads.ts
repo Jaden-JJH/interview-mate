@@ -130,6 +130,81 @@ export async function publishImage(
 }
 
 /**
+ * Threads carousel 발행 — 2~20장. 3단계.
+ * 1) child IMAGE container N개 (is_carousel_item=true)
+ * 2) CAROUSEL parent (children=ID 콤마)
+ * 3) threads_publish (publish 전 30초 대기)
+ */
+export async function publishCarousel(
+  text: string,
+  imageUrls: string[]
+): Promise<PublishResult> {
+  if (imageUrls.length < 2 || imageUrls.length > 20) {
+    throw new Error(`Threads carousel은 2~20장만 지원: 입력 ${imageUrls.length}장`);
+  }
+  const userId = env.threads.userId;
+  const token = env.threads.longToken;
+
+  // 1단계: child IMAGE container N개
+  const childIds: string[] = [];
+  for (const url of imageUrls) {
+    const child = await postForm(`${BASE}/${userId}/threads`, {
+      media_type: "IMAGE",
+      image_url: url,
+      is_carousel_item: "true",
+      access_token: token,
+    });
+    if (!child.id) throw new Error(`child container id 없음: ${JSON.stringify(child)}`);
+    childIds.push(child.id);
+  }
+
+  // 각 child FINISHED 대기
+  for (const id of childIds) {
+    for (let i = 0; i < 12; i++) {
+      await sleep(5_000);
+      const status = await getJson(
+        `${BASE}/${id}?fields=status&access_token=${token}`,
+      );
+      if (status.status === "FINISHED") break;
+      if (status.status === "ERROR" || status.status === "EXPIRED") {
+        throw new Error(`child container ${id} ${status.status}: ${JSON.stringify(status)}`);
+      }
+    }
+  }
+
+  // 2단계: CAROUSEL parent
+  const parent = await postForm(`${BASE}/${userId}/threads`, {
+    media_type: "CAROUSEL",
+    text,
+    children: childIds.join(","),
+    access_token: token,
+  });
+  if (!parent.id) throw new Error(`carousel parent id 없음: ${JSON.stringify(parent)}`);
+
+  // parent 검증 + 안정화 대기
+  await sleep(30_000);
+
+  // 3단계: publish
+  const published = await postForm(`${BASE}/${userId}/threads_publish`, {
+    creation_id: parent.id,
+    access_token: token,
+  });
+  if (!published.id) throw new Error(`media id 없음: ${JSON.stringify(published)}`);
+
+  let permalink: string | null = null;
+  try {
+    const meta = await getJson(
+      `${BASE}/${published.id}?fields=permalink,timestamp&access_token=${token}`,
+    );
+    permalink = meta.permalink ?? null;
+  } catch {
+    // permalink 조회 실패는 치명적 아님
+  }
+
+  return { mediaId: published.id, permalink };
+}
+
+/**
  * 토큰이 살아있는지 빠른 확인. /me 호출.
  */
 export async function pingThreads(): Promise<{ id: string; username: string }> {
