@@ -1,3 +1,4 @@
+// 면접 질문에 대한 AI 모범 답변 초안을 생성하는 API 라우트 (크레딧 차감)
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { resolvePersona } from "@/lib/personas";

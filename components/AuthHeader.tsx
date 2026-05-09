@@ -1,3 +1,4 @@
+// 로그인 상태에 따라 UserButton 또는 로그인 버튼을 표시하는 상단 헤더 컴포넌트
 "use client";
 
 import Link from "next/link";

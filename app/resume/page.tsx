@@ -1,3 +1,4 @@
+// Step 1/3 — 자기소개서 입력 페이지 (PDF 업로드 또는 직접 입력, 슬롯 관리)
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";

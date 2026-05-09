@@ -1,3 +1,4 @@
+// PDF 파일을 서버 /api/parse-pdf로 전송해 텍스트를 추출하는 클라이언트 유틸 함수
 "use client";
 
 // PDF text extraction is performed server-side via poppler `pdftotext` so that

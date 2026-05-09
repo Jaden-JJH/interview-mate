@@ -1,3 +1,4 @@
+// 면접관 페르소나 정의(Alex·지윤·Kevin·박상무·랜덤)와 시간 프리셋, 해석 유틸을 export하는 모듈
 export interface Persona {
   id: string;
   name: string;

@@ -1,3 +1,4 @@
+// 면접 점수를 반원형 게이지로 애니메이션 표시하는 SVG 컴포넌트
 "use client";
 
 import { useEffect, useRef, useState } from "react";

@@ -1,3 +1,4 @@
+// 특정 면접 히스토리 상세 내역을 조회하는 API 라우트 (본인 소유 검증 포함)
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";

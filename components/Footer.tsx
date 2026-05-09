@@ -1,3 +1,4 @@
+// 약관·가격정책 링크를 포함하는 전역 푸터 컴포넌트 (면접 페이지에서는 숨김)
 "use client";
 
 import Link from "next/link";

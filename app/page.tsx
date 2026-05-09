@@ -1,3 +1,4 @@
+// 서비스 소개 랜딩 페이지 — 3단계 플로우 안내, 주요 기능 소개, 면접 시작 CTA
 "use client";
 
 import { useEffect } from "react";

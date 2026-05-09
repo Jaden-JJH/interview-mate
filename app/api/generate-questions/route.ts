@@ -1,3 +1,4 @@
+// 자기소개서·채용공고·페르소나를 기반으로 맞춤 면접 질문을 생성하는 API 라우트 (크레딧 차감)
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas";

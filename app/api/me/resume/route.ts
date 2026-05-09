@@ -1,3 +1,4 @@
+// 저장된 자기소개서 슬롯(최대 3개)을 CRUD하는 API 라우트
 import { NextResponse } from "next/server";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "@/lib/db";

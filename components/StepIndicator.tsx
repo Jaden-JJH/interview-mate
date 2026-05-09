@@ -1,3 +1,4 @@
+// 3단계 플로우의 현재 단계를 시각적 점 막대로 표시하는 진행 표시자 컴포넌트
 "use client";
 
 interface StepIndicatorProps {

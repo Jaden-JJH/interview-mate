@@ -1,3 +1,4 @@
+// 직무 정보를 입력받아 한국어 자기소개서(4개 섹션)를 AI로 생성하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { checkRateLimit } from "@/lib/rate-limit";

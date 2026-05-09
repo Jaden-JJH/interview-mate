@@ -1,3 +1,4 @@
+// 이용약관 페이지 — 서비스 소개, 크레딧 결제·환불 정책, 면책 조항 등 법적 고지
 import type { Metadata } from "next";
 import Link from "next/link";
 

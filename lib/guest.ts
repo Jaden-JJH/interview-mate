@@ -1,4 +1,4 @@
-// Guest mode — bypasses Clerk auth and DB writes for local/preview
+// NEXT_PUBLIC_GUEST_MODE 플래그를 읽어 게스트 모드 여부를 반환하는 서버·클라 공용 유틸
 // testing. Toggled via NEXT_PUBLIC_GUEST_MODE so both server (middleware,
 // route handlers) and client (header badge) can read it.
 //

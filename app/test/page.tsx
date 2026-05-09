@@ -1,3 +1,4 @@
+// Lottie 애니메이션 파일을 확인하는 개발용 테스트 페이지
 "use client";
 import LottieAnimation from "@/components/LottieAnimation";
 

@@ -1,3 +1,4 @@
+// 가격정책 페이지 — 무료 체험 및 크레딧 패키지 플랜 안내
 import type { Metadata } from "next";
 import Link from "next/link";
 

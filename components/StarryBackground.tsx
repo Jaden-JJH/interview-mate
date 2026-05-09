@@ -1,3 +1,4 @@
+// 데스크탑 배경에 별 + 유성 애니메이션을 렌더링하는 장식 컴포넌트 (모바일 숨김)
 "use client";
 
 import { ShootingStars } from "@/components/ui/shooting-stars";

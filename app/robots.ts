@@ -1,3 +1,4 @@
+// 검색엔진 크롤러 허용·차단 경로를 정의하는 robots.txt 생성 라우트
 import type { MetadataRoute } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://interview-mate.com";

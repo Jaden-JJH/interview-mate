@@ -1,3 +1,4 @@
+// Paddle 결제 웹훅을 수신해 트랜잭션 완료 시 유료 크레딧을 지급하는 라우트
 import { NextRequest } from "next/server";
 import {
   Environment,

@@ -1,3 +1,4 @@
+// 브라우저 탭·파비콘용 32×32 앱 아이콘을 Edge에서 동적 생성하는 라우트
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";

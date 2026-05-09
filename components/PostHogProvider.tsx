@@ -1,3 +1,4 @@
+// PostHog 클라이언트를 초기화하고 페이지뷰를 자동 추적하는 프로바이더 컴포넌트
 "use client";
 
 import posthog from "posthog-js";

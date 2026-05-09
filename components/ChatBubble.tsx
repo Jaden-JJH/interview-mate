@@ -1,3 +1,4 @@
+// 면접 화면에서 AI와 사용자의 메시지를 페르소나 색상으로 구분해 표시하는 말풍선 컴포넌트
 "use client";
 
 import { motion } from "framer-motion";

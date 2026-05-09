@@ -1,3 +1,4 @@
+// React 렌더링 오류를 잡아 fallback UI를 표시하는 클래스 기반 에러 바운더리
 "use client";
 
 import { Component, type ErrorInfo, type ReactNode } from "react";

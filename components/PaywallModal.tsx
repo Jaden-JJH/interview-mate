@@ -1,3 +1,4 @@
+// 크레딧 부족 시 Paddle 결제를 유도하는 페이월 모달 컴포넌트
 "use client";
 
 import { useEffect, useState } from "react";

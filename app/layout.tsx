@@ -1,3 +1,4 @@
+// 전체 앱의 루트 레이아웃 — ClerkProvider, PostHog, 헤더·푸터, 별 배경을 감싸는 최상위 컴포넌트
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { koKR } from "@clerk/localizations";

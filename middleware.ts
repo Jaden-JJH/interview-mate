@@ -1,3 +1,4 @@
+// Clerk 인증 미들웨어 — 보호된 라우트 목록을 정의하고 미인증 접근을 차단
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { isGuestMode } from "@/lib/guest";
 

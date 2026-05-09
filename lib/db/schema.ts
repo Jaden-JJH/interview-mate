@@ -1,3 +1,4 @@
+// Drizzle ORM 스키마 정의 — users, credits, savedResumes, interviewHistory, transactions 테이블
 import {
   pgTable,
   uuid,

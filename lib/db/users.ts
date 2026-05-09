@@ -1,3 +1,4 @@
+// Clerk userId로 내부 users 행을 조회하거나 없으면 생성하는 유저 DB 헬퍼
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "./index";

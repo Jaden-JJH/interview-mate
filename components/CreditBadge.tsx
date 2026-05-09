@@ -1,3 +1,4 @@
+// 헤더에 크레딧 잔액을 표시하고 클릭 시 결제 모달을 여는 배지 컴포넌트
 "use client";
 
 import { useCallback, useEffect, useState } from "react";

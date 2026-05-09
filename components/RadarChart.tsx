@@ -1,3 +1,4 @@
+// 면접 역량 점수를 레이더(거미줄) 차트로 시각화하는 SVG 컴포넌트
 "use client";
 
 import { motion } from "framer-motion";

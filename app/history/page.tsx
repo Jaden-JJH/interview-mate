@@ -1,3 +1,4 @@
+// 면접 히스토리 목록 페이지 — 과거 면접 세션을 날짜·페르소나·점수와 함께 나열
 "use client";
 
 import { useEffect, useState } from "react";

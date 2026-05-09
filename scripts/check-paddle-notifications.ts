@@ -1,3 +1,4 @@
+// Paddle webhook 목적지 설정과 최근 발송 이력을 점검하는 스크립트
 /**
  * Paddle notification settings(=webhook destinations)와 최근 발송 이력 점검.
  */

@@ -1,3 +1,4 @@
+// DB 연결과 테이블 존재 여부를 확인하는 헬스체크 스크립트
 import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 

@@ -1,3 +1,4 @@
+// Clerk SignUp 컴포넌트를 렌더링하는 회원가입 페이지
 import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
 

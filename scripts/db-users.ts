@@ -1,3 +1,4 @@
+// DB에 저장된 전체 유저 목록을 조회해 출력하는 스크립트
 import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 

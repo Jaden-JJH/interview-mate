@@ -1,3 +1,4 @@
+// 면접 답변을 채점하고 피드백·꼬리질문을 반환하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { resolvePersona } from "@/lib/personas";

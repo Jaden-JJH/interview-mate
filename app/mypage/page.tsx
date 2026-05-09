@@ -1,3 +1,4 @@
+// 마이페이지 — 크레딧 잔액, 저장된 자기소개서 슬롯, 회원 탈퇴 기능 제공
 "use client";
 
 import { useEffect, useState } from "react";

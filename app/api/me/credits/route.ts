@@ -1,3 +1,4 @@
+// 현재 로그인 유저의 크레딧 잔액(무료/유료)을 조회하는 API 라우트
 import { NextResponse } from "next/server";
 import { getOrCreateAppUserId } from "@/lib/db/users";
 import { getBalance } from "@/lib/db/credits";

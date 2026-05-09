@@ -1,3 +1,4 @@
+// 오류·알림 메시지를 화면 상단에 잠깐 표시하는 토스트 컴포넌트
 "use client";
 
 import { useEffect, useState } from "react";

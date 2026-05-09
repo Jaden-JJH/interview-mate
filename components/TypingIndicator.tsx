@@ -1,3 +1,4 @@
+// AI 면접관이 답변을 생성 중임을 나타내는 점 깜빡임 타이핑 인디케이터 컴포넌트
 "use client";
 
 import LottieAnimation from "@/components/LottieAnimation";

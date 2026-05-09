@@ -1,3 +1,4 @@
+// JSON 캐싱과 fallbackSrc를 지원하는 Lottie 애니메이션 래퍼 컴포넌트
 "use client";
 
 import Lottie, { LottieRefCurrentProps } from "lottie-react";

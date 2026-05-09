@@ -1,3 +1,4 @@
+// 화면 하단에서 슬라이드 업되는 모달 시트 컴포넌트
 "use client";
 
 import { useEffect } from "react";

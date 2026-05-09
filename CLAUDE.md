@@ -77,3 +77,23 @@
 - `tsconfig.json`이 `**/*.ts`를 include하고 `node_modules`만 exclude. workspace 내 `projects/` 하위 다른 프로젝트(Electron 등)도 typecheck에 잡힘 — 우리 코드만 보려면 `npx tsc --noEmit 2>&1 | grep -E "^(app|contexts|lib|components)/"` 사용.
 - 페르소나 캐릭터 Lottie는 캔버스 비율이 제각각. 추가/교체 시 `cardScale`/`heroScale` 두 값 다 튜닝 필요.
 - `lib/anthropic.ts`의 `CLAUDE_MODEL` 한 곳에서 모델 ID 관리. system 프롬프트 cache_control: ephemeral 적용 중.
+
+## 파일 탐색 규칙 (첫 줄 주석 컨벤션)
+
+모든 `.ts` / `.tsx` 소스 파일 첫 줄에 `// 한국어 한 줄 설명` 주석이 있음. 파일을 전부 읽지 않고도 수정 대상을 빠르게 고를 수 있도록 도입한 컨벤션.
+
+**탐색 방법:**
+```bash
+# 키워드로 후보 추리기
+grep -r "^// " app/ components/ lib/ contexts/ --include="*.ts" --include="*.tsx" | grep "키워드"
+# 특정 디렉터리 전체 첫 줄 일괄 확인
+head -1 app/api/*/route.ts
+```
+
+**가드레일 — 반드시 지켜야 할 규칙:**
+1. **주석은 힌트, 수정 근거 아님** — 본문을 직접 읽고 확인한 뒤 수정. 주석만 보고 코드를 고치지 말 것.
+2. **주석 ↔ 본문 불일치 발견 시 멈출 것** — 내용이 다르면 주석이 낡은 것. 사용자에게 알리고 주석도 갱신.
+3. **비슷한 설명 파일이 여럿이면 모두 열어라** — 크레딧·이력서·결제 등 기능은 여러 파일에 걸쳐 있음. 후보를 성급하게 하나로 좁히지 말 것.
+4. **파일 기능 변경 시 첫 줄 주석도 갱신** — 낡은 주석은 다음 AI를 잘못 안내함.
+5. **새 파일 생성 시 첫 줄 주석 필수** — 컨벤션 일관성을 유지해야 탐색이 신뢰할 수 있음.
+6. **`projects/` 하위는 별도 프로젝트** — `projects/MCP Monitor/` 는 Electron 앱. 이 앱과 무관하므로 건드리지 말 것.

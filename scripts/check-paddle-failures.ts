@@ -1,3 +1,4 @@
+// Paddle notification setting의 최근 실패 webhook 상세(응답 코드·본문)를 조회하는 스크립트
 /**
  * 우리 notification setting의 최근 실패 webhook 상세 (응답 코드/본문 포함).
  */

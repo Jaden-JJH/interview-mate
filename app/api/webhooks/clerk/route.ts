@@ -1,3 +1,4 @@
+// Clerk 웹훅을 수신해 신규 유저 생성 시 DB users·credits 행을 프로비저닝하는 라우트
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";

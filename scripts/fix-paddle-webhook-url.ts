@@ -1,3 +1,4 @@
+// Paddle notification destination URL을 올바른 webhook 경로로 수정하는 스크립트
 /**
  * Paddle notification destination URL 수정.
  * 잘못된 경로(/api/webhooks/clerk) → 올바른 경로(/api/webhooks/paddle)

@@ -1,3 +1,4 @@
+// IP 기반 인메모리 슬라이딩 윈도우 레이트 리미터 — API 라우트 남용 방지용
 interface RateLimitConfig {
   /** Max requests allowed within the window */
   limit: number;

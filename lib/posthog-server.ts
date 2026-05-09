@@ -1,3 +1,4 @@
+// 서버 사이드 PostHog 클라이언트를 싱글턴으로 초기화하고 에러·이벤트를 캡처하는 유틸
 import { PostHog } from "posthog-node";
 
 let _client: PostHog | null = null;

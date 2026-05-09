@@ -1,3 +1,4 @@
+// 면접 종료 후 QA 결과·점수·페르소나 정보를 DB에 저장하는 API 라우트
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { interviewHistory } from "@/lib/db/schema";

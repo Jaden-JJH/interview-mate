@@ -1,4 +1,4 @@
-// Reads an env var with optional fallbacks. Useful for Vercel Marketplace
+// 복수 이름 폴백을 지원하는 환경변수 읽기·필수 검증 유틸리티 함수 모음
 // integrations that prefix variables with the project name
 // (e.g. interview_mate_DATABASE_URL).
 export function readEnv(...names: string[]): string | undefined {

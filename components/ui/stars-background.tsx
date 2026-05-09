@@ -1,3 +1,4 @@
+// Canvas 기반으로 깜빡이는 별 배경을 그리는 배경 장식 컴포넌트
 "use client";
 import { cn } from "@/lib/utils";
 import React, {

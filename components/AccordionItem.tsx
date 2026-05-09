@@ -1,3 +1,4 @@
+// 면접 결과 페이지에서 질문별 피드백을 펼치고 닫는 아코디언 아이템 컴포넌트
 "use client";
 
 import { useState } from "react";

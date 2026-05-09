@@ -1,4 +1,4 @@
-// Client-side resume persistence for guest mode.
+// 게스트 모드에서 자기소개서 슬롯을 localStorage에 저장·관리하는 클라이언트 유틸
 //
 // Guest mode (`NEXT_PUBLIC_GUEST_MODE=true`) intentionally skips DB writes
 // on the server (see lib/guest.ts) so local testing doesn't pollute the

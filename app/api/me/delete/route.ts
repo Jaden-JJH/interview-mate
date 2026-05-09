@@ -1,3 +1,4 @@
+// 현재 유저의 DB 데이터와 Clerk 계정을 모두 삭제하는 회원 탈퇴 API 라우트
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";

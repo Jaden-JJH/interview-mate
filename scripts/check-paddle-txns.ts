@@ -1,3 +1,4 @@
+// 특정 유저의 Paddle 트랜잭션 목록을 조회해 결제 내역을 확인하는 스크립트
 import { config } from "dotenv";
 import { Environment, Paddle } from "@paddle/paddle-node-sdk";
 

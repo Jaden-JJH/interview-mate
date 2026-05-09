@@ -1,3 +1,4 @@
+// 전체 면접 결과를 바탕으로 종합 피드백과 종합 점수를 생성하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

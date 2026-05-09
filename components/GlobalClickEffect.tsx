@@ -1,3 +1,4 @@
+// 전역 클릭 이벤트마다 Lottie 이펙트를 클릭 좌표에 렌더링하는 장식 컴포넌트
 "use client";
 
 import { useEffect, useState } from "react";

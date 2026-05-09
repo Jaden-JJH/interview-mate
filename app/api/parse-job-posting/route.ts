@@ -1,3 +1,4 @@
+// 채용공고 URL을 fetch·cheerio로 크롤링하고 Claude로 구조화하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";

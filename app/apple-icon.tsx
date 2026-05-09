@@ -1,3 +1,4 @@
+// iOS 홈 화면용 180×180 Apple Touch 아이콘을 Edge에서 동적 생성하는 라우트
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";

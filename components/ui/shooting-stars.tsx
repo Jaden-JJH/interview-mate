@@ -1,3 +1,4 @@
+// Canvas 기반으로 유성 이펙트를 애니메이션하는 배경 장식 컴포넌트
 "use client";
 import { cn } from "@/lib/utils";
 import React, { useEffect, useState, useRef } from "react";

@@ -1,3 +1,4 @@
+// 박스 테두리를 따라 글로우가 회전하는 Aceternity Moving Border 카드 컴포넌트
 "use client";
 
 import React, { useRef } from "react";

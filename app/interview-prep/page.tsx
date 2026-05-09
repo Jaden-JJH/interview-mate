@@ -1,3 +1,4 @@
+// Step 3/3 — 면접 준비 페이지 (페르소나·시간 선택, 질문 생성 후 면접 진입)
 "use client";
 
 import { useEffect, useMemo, useState } from "react";

@@ -1,3 +1,4 @@
+// Step 2/3 — 채용공고 입력 페이지 (URL·이미지·검색 탭, cheerio+Claude 파싱)
 "use client";
 
 import { useEffect, useRef, useState } from "react";

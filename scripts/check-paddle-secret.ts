@@ -1,3 +1,4 @@
+// Paddle endpoint_secret_key prefix와 로컬 PADDLE_WEBHOOK_SECRET의 매칭을 확인하는 스크립트
 /**
  * Paddle notification setting의 endpoint_secret_key prefix와
  * 로컬 PADDLE_WEBHOOK_SECRET을 매칭만 확인 (전체 값은 출력하지 않음).

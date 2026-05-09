@@ -1,3 +1,4 @@
+// 크레딧 잔액 조회, 소비, AI 어시스트 차감 등 크레딧 관련 DB 헬퍼 함수 모음
 import { eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { credits } from "./schema";

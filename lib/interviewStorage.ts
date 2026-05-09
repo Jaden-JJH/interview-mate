@@ -1,4 +1,4 @@
-// Persists the in-flight interview to localStorage so a stray refresh /
+// 면접 진행 상태를 localStorage에 24시간 TTL로 저장·복원하는 영속화 유틸 (새로고침 복구용)
 // closed tab / OS sleep doesn't lose paid progress. TTL is 24h — beyond
 // that the user's resume/job-posting context is too stale to safely resume
 // (and we already charged a credit, so we err on the side of "let them

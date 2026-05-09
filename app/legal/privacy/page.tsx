@@ -1,3 +1,4 @@
+// 개인정보처리방침 페이지 — 수집 항목, 이용 목적, 보유 기간 등 법적 고지
 import type { Metadata } from "next";
 import Link from "next/link";
 

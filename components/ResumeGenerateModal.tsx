@@ -1,3 +1,4 @@
+// AI 자기소개서 생성 폼과 결과를 보여주는 모달 컴포넌트
 "use client";
 
 import { useState, useEffect, useRef } from "react";

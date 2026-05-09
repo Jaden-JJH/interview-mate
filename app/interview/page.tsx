@@ -1,3 +1,4 @@
+// 면접 진행 페이지 — 카운트다운, 질문·답변 흐름, 꼬리질문, 클로징 질문 처리
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";

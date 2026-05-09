@@ -1,3 +1,4 @@
+// Paddle JS SDK를 초기화하고 클라이언트에서 결제 오버레이를 여는 checkout 유틸
 "use client";
 
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";

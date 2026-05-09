@@ -1,3 +1,4 @@
+// SEO용 sitemap.xml을 동적 생성하는 라우트 — 공개 페이지 URL 목록 반환
 import type { MetadataRoute } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://interview-mate.com";

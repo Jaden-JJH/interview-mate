@@ -1,3 +1,4 @@
+// 현재 유저의 면접 히스토리 목록(최대 50건)을 최신순으로 조회하는 API 라우트
 import { NextResponse } from "next/server";
 import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";

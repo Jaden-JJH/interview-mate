@@ -1,3 +1,4 @@
+// Anthropic SDK 인스턴스와 모델 ID 상수, 텍스트 추출·JSON 파싱 유틸리티를 export하는 모듈
 import Anthropic from "@anthropic-ai/sdk";
 
 export const anthropic = new Anthropic({

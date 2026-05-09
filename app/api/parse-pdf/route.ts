@@ -1,3 +1,4 @@
+// PDF 파일에서 텍스트를 추출하는 API 라우트 (pdftotext 우선, 실패 시 Claude 비전 폴백)
 import { NextRequest, NextResponse } from "next/server";
 import { spawn } from "node:child_process";
 import { anthropic, CLAUDE_HAIKU, extractText } from "@/lib/anthropic";

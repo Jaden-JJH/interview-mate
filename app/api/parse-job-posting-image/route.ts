@@ -1,3 +1,4 @@
+// 채용공고 이미지를 Claude 비전으로 분석해 구조화된 JSON으로 변환하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

@@ -1,3 +1,4 @@
+// 면접 결과 페이지 — 종합 점수, 레이더 차트, 질문별 아코디언 피드백, 컨페티 연출
 "use client";
 
 import { useMemo, useEffect, useRef } from "react";

@@ -1,3 +1,4 @@
+// 이메일로 DB 유저·크레딧 잔액·트랜잭션을 조회해 계정 상태를 확인하는 스크립트
 import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 

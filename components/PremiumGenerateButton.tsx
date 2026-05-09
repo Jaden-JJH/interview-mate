@@ -1,3 +1,4 @@
+// AI 생성·자소서 작성 등 프리미엄 기능을 트리거하는 글로우 버튼 컴포넌트
 "use client";
 
 import { useEffect, useState } from "react";

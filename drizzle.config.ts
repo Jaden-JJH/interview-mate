@@ -1,3 +1,4 @@
+// Drizzle Kit 마이그레이션 설정 — 스키마 경로, DB 방언, 접속 URL을 정의
 import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 

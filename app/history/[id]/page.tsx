@@ -1,3 +1,4 @@
+// 특정 면접 히스토리 상세 페이지 — 레이더 차트·점수 게이지·질문별 아코디언 표시
 "use client";
 
 import { useEffect, useMemo, useState } from "react";

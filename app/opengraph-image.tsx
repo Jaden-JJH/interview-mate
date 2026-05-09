@@ -1,3 +1,4 @@
+// SNS 공유용 1200×630 OG 이미지를 Edge에서 동적 생성하는 라우트
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
