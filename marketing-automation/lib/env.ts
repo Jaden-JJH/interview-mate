@@ -43,4 +43,7 @@ export const env = {
   youtube: {
     apiKey: optional("YOUTUBE_API_KEY"),
   },
+  openai: {
+    apiKey: optional("OPENAI_API_KEY"),
+  },
 };

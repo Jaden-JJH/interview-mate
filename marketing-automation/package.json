@@ -2,7 +2,7 @@
   "name": "marketing-automation",
   "version": "0.1.0",
   "private": true,
-  "description": "인터뷰메이트 SNS 콘텐츠 팩토리 — Threads/IG 자동 발행",
+  "description": "인터뷰메이트 SNS 콘텐츠 팩토리 — Threads/IG/FB/YouTube 자동 발행",
   "type": "module",
   "scripts": {
     "db:init": "tsx scripts/db-init.ts",
@@ -14,6 +14,7 @@
     "pipeline": "tsx scripts/run-pipeline.ts",
     "render-cta": "tsx scripts/render-cta-cards.ts",
     "approve": "tsx scripts/approve-and-queue.ts",
+    "build-shorts": "tsx scripts/build-shorts.ts",
     "hitl-server": "tsx server/hitl-server.ts"
   },
   "dependencies": {

@@ -18,16 +18,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * TODO: 실 발행 전 BLOB_READ_WRITE_TOKEN을 Vercel 대시보드에서 발급하여
  *       .env.local에 추가할 것. (https://vercel.com/docs/storage/vercel-blob)
  */
-export async function uploadCardImage(buffer: Buffer, filename: string): Promise<string> {
+export async function uploadCardImage(
+  buffer: Buffer,
+  filename: string,
+  contentType: string = "image/png",
+): Promise<string> {
   const token = process.env["BLOB_READ_WRITE_TOKEN"];
 
   if (token) {
-    // Vercel Blob 업로드
     const { put } = await import("@vercel/blob");
-    const blob = await put(`card-news/${filename}`, buffer, {
+    const folder = contentType.startsWith("audio") ? "shorts-audio"
+      : contentType.startsWith("video") ? "shorts-video"
+      : "card-news";
+    const blob = await put(`${folder}/${filename}`, buffer, {
       access: "public",
       token,
-      contentType: "image/png",
+      contentType,
       allowOverwrite: true,
     });
     return blob.url;

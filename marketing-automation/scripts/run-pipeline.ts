@@ -4,9 +4,11 @@ import "../lib/env.js";
 import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collector.js";
 import { writeMasterContent } from "../agents/master-writer.js";
 import { transformToIg } from "../agents/transformer-ig.js";
+import { transformToShorts } from "../agents/transformer-shorts.js";
 import { runQualityGate } from "../guards/quality-gate.js";
 import { sendSlack, sendHitlMessage } from "../lib/slack.js";
 import { db } from "../lib/db.js";
+import { env } from "../lib/env.js";
 
 // 정책: Threads = IG carousel 클론. 별도 텍스트 변환(transformer-threads)은 비활성화.
 // IG variant 생성 후 carousel-pipeline에서 IG/Threads 큐 동시 적재.
@@ -44,9 +46,28 @@ async function main() {
   const igVariant = await transformToIg(master);
   console.log(igVariant ? `  ✓ IG 캡션 + 카드 ${igVariant.cards.length}장` : "  · IG 변환 실패");
 
+  // Step 3b: Shorts 변환 (Sonnet) — OPENAI_API_KEY 있을 때만
+  let shortsScript = null;
+  if (env.openai.apiKey) {
+    console.log("\n[Step 3b] YouTube Shorts 각본 변환 (Sonnet)");
+    shortsScript = await transformToShorts({
+      id: master.id,
+      headline: master.headline,
+      body: master.body,
+      topicSlug: topic.slug,
+      keywords: master.keywords ?? [],
+    });
+    console.log(shortsScript ? `  ✓ Shorts 각본 ${shortsScript.scenes.length}씬` : "  · Shorts 변환 실패");
+  } else {
+    console.log("\n[Step 3b] Shorts 건너뜀 (OPENAI_API_KEY 미설정)");
+  }
+
   // Step 4: 품질 게이트 (Haiku)
   console.log("\n[Step 4] 품질 게이트 (Haiku)");
   const allTexts = igVariant ? [igVariant.caption] : [];
+  if (shortsScript) {
+    allTexts.push(...shortsScript.scenes.map((s) => s.narration));
+  }
 
   let allPass = true;
   for (const text of allTexts) {
