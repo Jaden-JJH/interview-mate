@@ -45,7 +45,7 @@ export async function composeVideo(
     writeFileSync(audioPath, scenes[i].audioBuf);
     tmpFiles.push(imgPath, audioPath, clipPath);
 
-    // 이미지 + 오디오 → MPEG-TS 클립
+    // 이미지 + 오디오 → MPEG-TS 클립 (-shortest: 오디오 끝나면 정지)
     await execFileAsync(ffmpeg, [
       "-y",
       "-loop", "1", "-i", imgPath,
@@ -54,7 +54,6 @@ export async function composeVideo(
       "-c:a", "aac", "-b:a", "128k",
       "-pix_fmt", "yuv420p",
       "-vf", "scale=1080:1920",
-      "-t", String(scenes[i].durationSec),
       "-shortest",
       clipPath,
     ], { timeout: 60_000 });
@@ -67,11 +66,12 @@ export async function composeVideo(
   writeFileSync(concatPath, concatEntries.join("\n"));
   tmpFiles.push(concatPath);
 
-  // 클립 연결 → 최종 mp4
+  // 클립 연결 → 최종 mp4 (Shorts 59초 하드캡)
   const outputPath = resolve(tmpDir, outputFilename);
   await execFileAsync(ffmpeg, [
     "-y",
     "-f", "concat", "-safe", "0", "-i", concatPath,
+    "-t", "59",
     "-c:v", "libx264", "-preset", "fast",
     "-c:a", "aac",
     "-movflags", "+faststart",
