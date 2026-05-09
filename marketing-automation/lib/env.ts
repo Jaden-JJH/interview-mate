@@ -38,6 +38,6 @@ export const env = {
   slack: {
     webhookUrl: optional("SLACK_WEBHOOK_URL"),
     botToken: optional("SLACK_BOT_TOKEN"),
-    signingSecret: optional("SLACK_SIGNING_SECRET"),
+    appToken: optional("SLACK_APP_TOKEN"),
   },
 };
