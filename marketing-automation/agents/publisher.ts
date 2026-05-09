@@ -59,6 +59,20 @@ export type PublisherResult =
  * 큐에서 "발행 시각이 도래한 콘텐츠 1건"을 꺼내 발행.
  * 한 번에 1건만 처리해서 cron이 자주 돌아도 부하 분산.
  */
+/**
+ * due가 도래한 pending 행을 전수 처리. 각 행을 순차 발행하고 결과 배열 반환.
+ */
+export async function runPublisherLoop(): Promise<PublisherResult[]> {
+  const results: PublisherResult[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const r = await runPublisherOnce();
+    if (r.kind === "no-due") break;
+    results.push(r);
+  }
+  return results;
+}
+
 export async function runPublisherOnce(): Promise<PublisherResult> {
   const now = new Date().toISOString();
   const row = PICK_DUE.get({ now });

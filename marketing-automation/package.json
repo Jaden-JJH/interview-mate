@@ -8,6 +8,7 @@
     "db:init": "tsx scripts/db-init.ts",
     "seed": "tsx scripts/seed-content.ts",
     "publish": "tsx scripts/run-publisher.ts",
+    "publish:all": "tsx scripts/run-publisher.ts --all",
     "queue:list": "tsx scripts/queue-list.ts",
     "collect": "tsx scripts/collect-sources.ts",
     "pipeline": "tsx scripts/run-pipeline.ts",
