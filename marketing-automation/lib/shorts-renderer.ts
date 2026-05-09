@@ -15,10 +15,7 @@ function buildHtml(scene: ShortsScene, totalScenes: number): string {
   html = html.replace("{{visualCue}}", scene.visualCue);
   html = html.replace("{{headline}}", scene.headline);
 
-  const hint = scene.narration.length > 60
-    ? scene.narration.slice(0, 57) + "..."
-    : scene.narration;
-  html = html.replace("{{narrationHint}}", hint);
+  html = html.replace("{{narrationHint}}", scene.narration);
 
   for (let i = 1; i <= 4; i++) {
     html = html.replace(
