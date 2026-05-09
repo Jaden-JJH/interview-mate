@@ -67,8 +67,14 @@ export async function handleApprove(masterId: number): Promise<ActionResult> {
     .prepare<[number], MasterRow>("SELECT * FROM master_contents WHERE id = ?")
     .get(masterId);
   if (!master) return { text: `master_id=${masterId} 없음`, success: false };
-  if (master.status !== "approved") {
-    return { text: `master.status='${master.status}' — approved 아님`, success: false };
+  if (master.status !== "approved" && master.status !== "failed") {
+    return { text: `master.status='${master.status}' — 승인 불가 (approved/failed만 가능)`, success: false };
+  }
+  if (master.status === "failed") {
+    db.prepare("UPDATE master_contents SET status = 'approved' WHERE id = ?").run(masterId);
+    db.prepare(
+      "UPDATE content_variants SET status = 'approved' WHERE master_id = ? AND status = 'failed'",
+    ).run(masterId);
   }
 
   const variant = db
