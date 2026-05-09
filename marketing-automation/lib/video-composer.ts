@@ -66,11 +66,23 @@ export async function composeVideo(
   writeFileSync(concatPath, concatEntries.join("\n"));
   tmpFiles.push(concatPath);
 
-  // 클립 연결 → 최종 mp4 (Shorts 59초 하드캡)
-  const outputPath = resolve(tmpDir, outputFilename);
+  // 클립 연결 → 1.2배속 → 최종 mp4 (Shorts 59초 하드캡)
+  const rawPath = resolve(tmpDir, `${outputFilename}.raw.mp4`);
   await execFileAsync(ffmpeg, [
     "-y",
     "-f", "concat", "-safe", "0", "-i", concatPath,
+    "-c:v", "libx264", "-preset", "fast",
+    "-c:a", "aac",
+    "-movflags", "+faststart",
+    rawPath,
+  ], { timeout: 120_000 });
+  tmpFiles.push(rawPath);
+
+  const outputPath = resolve(tmpDir, outputFilename);
+  await execFileAsync(ffmpeg, [
+    "-y", "-i", rawPath,
+    "-filter:v", "setpts=PTS/1.2",
+    "-filter:a", "atempo=1.2",
     "-t", "59",
     "-c:v", "libx264", "-preset", "fast",
     "-c:a", "aac",
