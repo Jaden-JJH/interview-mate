@@ -48,31 +48,28 @@
     }
 
     .brand {
-      position: absolute;
-      top: 64px;
-      left: 72px;
       display: flex;
       align-items: center;
       gap: 16px;
-      z-index: 10;
+      margin-bottom: -4px;
     }
 
     .logo {
-      width: 72px;
-      height: 72px;
-      border-radius: 18px;
+      width: 108px;
+      height: 108px;
+      border-radius: 27px;
       object-fit: contain;
       flex-shrink: 0;
     }
 
     .brand-name {
-      font-size: 30px;
+      font-size: 60px;
       font-weight: 700;
       color: #FFFFFF;
       letter-spacing: -0.5px;
     }
 
-    /* 중앙: Lottie + 슬로건 */
+    /* 전체 콘텐츠 — 세로 flex */
     .content {
       position: relative;
       z-index: 10;
@@ -82,18 +79,34 @@
       align-items: center;
       justify-content: center;
       padding: 0 80px;
-      gap: 40px;
+      gap: 36px;
     }
 
     .lottie-wrap {
-      width: 480px;
-      height: 360px;
+      position: relative;
+      width: 640px;
+      height: 480px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .blur-glow {
+      position: absolute;
+      width: 1400px;
+      height: 1050px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      mix-blend-mode: screen;
+      object-fit: contain;
     }
 
     #lottie-alex {
+      position: relative;
+      z-index: 1;
       width: 100%;
       height: 100%;
     }
@@ -121,65 +134,68 @@
       line-height: 1.15;
     }
 
-    /* 하단 큰 CTA 링크 */
+    /* 하단: 링크 + 로고 */
+    .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      margin-top: 8px;
+    }
+
     .cta-link {
-      position: absolute;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      font-size: 56px;
-      font-weight: 800;
-      color: #FFFFFF;
-      letter-spacing: -1px;
-      background: var(--accent);
-      border-radius: 100px;
-      padding: 32px 80px;
-      box-shadow: 0 16px 48px var(--glow);
+      font-size: 40px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      letter-spacing: -0.5px;
       white-space: nowrap;
     }
+
   </style>
 </head>
 <body>
   <div class="card">
     <div class="bg-glow"></div>
 
-    <div class="brand">
-      <img class="logo" src="../../public/icon-512.png" alt="인터뷰메이트" />
-      <span class="brand-name">인터뷰메이트</span>
-    </div>
-
     <div class="content">
+      <div class="brand">
+        <img class="logo" src="../../public/icon-512.png" alt="인터뷰메이트" />
+        <span class="brand-name">인터뷰메이트</span>
+      </div>
       <div class="lottie-wrap">
+        <img class="blur-glow" src="../../public/lottie/fixed_blur.webp" alt="" />
         <div id="lottie-alex"></div>
       </div>
       <div class="slogan">
         <div class="slogan-line-1">합격에 가까워지는</div>
         <div class="slogan-line-2">가장 빠른 면접 연습</div>
       </div>
+      <div class="footer">
+        <div class="cta-link">interview-mate.com</div>
+      </div>
     </div>
-
-    <div class="cta-link">interview-mate.com</div>
   </div>
 
   <script>
-    // Lottie 로드 — alex.json. autoplay 후 중간 프레임 정지(스크린샷 안정).
-    const anim = lottie.loadAnimation({
+    const alexConfig = {
       container: document.getElementById('lottie-alex'),
       renderer: 'svg',
       loop: false,
       autoplay: false,
-      path: '../../public/lottie/alex.json',
-    });
+    };
+    if (window.__lottieAnimData) {
+      alexConfig.animationData = window.__lottieAnimData;
+    } else {
+      alexConfig.path = '../../public/lottie/alex.json';
+    }
+    const anim = lottie.loadAnimation(alexConfig);
 
     window.__lottieReady = false;
     anim.addEventListener('DOMLoaded', () => {
-      // 600프레임 애니메이션의 중간(300) 프레임에서 정지 — 자연스러운 포즈
       anim.goToAndStop(300, true);
       window.__lottieReady = true;
     });
     anim.addEventListener('data_failed', () => {
-      // 로드 실패 시에도 ready 처리해 렌더 진행
       window.__lottieReady = true;
     });
   </script>

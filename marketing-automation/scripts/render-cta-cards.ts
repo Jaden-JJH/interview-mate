@@ -5,12 +5,15 @@
 
 import "../lib/env.js";
 import { dirname, resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 import { uploadCardImage } from "../lib/blob-uploader.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, "../templates/cta-card.html");
+const LOTTIE_ALEX_PATH = resolve(__dirname, "../../public/lottie/alex.json");
+const lottieAlexData = JSON.parse(readFileSync(LOTTIE_ALEX_PATH, "utf8"));
 
 // card-renderer.ts 색 팔레트와 동일 — 인덱스/이름 일치 유지
 const COLORS = [
@@ -34,6 +37,13 @@ async function renderOnce(palette: (typeof COLORS)[number]): Promise<Buffer> {
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 });
+
+    // Lottie JSON을 페이지 로드 전에 주입 — file:// 한국어 경로 XHR 실패 방지
+    await page.evaluateOnNewDocument((data) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as any).window.__lottieAnimData = data;
+    }, lottieAlexData);
+
     await page.goto(`file://${TEMPLATE_PATH}`, { waitUntil: "networkidle0", timeout: 30_000 });
 
     // 색 변수 주입
