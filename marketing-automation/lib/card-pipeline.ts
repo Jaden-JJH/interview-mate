@@ -44,7 +44,7 @@ const INSERT_QUEUE = db.prepare(`
   INSERT INTO content_queue
     (account, channel, text, media_url, format, scheduled_at)
   VALUES
-    ('main', 'instagram', @caption, @media_url, 'cardnews', @scheduled_at)
+    (@account, @channel, @caption, @media_url, 'cardnews', @scheduled_at)
 `);
 
 /**
@@ -79,10 +79,13 @@ export async function queueCardPost(
   const filename = `card-${timestamp}.png`;
   const imageUrl = await uploadCardImage(buffer, filename);
 
-  // 4. DB 큐 적재
+  // 4. DB 큐 적재 — IG + Threads 동시 (같은 이미지·캡션 클론)
   const scheduled = scheduledAt ?? new Date().toISOString();
-  const result = INSERT_QUEUE.run({ caption, media_url: imageUrl, scheduled_at: scheduled });
+  const base = { caption, media_url: imageUrl, scheduled_at: scheduled };
 
-  const queueId = result.lastInsertRowid as number;
+  const igResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "instagram" });
+  INSERT_QUEUE.run({ ...base, account: "main", channel: "threads" });
+
+  const queueId = igResult.lastInsertRowid as number;
   return { queueId, imageUrl };
 }
