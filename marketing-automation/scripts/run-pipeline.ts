@@ -5,7 +5,7 @@ import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collect
 import { writeMasterContent } from "../agents/master-writer.js";
 import { transformToIg } from "../agents/transformer-ig.js";
 import { runQualityGate } from "../guards/quality-gate.js";
-import { sendSlack } from "../lib/slack.js";
+import { sendSlack, sendHitlMessage } from "../lib/slack.js";
 import { db } from "../lib/db.js";
 
 // 정책: Threads = IG carousel 클론. 별도 텍스트 변환(transformer-threads)은 비활성화.
@@ -76,27 +76,16 @@ async function main() {
 
   console.log(`\n  품질 게이트: ${allPass ? "✓ 전체 통과" : "✗ 일부 실패"}`);
 
-  // Step 5: Slack HITL 알림
-  const cardsPreview = (igVariant?.cards ?? [])
-    .map((c, i) => `${i + 1}. [${c.type}] ${c.title} — ${c.body.slice(0, 40)}`)
-    .join("\n");
-
-  const slackMsg = [
-    `📝 *W2 콘텐츠 초안 준비됨* (${allPass ? "품질 통과 ✅" : "품질 실패 ⚠️"})`,
-    `*주제:* ${master.headline}`,
-    `*슬러그:* ${topic.slug}  |  *master_id:* ${master.id}`,
-    "",
-    `*IG 캡션:* ${igVariant?.caption.slice(0, 200) ?? "생성 실패"}${(igVariant?.caption.length ?? 0) > 200 ? "..." : ""}`,
-    "",
-    `*카드 ${igVariant?.cards.length ?? 0}장 + CTA:*`,
-    cardsPreview || "(생성 실패)",
-    "",
-    `발행 정책: IG carousel 4장 → Threads 동일 클론`,
-    `승인 후: \`npx tsx scripts/approve-and-queue.ts ${master.id}\``,
-  ].join("\n");
-
-  await sendSlack(slackMsg);
-  console.log("\n✓ Slack 알림 전송");
+  // Step 5: Slack HITL 인터랙티브 메시지 (Bot Token 있으면 버튼, 없으면 텍스트 fallback)
+  await sendHitlMessage({
+    masterId: master.id,
+    headline: master.headline,
+    topicSlug: topic.slug,
+    qualityPass: allPass,
+    caption: igVariant?.caption,
+    cards: igVariant?.cards,
+  });
+  console.log("\n✓ Slack HITL 메시지 전송");
   console.log(`\n✅ 파이프라인 완료. master_id=${master.id}`);
   console.log(`  내용 확인: npx tsx scripts/queue-list.ts`);
 }

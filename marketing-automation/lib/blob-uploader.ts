@@ -28,6 +28,7 @@ export async function uploadCardImage(buffer: Buffer, filename: string): Promise
       access: "public",
       token,
       contentType: "image/png",
+      allowOverwrite: true,
     });
     return blob.url;
   }
