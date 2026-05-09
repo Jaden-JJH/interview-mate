@@ -30,6 +30,7 @@ const INSERT_QUEUE = db.prepare(`
 export type QueueCarouselResult = {
   igQueueId: number;
   threadsQueueId: number;
+  facebookQueueId: number;
   imageUrls: string[];
   colorIndex: 0 | 1 | 2;
 };
@@ -95,10 +96,12 @@ export async function queueCarouselPost(
 
   const igResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "instagram" });
   const threadsResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "threads" });
+  const fbResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "facebook" });
 
   return {
     igQueueId: igResult.lastInsertRowid as number,
     threadsQueueId: threadsResult.lastInsertRowid as number,
+    facebookQueueId: fbResult.lastInsertRowid as number,
     imageUrls,
     colorIndex,
   };

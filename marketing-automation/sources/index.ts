@@ -1,20 +1,17 @@
-// 소스 어댑터 통합 진입점 — 활성: naver-news, youtube-feed, wanted
+// 소스 어댑터 통합 진입점 — 활성: naver-news, youtube-feed (Data API v3)
 
 export * from "./types.js";
 export { fetchArticles as fetchNaverNews } from "./naver-news.js";
 export { fetchArticles as fetchYouTube } from "./youtube-feed.js";
-export { fetchArticles as fetchWanted } from "./wanted.js";
 
 import { fetchArticles as fetchNaverNews } from "./naver-news.js";
 import { fetchArticles as fetchYouTube } from "./youtube-feed.js";
-import { fetchArticles as fetchWanted } from "./wanted.js";
 import type { SourceArticle } from "./types.js";
 
 export async function fetchAllArticles(): Promise<SourceArticle[]> {
   const fetchers = [
     { name: "naver-news", fn: fetchNaverNews },
     { name: "youtube-feed", fn: fetchYouTube },
-    { name: "wanted", fn: fetchWanted },
   ];
 
   const results = await Promise.allSettled(fetchers.map(({ fn }) => fn()));

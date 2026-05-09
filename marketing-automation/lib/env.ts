@@ -40,4 +40,7 @@ export const env = {
     botToken: optional("SLACK_BOT_TOKEN"),
     appToken: optional("SLACK_APP_TOKEN"),
   },
+  youtube: {
+    apiKey: optional("YOUTUBE_API_KEY"),
+  },
 };

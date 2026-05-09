@@ -42,7 +42,7 @@ export async function handleApprove(masterId: number): Promise<ActionResult> {
   db.prepare("UPDATE content_variants SET status = 'queued' WHERE id = ?").run(variant.id);
 
   return {
-    text: `✅ 승인 완료 → 큐 적재\nIG queue #${result.igQueueId} | Threads queue #${result.threadsQueueId}\n색상: ${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]}`,
+    text: `✅ 승인 완료 → 큐 적재\nIG #${result.igQueueId} | Threads #${result.threadsQueueId} | FB #${result.facebookQueueId}\n색상: ${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]}`,
     success: true,
   };
 }
