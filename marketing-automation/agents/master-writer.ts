@@ -80,12 +80,22 @@ JSON으로만 응답:
     const { headline, keywords, fullBody } = parsed;
     if (!headline || !fullBody) return null;
 
+    // 길이 가드: 600자 미만 또는 1500자 초과는 'failed' 처리 (HITL 통과 차단)
+    const len = (fullBody as string).length;
+    const initialStatus = len < 600 || len > 1500 ? "failed" : "draft";
+    if (initialStatus === "failed") {
+      console.error(`  · master body 길이 가드 위반: ${len}자 (목표 800-1200자)`);
+    }
+
     const result = db
       .prepare(
         `INSERT INTO master_contents (source_ids, topic_slug, headline, body, keywords, status)
-         VALUES (?, ?, ?, ?, ?, 'draft')`
+         VALUES (?, ?, ?, ?, ?, ?)`
       )
-      .run(JSON.stringify(sourceIds), topicSlug, headline, fullBody, JSON.stringify(keywords ?? []));
+      .run(JSON.stringify(sourceIds), topicSlug, headline, fullBody, JSON.stringify(keywords ?? []), initialStatus);
+
+    // 길이 위반 시 forensics 용으로 행은 남기되 파이프라인은 중단.
+    if (initialStatus === "failed") return null;
 
     return {
       id: result.lastInsertRowid as number,

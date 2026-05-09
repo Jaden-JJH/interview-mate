@@ -1,7 +1,7 @@
 // W2 파이프라인 1회 실행 — 수집→Master→Threads·IG 변환→품질 게이트→Slack HITL 알림
 
 import "../lib/env.js";
-import { collectAndSelectTopic } from "../agents/data-collector.js";
+import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collector.js";
 import { writeMasterContent } from "../agents/master-writer.js";
 import { transformToThreads } from "../agents/transformer-threads.js";
 import { transformToIg } from "../agents/transformer-ig.js";
@@ -27,12 +27,15 @@ async function main() {
   console.log("\n[Step 2] Master Content 생성 (Sonnet)");
   const master = await writeMasterContent(topic.slug, topic.headline, topic.selectedIds);
   if (!master) {
-    const msg = `❌ W2 파이프라인: Master Content 생성 실패 (주제: ${topic.headline})`;
+    const msg = `❌ W2 파이프라인: Master Content 생성 실패 (주제: ${topic.headline}). dedup 미등록 — 다음 사이클 재시도 가능.`;
     console.log("  · 생성 실패");
     await sendSlack(msg);
     return;
   }
   console.log(`  ✓ Master [id=${master.id}]: ${master.headline} (${master.body.length}자)`);
+
+  // Master 저장 성공 — 이제 dedup_index 등록(24h 재발행 차단).
+  registerDedupSlug(topic.slug);
 
   // Step 3: Threads 변환 (Sonnet)
   console.log("\n[Step 3] Threads 변환 (Sonnet)");
@@ -69,6 +72,11 @@ async function main() {
   if (allPass) {
     db.prepare(
       "UPDATE content_variants SET status = 'approved' WHERE master_id = ? AND status = 'draft'"
+    ).run(master.id);
+  } else {
+    // 품질 게이트 실패 — 'draft' 잔류 변형도 'failed'로 일관 처리 (publisher 누수 방지).
+    db.prepare(
+      "UPDATE content_variants SET status = 'failed' WHERE master_id = ? AND status = 'draft'"
     ).run(master.id);
   }
 

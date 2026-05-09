@@ -68,6 +68,12 @@ JSON으로만 응답:
 
     for (const post of posts) {
       const check = checkForbiddenWords(post.text);
+      // 500자 초과는 publisher가 reject. 사전에 'failed' 처리.
+      const tooLong = post.text.length > 500;
+      const status = !check.pass || tooLong ? "failed" : "draft";
+      if (tooLong) {
+        console.error(`  · threads 편 ${post.variantIndex} 500자 초과(${post.text.length}자) → failed`);
+      }
       db.prepare(
         `INSERT INTO content_variants (master_id, channel, variant_index, text, has_cta, status)
          VALUES (?, 'threads', ?, ?, ?, ?)`
@@ -76,7 +82,7 @@ JSON으로만 응답:
         post.variantIndex,
         post.text,
         post.hasCta ? 1 : 0,
-        check.pass ? "draft" : "failed"
+        status
       );
     }
 

@@ -86,18 +86,25 @@ JSON으로만 응답:
     if (!parsed.topTopic) return null;
 
     const { slug, headline, selectedIndices, categories } = parsed.topTopic;
-    const selectedIds: number[] = (selectedIndices as number[])
+    const selectedIds: number[] = ((selectedIndices ?? []) as number[])
       .map((i: number) => articles[i]?.id)
       .filter((id): id is number => id != null);
 
-    db.prepare(`
-      INSERT OR REPLACE INTO dedup_index (topic_slug, expires_at)
-      VALUES (?, datetime('now', '+24 hours'))
-    `).run(slug);
+    if (!slug || selectedIds.length === 0) return null;
 
+    // dedup 등록은 호출자(run-pipeline)에서 master-writer 성공 후 수행.
+    // 여기서 등록하면 master 실패 시 24h 동안 동일 주제 재시도 불가.
     return { slug, headline, selectedIds, categories: categories ?? [] };
   } catch (e) {
     console.error("  · data-collector 파싱 오류:", e);
     return null;
   }
+}
+
+/** master-writer 성공 직후 호출 — 24h 동일 주제 재선정 차단. */
+export function registerDedupSlug(slug: string): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO dedup_index (topic_slug, expires_at)
+     VALUES (?, datetime('now', '+24 hours'))`
+  ).run(slug);
 }

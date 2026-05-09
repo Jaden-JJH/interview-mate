@@ -8,10 +8,12 @@ import type { MasterContent } from "./master-writer.js";
 
 const client = new Anthropic({ apiKey: env.anthropic.apiKey });
 
+// IG 카드뉴스 — card-renderer.ts(`CardData`)와 직접 호환되도록 tags 필드 포함.
 export type IgCard = {
   cardNumber: number;
   title: string;
   body: string;
+  tags: string[];
   type: "cover" | "insight" | "cta";
 };
 
@@ -44,14 +46,15 @@ export async function transformToIg(master: MasterContent): Promise<IgVariant | 
 IG 캡션과 카드 스펙 작성:
 - caption: 첫 줄 강한 훅 + 핵심 2-3줄 + 해시태그 5-8개 (#면접준비 #취업 #커리어 등)
 - cards: cover 1장 → insight 4-5장 → cta 1장
+- 각 카드의 tags: 카드 주제와 어울리는 해시태그 2-3개 (# 없이 단어만)
 
 JSON으로만 응답:
 {
   "caption": "...",
   "cards": [
-    {"cardNumber": 1, "title": "제목 20자 이내", "body": "본문 30자 이내", "type": "cover"},
-    {"cardNumber": 2, "title": "...", "body": "...", "type": "insight"},
-    {"cardNumber": 7, "title": "팔로우하면 면접 꿀팁 매일!", "body": "@intv_mate", "type": "cta"}
+    {"cardNumber": 1, "title": "제목 20자 이내", "body": "본문 30자 이내", "tags": ["면접준비", "취업"], "type": "cover"},
+    {"cardNumber": 2, "title": "...", "body": "...", "tags": ["...", "..."], "type": "insight"},
+    {"cardNumber": 7, "title": "팔로우하면 면접 꿀팁 매일!", "body": "@intv_mate", "tags": ["intv_mate"], "type": "cta"}
   ]
 }`,
       },
@@ -62,15 +65,25 @@ JSON으로만 응답:
     const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
     const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
     const { caption, cards } = parsed;
-    if (!caption || !cards) return null;
+    if (!caption || !cards || !Array.isArray(cards)) return null;
+
+    // tags 누락 카드는 master.keywords로 fallback (card-renderer 빈 태그 방지)
+    const fallbackTags = master.keywords.slice(0, 3);
+    const normalized: IgCard[] = (cards as Partial<IgCard>[]).map((c, i) => ({
+      cardNumber: c.cardNumber ?? i + 1,
+      title: c.title ?? "",
+      body: c.body ?? "",
+      tags: Array.isArray(c.tags) && c.tags.length > 0 ? c.tags : fallbackTags,
+      type: c.type ?? "insight",
+    }));
 
     const check = checkForbiddenWords(caption);
     db.prepare(
       `INSERT INTO content_variants (master_id, channel, variant_index, text, media_spec, has_cta, status)
        VALUES (?, 'instagram', 0, ?, ?, 1, ?)`
-    ).run(master.id, caption, JSON.stringify(cards), check.pass ? "draft" : "failed");
+    ).run(master.id, caption, JSON.stringify(normalized), check.pass ? "draft" : "failed");
 
-    return { caption, cards };
+    return { caption, cards: normalized };
   } catch (e) {
     console.error("  · transformer-ig 파싱 오류:", e);
     return null;
