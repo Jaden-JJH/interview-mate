@@ -1,4 +1,4 @@
-// Master Content → YouTube Shorts 30~60초 각본 (5씬 JSON)
+// Master Content → YouTube Shorts 30~40초 각본 (4씬 JSON)
 
 import Anthropic from "@anthropic-ai/sdk";
 import { env } from "../lib/env.js";
@@ -36,13 +36,13 @@ export async function transformToShorts(master: MasterInput): Promise<ShortsScri
     system: [
       {
         type: "text",
-        text: `YouTube Shorts 각본 작가입니다. 채용·면접·커리어 콘텐츠를 30~60초 세로 영상 각본으로 변환합니다.
+        text: `YouTube Shorts 각본 작가입니다. 채용·면접·커리어 콘텐츠를 30~40초 세로 영상 각본으로 변환합니다.
 
 규칙:
-- 정확히 4씬. 씬1은 hook(2~3초, 강렬한 한 문장), 씬4는 CTA(5초).
-- 나레이션은 자연스러운 한국어 구어체. 총 나레이션 **150~220자** (한국어 TTS 기준 약 30~40초).
-- 씬당 durationHint 합계 = **30~40초**. 절대 45초 초과 금지.
-- 한국어 TTS는 초당 약 5~6자. 각 씬 나레이션 글자 수 × 0.18초 ≈ durationHint 가 되도록.
+- 정확히 4씬. 씬1은 hook(3초), 씬4는 CTA(4초).
+- 나레이션은 자연스러운 한국어 구어체.
+- **총 나레이션 180~240자**. 한국어 TTS는 초당 약 5.5자이므로 220자 ≈ 40초.
+- 씬당 durationHint 합계 = **30~40초**.
 - tags: 한국어 해시태그 5~8개 (# 없이 텍스트만).
 - title: YouTube 제목 (40자 이내, 호기심 유발). #Shorts 미포함(자동 추가).
 - description: 2~3줄 설명 + "면접 연습은 interview-mate.com"
@@ -65,10 +65,10 @@ JSON으로만 응답:
   "description": "설명",
   "tags": ["태그1", "태그2"],
   "scenes": [
-    { "sceneNumber": 1, "headline": "화면 표시 텍스트(15자 이내)", "narration": "TTS 나레이션(짧게)", "visualCue": "hook", "durationHint": 3 },
-    { "sceneNumber": 2, ... },
-    { "sceneNumber": 3, ... },
-    { "sceneNumber": 4, "headline": "CTA", "narration": "마무리 한마디", "visualCue": "cta", "durationHint": 5 }
+    { "sceneNumber": 1, "headline": "화면 텍스트(15자)", "narration": "TTS 나레이션", "visualCue": "hook", "durationHint": 3 },
+    { "sceneNumber": 2, "headline": "...", "narration": "...", "visualCue": "insight", "durationHint": 15 },
+    { "sceneNumber": 3, "headline": "...", "narration": "...", "visualCue": "tip", "durationHint": 15 },
+    { "sceneNumber": 4, "headline": "CTA", "narration": "마무리", "visualCue": "cta", "durationHint": 4 }
   ]
 }`,
       },
@@ -79,14 +79,26 @@ JSON으로만 응답:
     const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
     const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as ShortsScript;
 
-    if (!parsed.scenes || parsed.scenes.length !== 4) return null;
-    if (!parsed.title || !parsed.description) return null;
+    if (!parsed.scenes || parsed.scenes.length !== 4) {
+      console.error(`  · Shorts 검증 실패: 씬 ${parsed.scenes?.length ?? 0}개 (4개 필요)`);
+      return null;
+    }
+    if (!parsed.title || !parsed.description) {
+      console.error("  · Shorts 검증 실패: title 또는 description 누락");
+      return null;
+    }
 
     const totalDuration = parsed.scenes.reduce((s, sc) => s + sc.durationHint, 0);
-    if (totalDuration < 20 || totalDuration > 45) return null;
+    if (totalDuration > 50) {
+      console.error(`  · Shorts 검증 실패: durationHint 합계 ${totalDuration}초 (50초 초과)`);
+      return null;
+    }
 
     const totalChars = parsed.scenes.reduce((s, sc) => s + sc.narration.length, 0);
-    if (totalChars > 250) return null;
+    if (totalChars > 350) {
+      console.error(`  · Shorts 검증 실패: 나레이션 총 ${totalChars}자 (350자 초과)`);
+      return null;
+    }
 
     db.prepare(
       `INSERT INTO content_variants (master_id, channel, text, media_spec, status)
