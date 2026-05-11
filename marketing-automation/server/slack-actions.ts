@@ -94,11 +94,35 @@ export async function handleApprove(masterId: number): Promise<ActionResult> {
     return { text: "media_spec JSON 파싱 실패", success: false };
   }
 
-  // 1. IG/Threads/FB 큐 적재 (즉시)
+  // 1. IG/Threads 큐 적재 (IG 즉시, Threads 1시간 후)
   const result = await queueCarouselPost(cards, variant.text);
   db.prepare("UPDATE content_variants SET status = 'queued' WHERE id = ?").run(variant.id);
 
-  // 2. Shorts 빌드 + 업로드 (백그라운드 — 완료 시 Slack 후속 알림)
+  // 2. Blog 큐 적재 (WordPress 설정 시)
+  let blogStatus = "📝 Blog: 건너뜀 (WORDPRESS_SITE_URL 미설정)";
+  if (env.wordpress?.siteUrl) {
+    const blogVariant = db
+      .prepare<[number], { id: number; text: string }>(
+        `SELECT id, text FROM content_variants
+         WHERE master_id = ? AND channel = 'blog' AND status IN ('approved', 'draft')
+         ORDER BY id DESC LIMIT 1`,
+      )
+      .get(masterId);
+
+    if (blogVariant) {
+      const scheduled = new Date().toISOString();
+      db.prepare(
+        `INSERT INTO content_queue (account, channel, text, topic, format, scheduled_at)
+         VALUES ('main', 'blog', ?, ?, 'seo-article', ?)`,
+      ).run(blogVariant.text, String(masterId), scheduled);
+      db.prepare("UPDATE content_variants SET status = 'queued' WHERE id = ?").run(blogVariant.id);
+      blogStatus = "📝 Blog: 큐 적재 완료";
+    } else {
+      blogStatus = "📝 Blog: variant 없음 (건너뜀)";
+    }
+  }
+
+  // 3. Shorts 빌드 + 업로드 (백그라운드 — 완료 시 Slack 후속 알림)
   const hasShortsVariant = db
     .prepare<[number], { cnt: number }>(
       "SELECT COUNT(*) as cnt FROM content_variants WHERE master_id = ? AND channel = 'youtube-shorts'",
@@ -118,7 +142,7 @@ export async function handleApprove(masterId: number): Promise<ActionResult> {
   }
 
   return {
-    text: `✅ 승인 완료 — 5채널 발행\nIG #${result.igQueueId} | Threads #${result.threadsQueueId} | FB #${result.facebookQueueId} → 큐 적재\n${shortsStatus}\n색상: ${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]}`,
+    text: `✅ 승인 완료\nIG #${result.igQueueId} (즉시) | Threads #${result.threadsQueueId} (1시간 후) → 큐 적재\n${blogStatus}\n${shortsStatus}\n색상: ${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]}`,
     success: true,
   };
 }

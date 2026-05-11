@@ -5,7 +5,7 @@ import {
   publishImage as publishThreadsImage,
   publishCarousel as publishThreadsCarousel,
 } from "../lib/threads.js";
-import { publishMultiPhoto } from "../lib/facebook.js";
+import { publishBlogPost } from "../lib/blog-publisher.js";
 
 /** media_url이 JSON 배열이면 carousel용 URL 배열, 단일 string이면 null. */
 function tryParseCarouselUrls(media_url: string | null): string[] | null {
@@ -107,14 +107,8 @@ export async function runPublisherOnce(): Promise<PublisherResult> {
       } else {
         throw new Error("instagram 채널은 media_url 필수 (텍스트 단독 발행 불가)");
       }
-    } else if (row.channel === "facebook") {
-      if (carouselUrls) {
-        result = await publishMultiPhoto(row.text, carouselUrls);
-      } else if (row.media_url) {
-        result = await publishMultiPhoto(row.text, [row.media_url]);
-      } else {
-        throw new Error("facebook 채널은 media_url 필수");
-      }
+    } else if (row.channel === "blog") {
+      result = await publishBlogPost(row.id);
     } else {
       throw new Error(`미지원 채널: ${row.channel}`);
     }

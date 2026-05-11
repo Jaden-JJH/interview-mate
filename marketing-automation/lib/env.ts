@@ -49,4 +49,12 @@ export const env = {
   openai: {
     apiKey: optional("OPENAI_API_KEY"),
   },
+  wordpress: {
+    siteUrl: optional("WORDPRESS_SITE_URL") ?? "",
+    username: optional("WORDPRESS_USERNAME") ?? "",
+    appPassword: optional("WORDPRESS_APP_PASSWORD") ?? "",
+  },
+  unsplash: {
+    accessKey: optional("UNSPLASH_ACCESS_KEY"),
+  },
 };

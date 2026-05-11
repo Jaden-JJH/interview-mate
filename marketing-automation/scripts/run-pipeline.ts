@@ -5,6 +5,7 @@ import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collect
 import { writeMasterContent } from "../agents/master-writer.js";
 import { transformToIg } from "../agents/transformer-ig.js";
 import { transformToShorts } from "../agents/transformer-shorts.js";
+import { transformToBlog } from "../agents/transformer-blog.js";
 import { runQualityGate } from "../guards/quality-gate.js";
 import { sendSlack, sendHitlMessage } from "../lib/slack.js";
 import { db } from "../lib/db.js";
@@ -62,11 +63,24 @@ async function main() {
     console.log("\n[Step 3b] Shorts 건너뜀 (OPENAI_API_KEY 미설정)");
   }
 
+  // Step 3c: Blog 변환 (Sonnet) — WORDPRESS_SITE_URL 있을 때만
+  let blogVariant = null;
+  if (env.wordpress?.siteUrl) {
+    console.log("\n[Step 3c] Blog SEO 변환 (Sonnet)");
+    blogVariant = await transformToBlog(master);
+    console.log(blogVariant ? `  ✓ Blog: ${blogVariant.title} (${blogVariant.htmlBody.replace(/<[^>]*>/g, "").length}자)` : "  · Blog 변환 실패");
+  } else {
+    console.log("\n[Step 3c] Blog 건너뜀 (WORDPRESS_SITE_URL 미설정)");
+  }
+
   // Step 4: 품질 게이트 (Haiku)
   console.log("\n[Step 4] 품질 게이트 (Haiku)");
   const allTexts = igVariant ? [igVariant.caption] : [];
   if (shortsScript) {
     allTexts.push(...shortsScript.scenes.map((s) => s.narration));
+  }
+  if (blogVariant) {
+    allTexts.push(blogVariant.htmlBody.replace(/<[^>]*>/g, ""));
   }
 
   let allPass = true;

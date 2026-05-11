@@ -1,4 +1,4 @@
-// W3 carousel 파이프라인 — Master + IG variant → 4장 carousel(IG/Threads 동시 큐 적재).
+// W3 carousel 파이프라인 — Master + IG variant → 4장 carousel(IG 즉시 + Threads 1시간 후 큐 적재).
 // 3장 카드(cover+insight×2) puppeteer 렌더 + Vercel Blob 업로드 + 사전 자산 CTA URL 부착.
 // content_queue.media_url 컬럼에 JSON array(URL 4개)로 저장 → publisher가 분기 처리.
 
@@ -30,7 +30,6 @@ const INSERT_QUEUE = db.prepare(`
 export type QueueCarouselResult = {
   igQueueId: number;
   threadsQueueId: number;
-  facebookQueueId: number;
   imageUrls: string[];
   colorIndex: 0 | 1 | 2;
 };
@@ -89,19 +88,23 @@ export async function queueCarouselPost(
   const ctaUrl = getCtaCardUrl(colorIndex);
   const imageUrls = [...renderedUrls, ctaUrl];
 
-  // 큐 적재 — IG + Threads
-  const scheduled = scheduledAt ?? new Date().toISOString();
+  // 큐 적재 — IG 먼저, Threads는 1시간 후 (Meta 봇 탐지 회피)
+  const igTime = scheduledAt ?? new Date().toISOString();
+  const threadsTime = new Date(new Date(igTime).getTime() + 60 * 60 * 1000).toISOString();
   const mediaUrlJson = JSON.stringify(imageUrls);
-  const base = { caption, media_url: mediaUrlJson, scheduled_at: scheduled };
 
-  const igResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "instagram" });
-  const threadsResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "threads" });
-  const fbResult = INSERT_QUEUE.run({ ...base, account: "main", channel: "facebook" });
+  const igResult = INSERT_QUEUE.run({
+    caption, media_url: mediaUrlJson, scheduled_at: igTime,
+    account: "main", channel: "instagram",
+  });
+  const threadsResult = INSERT_QUEUE.run({
+    caption, media_url: mediaUrlJson, scheduled_at: threadsTime,
+    account: "main", channel: "threads",
+  });
 
   return {
     igQueueId: igResult.lastInsertRowid as number,
     threadsQueueId: threadsResult.lastInsertRowid as number,
-    facebookQueueId: fbResult.lastInsertRowid as number,
     imageUrls,
     colorIndex,
   };

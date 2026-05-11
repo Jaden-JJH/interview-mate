@@ -4,7 +4,7 @@
 // 동작:
 //   1. master_contents.status = 'approved' 검증
 //   2. content_variants(channel='instagram', status='approved') 1건 조회 → media_spec(IgCard[]) 파싱
-//   3. carousel-pipeline.queueCarouselPost() 호출 → IG/Threads/Facebook 큐 적재
+//   3. carousel-pipeline.queueCarouselPost() 호출 → IG(즉시)/Threads(1시간 후) 큐 적재
 //   4. content_variants.status = 'queued' 업데이트
 
 import "../lib/env.js";
@@ -84,15 +84,14 @@ async function main() {
 
   // 3. carousel-pipeline 호출
   const result = await queueCarouselPost(cards, variant.text, scheduledAt);
-  console.log(`\n✓ IG queue id: ${result.igQueueId}`);
-  console.log(`✓ Threads queue id: ${result.threadsQueueId}`);
-  console.log(`✓ Facebook queue id: ${result.facebookQueueId}`);
+  console.log(`\n✓ IG queue id: ${result.igQueueId} (즉시)`);
+  console.log(`✓ Threads queue id: ${result.threadsQueueId} (1시간 후)`);
   console.log(`  colorIndex: ${result.colorIndex} (${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]})`);
 
   // 4. variant status 업데이트
   db.prepare(`UPDATE content_variants SET status = 'queued' WHERE id = ?`).run(variant.id);
 
-  console.log(`\n✅ 완료. 다음: \`npm run publish\` (또는 cron이 자동 발행).`);
+  console.log(`\n✅ 완료. 다음: cron이 자동 발행 (IG 즉시, Threads 1시간 후).`);
 }
 
 main().catch((e) => {
