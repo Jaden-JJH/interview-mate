@@ -1,4 +1,4 @@
-// Slack 알림 헬퍼 — webhook(단방향) + Bot Token(Block Kit 인터랙티브)
+// Slack 알림 헬퍼 — webhook(단방향) + Bot Token(Block Kit 인터랙티브 + 파일 업로드)
 import { env } from "./env.js";
 
 export async function sendSlack(text: string): Promise<void> {
@@ -22,6 +22,7 @@ export type HitlMessageParams = {
   caption?: string;
   cards?: { type: string; title: string; body: string }[];
   channel?: string;
+  blogTitle?: string;
 };
 
 export async function sendHitlMessage(params: HitlMessageParams): Promise<void> {
@@ -85,6 +86,17 @@ function buildBlocks(p: HitlMessageParams): object[] {
         text: `*카드 ${p.cards?.length ?? 0}장 + CTA:*\n${cardsPreview || "_(생성 실패)_"}`,
       },
     },
+    ...(p.blogTitle
+      ? [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*블로그 초안:* 📎 \`${p.blogTitle}\` — 파일 별도 첨부`,
+            },
+          },
+        ]
+      : []),
     { type: "divider" },
     {
       type: "actions",
@@ -133,5 +145,53 @@ function buildFallbackText(p: HitlMessageParams): string {
     "",
     `발행 정책: IG carousel 4장 → Threads 동일 클론`,
     `승인 후: \`npx tsx scripts/approve-and-queue.ts ${p.masterId}\``,
+    ...(p.blogTitle ? [``, `*블로그 초안:* 📎 ${p.blogTitle} — 파일 별도 첨부`] : []),
   ].join("\n");
+}
+
+export async function uploadBlogFile(params: {
+  content: string;
+  filename: string;
+  title: string;
+  channel: string;
+  token: string;
+}): Promise<void> {
+  const { content, filename, title, channel, token } = params;
+  const bytes = Buffer.from(content, "utf-8");
+
+  // Step 1: 업로드 URL 발급
+  const urlRes = await fetch("https://slack.com/api/files.getUploadURLExternal", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ filename, length: String(bytes.length) }),
+  });
+  const urlData = (await urlRes.json()) as { ok: boolean; upload_url?: string; file_id?: string; error?: string };
+  if (!urlData.ok || !urlData.upload_url || !urlData.file_id) {
+    console.error("  · Slack 파일 업로드 URL 발급 실패:", urlData.error);
+    return;
+  }
+
+  // Step 2: 파일 내용 업로드 (Content-Type 지정 없음 — S3 pre-signed URL과 충돌 방지)
+  const uploadRes = await fetch(urlData.upload_url, {
+    method: "POST",
+    body: bytes,
+  });
+  if (!uploadRes.ok) {
+    console.error("  · Slack 파일 업로드 실패:", uploadRes.status);
+    return;
+  }
+
+  // Step 3: 채널에 공유
+  const completeRes = await fetch("https://slack.com/api/files.completeUploadExternal", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      files: [{ id: urlData.file_id, title }],
+      channel_id: channel,
+    }),
+  });
+  const completeData = (await completeRes.json()) as { ok: boolean; error?: string };
+  if (!completeData.ok) {
+    console.error("  · Slack 파일 채널 공유 실패:", completeData.error, "(channel_id가 이름이 아닌 ID 형식이어야 합니다 — C0123...)");
+  }
 }

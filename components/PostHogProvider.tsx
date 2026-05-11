@@ -1,9 +1,10 @@
-// PostHog 클라이언트를 초기화하고 페이지뷰를 자동 추적하는 프로바이더 컴포넌트
+// PostHog 클라이언트를 초기화하고 페이지뷰 자동 추적 + Clerk 유저 식별을 담당하는 프로바이더 컴포넌트
 "use client";
 
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { useEffect, Suspense } from "react";
 
 function PostHogPageView() {
@@ -16,6 +17,25 @@ function PostHogPageView() {
     const url = pathname + (searchParams.toString() ? `?${searchParams}` : "");
     ph.capture("$pageview", { $current_url: url });
   }, [pathname, searchParams, ph]);
+
+  return null;
+}
+
+function PostHogUserIdentify() {
+  const { user, isLoaded } = useUser();
+  const ph = usePostHog();
+
+  useEffect(() => {
+    if (!ph || !isLoaded) return;
+    if (user) {
+      ph.identify(user.id, {
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName ?? undefined,
+      });
+    } else {
+      ph.reset();
+    }
+  }, [user, isLoaded, ph]);
 
   return null;
 }
@@ -38,6 +58,7 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
       <Suspense fallback={null}>
         <PostHogPageView />
       </Suspense>
+      <PostHogUserIdentify />
       {children}
     </PHProvider>
   );

@@ -1,4 +1,4 @@
-// W7 블로그 변환기 — Master Content → SEO long-form HTML (WordPress 발행용)
+// W7 블로그 변환기 — Master Content → SEO long-form HTML (티스토리/WordPress 발행용)
 
 import Anthropic from "@anthropic-ai/sdk";
 import { env } from "../lib/env.js";
@@ -34,14 +34,15 @@ export async function transformToBlog(
 
 구조 규칙:
 - 1500~3000자 (한국어 기준)
-- H2 2-3개, H3 2-4개 (시맨틱 구조)
-- 첫 문단: 검색 의도 정확히 충족하는 도입부 (150자 내)
-- 본문: 인사이트, 실전 팁, 예시
-- 마무리: 핵심 요약 + 자연스러운 CTA ("더 깊은 면접 연습이 필요하다면 인터뷰메이트에서 AI 모의 면접을 체험해보세요.")
+- 도입부 (150자 내): 검색 의도 정확히 충족
+- 핵심 요약 박스: 도입부 바로 아래. <div style="background:#f0f4ff;border-left:4px solid #3b82f6;padding:16px 20px;border-radius:6px;margin:24px 0"><strong>📌 이 글의 핵심</strong><ul style="margin:8px 0 0 0;padding-left:20px">...3줄 이내 핵심 포인트...</ul></div>
+- 목차(TOC): 핵심 요약 박스 아래. <nav style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:24px 0"><strong>📋 목차</strong><ol style="margin:8px 0 0 0;padding-left:20px">...H2 앵커 링크 목록...</ol></nav>
+- H2 2-3개 (id 앵커 포함, 예: <h2 id="section-1">제목</h2>), H3 2-4개
+- 이미지 삽입 위치: {{IMAGE_1}} 태그 (첫 H2 아래)
+- FAQ 섹션: 마지막 H2로 "자주 묻는 질문" 3개. <details><summary>질문</summary><p>답변</p></details> 구조
+- FAQ JSON-LD: htmlBody 맨 끝에 추가. <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[...]}</script>
+- 마무리 CTA: "더 깊은 면접 연습이 필요하다면 <a href="https://interview-mate.com">인터뷰메이트</a>에서 AI 모의 면접을 체험해보세요."
 - SEO: title은 핵심 키워드 포함 50자 이내, excerpt 120자 이내
-- HTML 포맷: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <blockquote> 사용
-- 이미지 삽입 위치: {{IMAGE_1}} 태그로 표시 (첫 H2 아래, 본문 중간)
-- 내부 링크: interview-mate.com 언급은 CTA에서만 1회
 
 절대 금지 단어: 자동화, 봇, 테스트, 시스템, publisher, 에이전트, 큐, API, dev`,
         cache_control: { type: "ephemeral" },

@@ -1,4 +1,4 @@
-// W2 파이프라인 1회 실행 — 수집→Master→Threads·IG 변환→품질 게이트→Slack HITL 알림
+// W2 파이프라인 1회 실행 — 수집→Master→Threads·IG·Blog 변환→품질 게이트→Slack HITL 알림 + 블로그 파일 업로드
 
 import "../lib/env.js";
 import { collectAndSelectTopic, registerDedupSlug } from "../agents/data-collector.js";
@@ -7,7 +7,7 @@ import { transformToIg } from "../agents/transformer-ig.js";
 import { transformToShorts } from "../agents/transformer-shorts.js";
 import { transformToBlog } from "../agents/transformer-blog.js";
 import { runQualityGate } from "../guards/quality-gate.js";
-import { sendSlack, sendHitlMessage } from "../lib/slack.js";
+import { sendSlack, sendHitlMessage, uploadBlogFile } from "../lib/slack.js";
 import { db } from "../lib/db.js";
 import { env } from "../lib/env.js";
 
@@ -63,15 +63,11 @@ async function main() {
     console.log("\n[Step 3b] Shorts 건너뜀 (OPENAI_API_KEY 미설정)");
   }
 
-  // Step 3c: Blog 변환 (Sonnet) — WORDPRESS_SITE_URL 있을 때만
+  // Step 3c: Blog 변환 (Sonnet) — 항상 실행. Slack 파일 업로드로 전달 (티스토리 수동 발행용)
+  console.log("\n[Step 3c] Blog SEO 변환 (Sonnet)");
   let blogVariant = null;
-  if (env.wordpress?.siteUrl) {
-    console.log("\n[Step 3c] Blog SEO 변환 (Sonnet)");
-    blogVariant = await transformToBlog(master);
-    console.log(blogVariant ? `  ✓ Blog: ${blogVariant.title} (${blogVariant.htmlBody.replace(/<[^>]*>/g, "").length}자)` : "  · Blog 변환 실패");
-  } else {
-    console.log("\n[Step 3c] Blog 건너뜀 (WORDPRESS_SITE_URL 미설정)");
-  }
+  blogVariant = await transformToBlog(master);
+  console.log(blogVariant ? `  ✓ Blog: ${blogVariant.title} (${blogVariant.htmlBody.replace(/<[^>]*>/g, "").length}자)` : "  · Blog 변환 실패");
 
   // Step 4: 품질 게이트 (Haiku)
   console.log("\n[Step 4] 품질 게이트 (Haiku)");
@@ -119,8 +115,39 @@ async function main() {
     qualityPass: allPass,
     caption: igVariant?.caption,
     cards: igVariant?.cards,
+    blogTitle: blogVariant?.title,
   });
   console.log("\n✓ Slack HITL 메시지 전송");
+
+  // Step 6: 블로그 초안 HTML 파일 Slack 업로드
+  if (blogVariant && env.slack.botToken) {
+    const channel = process.env["SLACK_HITL_CHANNEL"] ?? "#content-review";
+    const date = new Date().toISOString().slice(0, 10);
+    const imageUrl = blogVariant.htmlBody.match(/src="([^"]+)"/)?.[1] ?? "(없음)";
+    const fileContent = [
+      `<!-- ===== 인터뷰메이트 블로그 초안 =====`,
+      `제목: ${blogVariant.title}`,
+      `슬러그: ${blogVariant.slug}`,
+      `발췌(메타 디스크립션): ${blogVariant.excerpt}`,
+      `키워드: ${blogVariant.keywords.join(", ")}`,
+      `대표 이미지 URL: ${imageUrl}`,
+      `생성일: ${date}`,
+      `===================================== -->`,
+      ``,
+      blogVariant.htmlBody,
+    ].join("\n");
+
+    console.log("\n[Step 6] 블로그 초안 Slack 파일 업로드");
+    await uploadBlogFile({
+      content: fileContent,
+      filename: `blog-${blogVariant.slug}-${date}.html`,
+      title: blogVariant.title,
+      channel,
+      token: env.slack.botToken,
+    });
+    console.log("  ✓ 블로그 파일 업로드 완료");
+  }
+
   console.log(`\n✅ 파이프라인 완료. master_id=${master.id}`);
   console.log(`  내용 확인: npx tsx scripts/queue-list.ts`);
 }
