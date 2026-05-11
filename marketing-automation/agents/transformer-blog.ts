@@ -35,13 +35,19 @@ export async function transformToBlog(
 구조 규칙:
 - 1500~3000자 (한국어 기준)
 - 도입부 (150자 내): 검색 의도 정확히 충족
-- 핵심 요약 박스: 도입부 바로 아래. <div style="background:#f0f4ff;border-left:4px solid #3b82f6;padding:16px 20px;border-radius:6px;margin:24px 0"><strong>📌 이 글의 핵심</strong><ul style="margin:8px 0 0 0;padding-left:20px">...3줄 이내 핵심 포인트...</ul></div>
-- 목차(TOC): 핵심 요약 박스 아래. <nav style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:24px 0"><strong>📋 목차</strong><ol style="margin:8px 0 0 0;padding-left:20px">...H2 앵커 링크 목록...</ol></nav>
-- H2 2-3개 (id 앵커 포함, 예: <h2 id="section-1">제목</h2>), H3 2-4개
+- 핵심 요약 박스: 도입부 바로 아래. <div style='background:#f0f4ff;border-left:4px solid #3b82f6;padding:16px 20px;border-radius:6px;margin:24px 0'><strong>📌 이 글의 핵심</strong><ul style='margin:8px 0 0 0;padding-left:20px'>...3줄 이내 핵심 포인트...</ul></div>
+- 목차(TOC): 핵심 요약 박스 아래. <nav style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin:24px 0'><strong>📋 목차</strong><ol style='margin:8px 0 0 0;padding-left:20px'>...H2 앵커 링크 목록 (a href='#section-1' 형식)...</ol></nav>
+- H2 2-3개 (id 앵커 포함, 예: <h2 id='section-1'>제목</h2>), H3 2-4개
 - 이미지 삽입 위치: {{IMAGE_1}} 태그 (첫 H2 아래)
 - FAQ 섹션: 마지막 H2로 "자주 묻는 질문" 3개. <details><summary>질문</summary><p>답변</p></details> 구조
-- FAQ JSON-LD: htmlBody 맨 끝에 추가. <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[...]}</script>
-- 마무리 CTA: "더 깊은 면접 연습이 필요하다면 <a href="https://interview-mate.com">인터뷰메이트</a>에서 AI 모의 면접을 체험해보세요."
+- FAQ JSON-LD: htmlBody 맨 끝에 추가. 스크립트 태그 안의 JSON은 escape된 큰따옴표(\")로 작성하지 말고 single quote 속성 안에 일반 JSON으로: <script type='application/ld+json'>{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[...]}</script>
+- 마무리 CTA: <a href='https://interview-mate.com'>인터뷰메이트</a> 에서 AI 모의 면접 체험 권유
+
+**중요 — JSON 응답 규칙:**
+- htmlBody 안의 모든 HTML 속성 인용은 **반드시 작은따옴표(single quote)** 로 작성. 예: <a href='url' class='cta'>
+- 절대 큰따옴표(") 사용 금지 — JSON escape 충돌 방지.
+- 본문 텍스트 내부의 인용 부호도 따옴표 「」 또는 '...' 사용.
+
 - SEO: title은 핵심 키워드 포함 50자 이내, excerpt 120자 이내
 
 절대 금지 단어: 자동화, 봇, 테스트, 시스템, publisher, 에이전트, 큐, API, dev`,
@@ -119,7 +125,9 @@ SEO 블로그 아티클 작성. JSON으로만 응답:
 
     return { ...parsed, htmlBody: finalHtml };
   } catch (e) {
-    console.error("  · transformer-blog 파싱 오류:", e);
+    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    console.error("  · transformer-blog 파싱 오류:", e instanceof Error ? e.message : e);
+    console.error("  · raw 응답 앞 500자:", raw.slice(0, 500));
     return null;
   }
 }
