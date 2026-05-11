@@ -157,41 +157,48 @@ export async function uploadBlogFile(params: {
   token: string;
 }): Promise<void> {
   const { content, filename, title, channel, token } = params;
-  const bytes = Buffer.from(content, "utf-8");
 
-  // Step 1: 업로드 URL 발급
-  const urlRes = await fetch("https://slack.com/api/files.getUploadURLExternal", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ filename, length: String(bytes.length) }),
-  });
-  const urlData = (await urlRes.json()) as { ok: boolean; upload_url?: string; file_id?: string; error?: string };
-  if (!urlData.ok || !urlData.upload_url || !urlData.file_id) {
-    console.error("  · Slack 파일 업로드 URL 발급 실패:", urlData.error);
+  if (!channel.startsWith("C")) {
+    console.error(`  · SLACK_HITL_CHANNEL은 채널 ID(C…) 형식이어야 합니다 — 현재값: ${channel}`);
     return;
   }
 
-  // Step 2: 파일 내용 업로드 (Content-Type 지정 없음 — S3 pre-signed URL과 충돌 방지)
-  const uploadRes = await fetch(urlData.upload_url, {
-    method: "POST",
-    body: bytes,
-  });
-  if (!uploadRes.ok) {
-    console.error("  · Slack 파일 업로드 실패:", uploadRes.status);
-    return;
-  }
+  try {
+    const bytes = Buffer.from(content, "utf-8");
 
-  // Step 3: 채널에 공유
-  const completeRes = await fetch("https://slack.com/api/files.completeUploadExternal", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      files: [{ id: urlData.file_id, title }],
-      channel_id: channel,
-    }),
-  });
-  const completeData = (await completeRes.json()) as { ok: boolean; error?: string };
-  if (!completeData.ok) {
-    console.error("  · Slack 파일 채널 공유 실패:", completeData.error, "(channel_id가 이름이 아닌 ID 형식이어야 합니다 — C0123...)");
+    const urlRes = await fetch("https://slack.com/api/files.getUploadURLExternal", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ filename, length: String(bytes.length) }),
+    });
+    const urlData = (await urlRes.json()) as { ok: boolean; upload_url?: string; file_id?: string; error?: string };
+    if (!urlData.ok || !urlData.upload_url || !urlData.file_id) {
+      console.error("  · Slack 파일 업로드 URL 발급 실패:", urlData.error);
+      return;
+    }
+
+    const uploadRes = await fetch(urlData.upload_url, {
+      method: "POST",
+      body: bytes,
+    });
+    if (!uploadRes.ok) {
+      console.error("  · Slack 파일 업로드 실패:", uploadRes.status);
+      return;
+    }
+
+    const completeRes = await fetch("https://slack.com/api/files.completeUploadExternal", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        files: [{ id: urlData.file_id, title }],
+        channel_id: channel,
+      }),
+    });
+    const completeData = (await completeRes.json()) as { ok: boolean; error?: string };
+    if (!completeData.ok) {
+      console.error("  · Slack 파일 채널 공유 실패:", completeData.error);
+    }
+  } catch (e) {
+    console.error("  · Slack 블로그 파일 업로드 실패:", e);
   }
 }

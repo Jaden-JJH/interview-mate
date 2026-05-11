@@ -120,10 +120,11 @@ async function main() {
   console.log("\n✓ Slack HITL 메시지 전송");
 
   // Step 6: 블로그 초안 HTML 파일 Slack 업로드
-  if (blogVariant && env.slack.botToken) {
-    const channel = process.env["SLACK_HITL_CHANNEL"] ?? "#content-review";
+  const hitlChannel = process.env["SLACK_HITL_CHANNEL"];
+  if (blogVariant && env.slack.botToken && hitlChannel) {
     const date = new Date().toISOString().slice(0, 10);
-    const imageUrl = blogVariant.htmlBody.match(/src="([^"]+)"/)?.[1] ?? "(없음)";
+    const safeSlug = blogVariant.slug.replace(/[^a-z0-9-]/gi, "-").slice(0, 60);
+    const imageUrl = blogVariant.htmlBody.match(/src=["']([^"']+)["']/)?.[1] ?? "(없음)";
     const fileContent = [
       `<!-- ===== 인터뷰메이트 블로그 초안 =====`,
       `제목: ${blogVariant.title}`,
@@ -140,12 +141,14 @@ async function main() {
     console.log("\n[Step 6] 블로그 초안 Slack 파일 업로드");
     await uploadBlogFile({
       content: fileContent,
-      filename: `blog-${blogVariant.slug}-${date}.html`,
+      filename: `blog-${safeSlug}-${date}.html`,
       title: blogVariant.title,
-      channel,
+      channel: hitlChannel,
       token: env.slack.botToken,
     });
     console.log("  ✓ 블로그 파일 업로드 완료");
+  } else {
+    console.log(`\n[Step 6] 블로그 파일 업로드 건너뜀 — blogVariant=${blogVariant ? "있음" : "없음"} botToken=${env.slack.botToken ? "설정" : "미설정"} SLACK_HITL_CHANNEL=${hitlChannel ?? "미설정"}`);
   }
 
   console.log(`\n✅ 파이프라인 완료. master_id=${master.id}`);

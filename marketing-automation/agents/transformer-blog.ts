@@ -16,6 +16,7 @@ export type BlogVariant = {
   htmlBody: string;
   keywords: string[];
   featuredImageQuery: string;
+  faqItems?: { question: string; answer: string }[];
 };
 
 export async function transformToBlog(
@@ -40,7 +41,7 @@ export async function transformToBlog(
 - H2 2-3개 (id 앵커 포함, 예: <h2 id='section-1'>제목</h2>), H3 2-4개
 - 이미지 삽입 위치: {{IMAGE_1}} 태그 (첫 H2 아래)
 - FAQ 섹션: 마지막 H2로 "자주 묻는 질문" 3개. <details><summary>질문</summary><p>답변</p></details> 구조
-- FAQ JSON-LD: htmlBody 맨 끝에 추가. 스크립트 태그 안의 JSON은 escape된 큰따옴표(\")로 작성하지 말고 single quote 속성 안에 일반 JSON으로: <script type='application/ld+json'>{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[...]}</script>
+- FAQ JSON-LD는 별도 faqItems 필드로 반환 (코드에서 자동 주입)
 - 마무리 CTA: <a href='https://interview-mate.com'>인터뷰메이트</a> 에서 AI 모의 면접 체험 권유
 
 **중요 — JSON 응답 규칙:**
@@ -69,7 +70,8 @@ SEO 블로그 아티클 작성. JSON으로만 응답:
   "excerpt": "메타 디스크립션 120자 이내",
   "htmlBody": "HTML 본문 전체 (1500-3000자)",
   "keywords": ["SEO키워드1", "SEO키워드2", "..."],
-  "featuredImageQuery": "Unsplash 검색 키워드 (영어, 2-3단어)"
+  "featuredImageQuery": "Unsplash 검색 키워드 (영어, 2-3단어)",
+  "faqItems": [{"question": "질문", "answer": "답변"}, ...]
 }`,
       },
     ],
@@ -109,6 +111,19 @@ SEO 블로그 아티클 작성. JSON으로만 응답:
 
     // 남은 이미지 placeholder 제거
     finalHtml = finalHtml.replace(/\{\{IMAGE_\d+\}\}/g, "");
+
+    if (parsed.faqItems && parsed.faqItems.length > 0) {
+      const faqJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: parsed.faqItems.map((item: { question: string; answer: string }) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      };
+      finalHtml += `\n<script type='application/ld+json'>${JSON.stringify(faqJsonLd)}</script>`;
+    }
 
     const check = checkForbiddenWords(finalHtml.replace(/<[^>]*>/g, ""));
     const status = check.pass ? "draft" : "failed";
