@@ -49,3 +49,14 @@ assets-output/
 build_pptx.py
 pack_assets.py
 인터뷰메이트_에셋가이드.md
+
+# 프레젠테이션 / 강의 자료
+slides.html
+강의자료/
+
+# 기획 문서 (로컬 전용)
+docs/marketing-automation-plan.md
+
+# 수동 에셋 (코드 미참조)
+public/youtube.png
+public/app_icon.png
