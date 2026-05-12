@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
 import { useJasoseo } from "@/contexts/JasoseoContext";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -20,6 +20,8 @@ export default function JasoseoGeneratePage() {
   const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
   const [keyExperience, setKeyExperience] = useState("");
+  const [emphasis, setEmphasis] = useState("");
+  const [showEmphasis, setShowEmphasis] = useState(false);
   const [result, setResult] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -29,7 +31,7 @@ export default function JasoseoGeneratePage() {
     if (!position.trim()) return;
     setError(null);
     setStep("loading");
-    posthog.capture("jasoseo_generate_requested", { position: position.trim() });
+    posthog.capture("jasoseo_generate_requested", { position: position.trim(), hasEmphasis: !!emphasis.trim() });
     try {
       const res = await fetch("/api/generate-resume", {
         method: "POST",
@@ -39,6 +41,7 @@ export default function JasoseoGeneratePage() {
           yearsOfExperience: yearsOfExperience.trim() || undefined,
           targetCompany: targetCompany.trim() || undefined,
           keyExperience: keyExperience.trim() || undefined,
+          emphasis: emphasis.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -73,7 +76,14 @@ export default function JasoseoGeneratePage() {
 
   return (
     <div className="flex flex-1 flex-col px-5 pt-6 pb-32">
-      {/* Header */}
+      {/* Back + Header */}
+      <button
+        onClick={() => router.push("/jasoseo")}
+        className="mb-3 flex items-center gap-1 text-[13px] font-semibold text-[var(--gray-500)]"
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        자소서메이트
+      </button>
       <div className="mb-6">
         <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">
           자소서 생성
@@ -142,6 +152,48 @@ export default function JasoseoGeneratePage() {
               placeholder="어필하고 싶은 프로젝트, 성과, 역량을 자유롭게 적어주세요.&#10;예: React로 사내 대시보드 개발, MAU 2만 → 8만 성장"
               className="w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[21px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
             />
+          </div>
+
+          {/* 강조하고 싶은 내용 — 토글형 선택 입력 */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowEmphasis((v) => !v)}
+              className="flex items-center gap-1 text-[13px] font-semibold text-[var(--blue-primary)]"
+            >
+              <svg
+                className={`h-3.5 w-3.5 transition-transform ${showEmphasis ? "rotate-90" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="9 6 15 12 9 18" />
+              </svg>
+              강조하고 싶은 내용
+            </button>
+            <AnimatePresence initial={false}>
+              {showEmphasis && (
+                <motion.div
+                  key="emphasis"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <textarea
+                    rows={3}
+                    value={emphasis}
+                    onChange={(e) => setEmphasis(e.target.value)}
+                    placeholder={"특히 어필하고 싶은 포인트를 적어주세요.\n예: 리더십 경험 강조, 해외 근무 경험 부각, 문제 해결 능력 중심으로"}
+                    className="mt-2 w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[21px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}

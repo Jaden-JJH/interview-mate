@@ -65,4 +65,5 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "generate-resume":     { limit: 5,   windowMs: 60 * 60 * 1000 },
   "generate-career":     { limit: 5,   windowMs: 60 * 60 * 1000 },
   "generate-resume-doc": { limit: 5,   windowMs: 60 * 60 * 1000 },
+  "generate-answers":    { limit: 3,   windowMs: 60 * 60 * 1000 },
 };

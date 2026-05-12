@@ -26,6 +26,7 @@ Guidelines:
 - Use STAR structure (상황·과제·행동·결과) for experience sections
 - Be specific — avoid generic phrases like "열심히 하겠습니다"
 - Address the target company/position directly where specified
+- If the user specifies emphasis points (강조하고 싶은 내용), prominently weave those themes into the relevant sections
 - Total length: 600–900 Korean characters across all 4 sections`;
 
 interface Body {
@@ -33,6 +34,7 @@ interface Body {
   yearsOfExperience?: string;
   keyExperience?: string;
   targetCompany?: string;
+  emphasis?: string;
   existingResume?: string;
 }
 
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest) {
     body.yearsOfExperience ? `경력: ${body.yearsOfExperience}` : null,
     body.targetCompany ? `지원 회사: ${body.targetCompany}` : null,
     body.keyExperience ? `핵심 경험 및 강점:\n${body.keyExperience}` : null,
+    body.emphasis ? `강조하고 싶은 내용:\n${body.emphasis}` : null,
     body.existingResume ? `기존 자기소개서 (참고용):\n${body.existingResume}` : null,
   ]
     .filter(Boolean)

@@ -7,6 +7,14 @@ import LottieAnimation from "@/components/LottieAnimation";
 
 const services = [
   {
+    title: "서류전형 답변 생성",
+    subtitle: "기업 질문에 맞춘 맞춤형 답변",
+    tag: "2크레딧",
+    route: "/jasoseo/answers",
+    icon: "document" as const,
+    isNew: true,
+  },
+  {
     title: "자기소개서 답변 생성",
     subtitle: "기업 질문에 맞는 합격형 답변",
     tag: "1크레딧",
@@ -36,8 +44,16 @@ const services = [
   },
 ];
 
-function ServiceIcon({ type, className }: { type: "sparkle" | "briefcase" | "user" | "search"; className?: string }) {
+function ServiceIcon({ type, className }: { type: "document" | "sparkle" | "briefcase" | "user" | "search"; className?: string }) {
   switch (type) {
+    case "document":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+          <rect x="9" y="3" width="6" height="4" rx="1" />
+          <path d="M9 14l2 2 4-4" />
+        </svg>
+      );
     case "sparkle":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -122,6 +138,13 @@ export default function JasoseoHubPage() {
 
               {/* Inner content */}
               <span className="relative flex w-full items-center gap-3 rounded-[14px] bg-[var(--gray-900)] px-5 py-4 text-left">
+                {/* NEW badge */}
+                {"isNew" in service && service.isNew && (
+                  <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    NEW
+                  </span>
+                )}
+
                 {/* Icon circle */}
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#1B64DA]">
                   <ServiceIcon type={service.icon} className="h-5 w-5" />
@@ -147,7 +170,9 @@ export default function JasoseoHubPage() {
                         autoplay={false}
                         className="h-4 w-4"
                       />
-                      <span className="text-[10px] font-semibold text-white/80">1</span>
+                      <span className="text-[10px] font-semibold text-white/80">
+                        {service.tag.replace(/[^0-9]/g, "") || "1"}
+                      </span>
                     </span>
                   )}
                 </span>

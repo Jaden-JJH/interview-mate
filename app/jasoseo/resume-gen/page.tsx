@@ -72,7 +72,14 @@ export default function ResumeGeneratePage() {
 
   return (
     <div className="flex flex-1 flex-col px-5 pt-6 pb-32">
-      {/* Header */}
+      {/* Back + Header */}
+      <button
+        onClick={() => router.push("/jasoseo")}
+        className="mb-3 flex items-center gap-1 text-[13px] font-semibold text-[var(--gray-500)]"
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        자소서메이트
+      </button>
       <div className="mb-6">
         <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">
           이력서 생성
