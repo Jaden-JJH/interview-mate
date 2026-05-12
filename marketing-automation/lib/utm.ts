@@ -5,7 +5,9 @@ const BASE_URL = "https://interview-mate.com";
 export type UtmSource = "instagram" | "threads" | "youtube" | "blog";
 
 export function buildCampaignId(date: Date = new Date()): string {
-  return `ai_interview_daily_${date.toISOString().slice(0, 10).replace(/-/g, "")}`;
+  // UTC+9(KST) 기준 날짜 — UTC 사용 시 자정~9시 사이 하루 어긋남 방지
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return `ai_interview_daily_${kst.toISOString().slice(0, 10).replace(/-/g, "")}`;
 }
 
 export function buildUtmUrl(

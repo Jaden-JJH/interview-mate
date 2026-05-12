@@ -116,7 +116,7 @@ JSON으로만 응답:
     if (parsed.description) {
       const utmUrl = buildUtmUrl("youtube", buildCampaignId(), master.topicSlug);
       if (/interview-mate\.com/i.test(parsed.description)) {
-        parsed.description = parsed.description.replace(/interview-mate\.com\S*/gi, utmUrl);
+        parsed.description = parsed.description.replace(/https?:\/\/interview-mate\.com\S*|interview-mate\.com\S*/gi, utmUrl);
       } else {
         parsed.description += `\n면접 연습은 ${utmUrl}`;
       }

@@ -83,7 +83,7 @@ async function main() {
   if (scheduledAt) console.log(`  scheduled_at: ${scheduledAt}`);
 
   // 3. carousel-pipeline 호출
-  const result = await queueCarouselPost(cards, variant.text, scheduledAt);
+  const result = await queueCarouselPost(cards, variant.text, master.topic_slug, scheduledAt);
   console.log(`\n✓ IG queue id: ${result.igQueueId} (즉시)`);
   console.log(`✓ Threads queue id: ${result.threadsQueueId} (1시간 후)`);
   console.log(`  colorIndex: ${result.colorIndex} (${["BLUE", "PURPLE", "ORANGE"][result.colorIndex]})`);
