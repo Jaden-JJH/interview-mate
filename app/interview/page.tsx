@@ -947,7 +947,7 @@ export default function InterviewPage() {
               />
             </div>
             <h2 className="mt-1 text-[20px] font-extrabold text-[var(--gray-900)] tracking-tight text-center">
-              AI가 답변을 분석하고 있어요
+              답변을 분석하고 있어요
             </h2>
             <div className="mt-3 h-6 relative w-full max-w-[280px] flex items-center justify-center">
               <AnimatePresence mode="wait">
@@ -1173,7 +1173,7 @@ export default function InterviewPage() {
             onKeyDown={handleKeyDown}
             placeholder={
               isAiAssisting
-                ? "AI가 모범답안을 작성하고 있어요..."
+                ? "모범답안을 작성하고 있어요..."
                 : streamingText !== null
                 ? "질문 표시 중..."
                 : "답변을 입력하세요"

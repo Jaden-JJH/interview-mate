@@ -1,10 +1,11 @@
-// 경력기술서 생성 페이지 — 경력 정보 입력 → AI 경력기술서 생성 (1크레딧)
+// 경력기술서 생성 페이지 — 경력 정보 입력 → 경력기술서 생성 (1크레딧)
 "use client";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import LottieAnimation from "@/components/LottieAnimation";
+import { exportAsWord, exportAsPDF } from "@/lib/export-document";
 
 type Step = "form" | "loading" | "result";
 
@@ -150,7 +151,7 @@ export default function CareerDescriptionPage() {
             />
           </div>
           <h2 className="mt-1 text-[20px] font-extrabold text-[var(--gray-900)] tracking-tight text-center">
-            AI가 경력기술서를 작성하고 있어요
+            경력기술서를 작성하고 있어요
           </h2>
           <p className="mt-3 text-[14px] text-[var(--gray-500)] font-medium">
             보통 20~40초 정도 걸려요
@@ -212,11 +213,34 @@ export default function CareerDescriptionPage() {
             rows={16}
             className="w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[13px] leading-[21px] text-[var(--gray-700)] focus:outline-none"
           />
-          <p className="text-[11px] text-[var(--gray-400)] text-center">
-            AI가 생성한 초안입니다. 직접 수정해서 사용하세요.
-          </p>
 
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => exportAsPDF(result, "경력기술서")}
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--gray-900)] py-3 text-[14px] font-semibold text-white active:scale-[0.99] transition-transform"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <polyline points="9 15 12 18 15 15" />
+              </svg>
+              PDF 저장
+            </button>
+            <button
+              onClick={() => exportAsWord(result, "경력기술서")}
+              className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--blue-primary)] py-3 text-[14px] font-semibold text-white active:scale-[0.99] transition-transform"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <polyline points="9 15 12 18 15 15" />
+              </svg>
+              Word 저장
+            </button>
+          </div>
+          <div className="space-y-2">
             <button
               onClick={() => {
                 setStep("form");

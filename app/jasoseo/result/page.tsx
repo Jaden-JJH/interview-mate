@@ -331,7 +331,7 @@ export default function JasoseoResultPage() {
                   {unlocked?.revisedText && (
                     <div className="mt-3 rounded-xl bg-green-50 px-3 py-3">
                       <p className="text-[11px] font-semibold text-green-700 mb-1">
-                        AI 수정본
+                        수정본
                       </p>
                       <p className="text-[12px] leading-[18px] text-[var(--gray-700)] whitespace-pre-line">
                         {unlocked.revisedText}
@@ -353,7 +353,7 @@ export default function JasoseoResultPage() {
               전체 상세 분석 잠금 해제
             </p>
             <p className="mt-1 text-[13px] text-[var(--gray-500)]">
-              약점 상세 분석 · 예상 꼬리질문 · AI 수정본
+              약점 상세 분석 · 예상 꼬리질문 · 수정본
             </p>
           </div>
           <button

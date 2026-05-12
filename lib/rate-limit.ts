@@ -63,4 +63,6 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "parse-job-posting":   { limit: 15,  windowMs: 60 * 60 * 1000 },
   "analyze-resume":      { limit: 5,   windowMs: 60 * 60 * 1000 },
   "generate-resume":     { limit: 5,   windowMs: 60 * 60 * 1000 },
+  "generate-career":     { limit: 5,   windowMs: 60 * 60 * 1000 },
+  "generate-resume-doc": { limit: 5,   windowMs: 60 * 60 * 1000 },
 };

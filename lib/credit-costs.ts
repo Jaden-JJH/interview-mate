@@ -3,6 +3,8 @@ export const CREDIT_COSTS = {
   interview: 2,
   resumeAnalysisUnlock: 1,
   resumeGenerate: 1,
+  careerGenerate: 1,
+  resumeDocGenerate: 1,
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;

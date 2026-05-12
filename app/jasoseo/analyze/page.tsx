@@ -8,7 +8,6 @@ import posthog from "posthog-js";
 import { useJasoseo } from "@/contexts/JasoseoContext";
 import { extractPdfText } from "@/lib/pdf";
 import LottieAnimation from "@/components/LottieAnimation";
-import PremiumGenerateButton from "@/components/PremiumGenerateButton";
 
 type InputTab = "text" | "pdf";
 
@@ -206,7 +205,7 @@ export default function JasoseoPage() {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="자기소개서 전체를 붙여넣어 주세요.&#10;&#10;문항 구분이 있으면 AI가 자동으로 파싱합니다."
+              placeholder="자기소개서 전체를 붙여넣어 주세요.&#10;&#10;문항 구분이 있으면 자동으로 파싱합니다."
               rows={10}
               className="w-full resize-none rounded-2xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
             />
@@ -368,14 +367,6 @@ export default function JasoseoPage() {
           {error}
         </div>
       )}
-
-      {/* Navigation — premium generate button */}
-      <div className="mt-4">
-        <PremiumGenerateButton
-          variant="compact"
-          onClick={() => router.push("/jasoseo/generate")}
-        />
-      </div>
 
       {/* Bottom CTA */}
       <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />
