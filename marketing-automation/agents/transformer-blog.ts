@@ -5,6 +5,7 @@ import { env } from "../lib/env.js";
 import { db } from "../lib/db.js";
 import { checkForbiddenWords } from "../guards/forbidden-words.js";
 import { searchImage } from "../lib/unsplash.js";
+import { buildUtmUrl, buildCampaignId } from "../lib/utm.js";
 import type { MasterContent } from "./master-writer.js";
 
 const client = new Anthropic({ apiKey: env.anthropic.apiKey });
@@ -111,6 +112,13 @@ SEO 블로그 아티클 작성. JSON으로만 응답:
 
     // 남은 이미지 placeholder 제거
     finalHtml = finalHtml.replace(/\{\{IMAGE_\d+\}\}/g, "");
+
+    // CTA 링크 UTM 부착
+    const utmUrl = buildUtmUrl("blog", buildCampaignId(), master.topicSlug);
+    finalHtml = finalHtml.replace(
+      /href='https?:\/\/interview-mate\.com[^']*'/g,
+      `href='${utmUrl}'`,
+    );
 
     if (parsed.faqItems && parsed.faqItems.length > 0) {
       const faqJsonLd = {

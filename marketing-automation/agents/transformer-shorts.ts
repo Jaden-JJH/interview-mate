@@ -3,6 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { env } from "../lib/env.js";
 import { db } from "../lib/db.js";
+import { buildUtmUrl, buildCampaignId } from "../lib/utm.js";
 
 const client = new Anthropic({ apiKey: env.anthropic.apiKey });
 
@@ -109,6 +110,16 @@ JSON으로만 응답:
     const totalChars = parsed.scenes.reduce((s, sc) => s + sc.narration.length, 0);
     if (totalChars > MAX_NARRATION_CHARS) {
       return { parsed: null, reason: `__OVER_CHARS__:${totalChars}` };
+    }
+
+    // description URL에 UTM 부착
+    if (parsed.description) {
+      const utmUrl = buildUtmUrl("youtube", buildCampaignId(), master.topicSlug);
+      if (/interview-mate\.com/i.test(parsed.description)) {
+        parsed.description = parsed.description.replace(/interview-mate\.com\S*/gi, utmUrl);
+      } else {
+        parsed.description += `\n면접 연습은 ${utmUrl}`;
+      }
     }
 
     return { parsed, reason: null };
