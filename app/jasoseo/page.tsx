@@ -1,4 +1,4 @@
-// 자소서메이트 서비스 허브 — 자기소개서·경력기술서·이력서 생성 서비스 선택 페이지
+// 합격 서류 준비 — 자기소개서·경력기술서·이력서 만들기
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -27,9 +27,16 @@ const services = [
     route: "/jasoseo/resume-gen",
     icon: "user" as const,
   },
+  {
+    title: "자소서 분석",
+    subtitle: "면접관 관점으로 약점·꼬리질문 분석",
+    tag: "무료",
+    route: "/jasoseo/analyze",
+    icon: "search" as const,
+  },
 ];
 
-function ServiceIcon({ type, className }: { type: "sparkle" | "briefcase" | "user"; className?: string }) {
+function ServiceIcon({ type, className }: { type: "sparkle" | "briefcase" | "user" | "search"; className?: string }) {
   switch (type) {
     case "sparkle":
       return (
@@ -54,6 +61,13 @@ function ServiceIcon({ type, className }: { type: "sparkle" | "briefcase" | "use
           <line x1="15" y1="13" x2="19" y2="13" />
         </svg>
       );
+    case "search":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      );
   }
 }
 
@@ -69,10 +83,10 @@ export default function JasoseoHubPage() {
         className="text-center"
       >
         <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">
-          AI 문서 작성소
+          자소서<span className="text-[var(--blue-primary)]">메이트</span>
         </h1>
         <p className="mt-1 text-[14px] text-[var(--gray-500)]">
-          합격을 부르는 서류, AI가 대신 써 드려요
+          자기소개서·경력기술서·이력서 만들기
         </p>
       </motion.div>
 
@@ -81,9 +95,9 @@ export default function JasoseoHubPage() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="flex justify-center my-4"
+        className="flex justify-center my-0"
       >
-        <LottieAnimation src="/lottie/alex.json" className="w-32 h-32" />
+        <LottieAnimation src="/lottie/Paper File and Document Animations.json" className="w-48 h-48 -my-6" />
       </motion.div>
 
       {/* Service cards */}
@@ -121,9 +135,21 @@ export default function JasoseoHubPage() {
                   <span className="text-[12px] text-white/60">
                     {service.subtitle}
                   </span>
-                  <span className="mt-1 inline-flex w-fit rounded-full bg-white/10 px-2 py-[2px] text-[10px] font-semibold text-white/80">
-                    {service.tag}
-                  </span>
+                  {service.tag === "무료" ? (
+                    <span className="mt-1 inline-flex w-fit rounded-full bg-white/10 px-2 py-[2px] text-[10px] font-semibold text-white/80">
+                      무료
+                    </span>
+                  ) : (
+                    <span className="mt-1 inline-flex w-fit items-center rounded-full bg-white/10 pl-0.5 pr-2 py-[1px]">
+                      <LottieAnimation
+                        src="/lottie/Coin.json"
+                        loop={false}
+                        autoplay={false}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-[10px] font-semibold text-white/80">1</span>
+                    </span>
+                  )}
                 </span>
 
                 {/* Chevron */}
@@ -144,12 +170,12 @@ export default function JasoseoHubPage() {
         ))}
       </div>
 
-      {/* Bottom analyze link */}
+      {/* Bottom link */}
       <button
-        onClick={() => router.push("/jasoseo/analyze")}
+        onClick={() => router.push("/resume")}
         className="mt-6 flex items-center justify-center gap-1 text-[13px] font-semibold text-[var(--gray-500)] hover:text-[var(--blue-primary)] transition-colors"
       >
-        이미 작성한 자소서 분석하기
+        면접으로 돌아가기
         <svg
           className="h-4 w-4"
           viewBox="0 0 24 24"
