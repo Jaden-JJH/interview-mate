@@ -246,19 +246,19 @@ export default function MyPage() {
           </div>
 
           {resumes !== null && resumes.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[var(--gray-200)] p-5 text-center">
-              <p className="text-[13px] text-[var(--gray-500)]">
-                저장된 이력서가 없어요.
-              </p>
-              <Link
-                href="/resume"
-                className="mt-3 inline-block rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white"
-              >
-                이력서 등록하기
-              </Link>
-              <div className="mt-5">
-                <PremiumGenerateButton />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-dashed border-[var(--gray-200)] p-5 text-center">
+                <p className="text-[13px] text-[var(--gray-500)]">
+                  저장된 이력서가 없어요.
+                </p>
+                <Link
+                  href="/resume"
+                  className="mt-3 inline-block rounded-full bg-[var(--blue-primary)] px-4 py-1.5 text-[13px] font-semibold text-white"
+                >
+                  이력서 등록하기
+                </Link>
               </div>
+              <PremiumGenerateButton />
             </div>
           )}
 
@@ -268,7 +268,7 @@ export default function MyPage() {
                 {resumes.map((r) => (
                   <li
                     key={r.id}
-                    className="rounded-2xl border border-[var(--gray-200)] p-4"
+                    className="rounded-2xl bg-[var(--gray-50)] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">

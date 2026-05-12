@@ -91,11 +91,6 @@ export default function PremiumGenerateButton({
             >
               면접관이 합격시키는 이력서
             </span>
-            {!isCompact && (
-              <span className="mt-0.5 text-[11px] font-medium leading-[16px] text-white/60">
-                AI 면접관이 직접 코칭한 합격형 이력서
-              </span>
-            )}
           </span>
 
           {/* PREMIUM badge */}
