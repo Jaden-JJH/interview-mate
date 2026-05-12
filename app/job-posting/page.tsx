@@ -18,6 +18,225 @@ const TABS = [
   { key: "search" as const, label: "채용공고 검색" },
 ];
 
+const RECENT_JOBS = [
+  { company: "삼성전자", position: "서비스 기획", exp: "4년차" },
+  { company: "삼성전자", position: "콘텐츠 마케터", exp: "3년차" },
+  { company: "삼성SDS", position: "프론트엔드 개발자", exp: "5년차" },
+  { company: "삼성증권", position: "UX 디자이너", exp: "3년차" },
+  { company: "LG전자", position: "데이터 분석가", exp: "4년차" },
+  { company: "LG에너지솔루션", position: "경영 기획", exp: "5년차" },
+  { company: "LG CNS", position: "프로덕트 매니저", exp: "4년차" },
+  { company: "SK하이닉스", position: "구매 관리", exp: "3년차" },
+  { company: "SK텔레콤", position: "백엔드 개발자", exp: "5년차" },
+  { company: "SK C&C", position: "UI 디자이너", exp: "3년차" },
+  { company: "현대자동차", position: "콘텐츠 기획", exp: "4년차" },
+  { company: "현대자동차", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "현대모비스", position: "해외 영업", exp: "5년차" },
+  { company: "현대로템", position: "인사 담당", exp: "3년차" },
+  { company: "HD현대", position: "재무 회계", exp: "4년차" },
+  { company: "기아", position: "BX 디자이너", exp: "4년차" },
+  { company: "롯데그룹", position: "데이터 엔지니어", exp: "3년차" },
+  { company: "롯데이커머스", position: "백엔드 개발자", exp: "4년차" },
+  { company: "CJ제일제당", position: "SCM 기획", exp: "5년차" },
+  { company: "CJ올리브네트웍스", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "CJ ENM", position: "프로덕트 매니저", exp: "4년차" },
+  { company: "포스코홀딩스", position: "데이터 분석가", exp: "3년차" },
+  { company: "한화솔루션", position: "마케팅 기획", exp: "4년차" },
+  { company: "한화에어로스페이스", position: "백엔드 개발자", exp: "5년차" },
+  { company: "GS리테일", position: "서비스 기획", exp: "3년차" },
+  { company: "신세계", position: "데이터 엔지니어", exp: "4년차" },
+  { company: "아모레퍼시픽", position: "UX 리서처", exp: "3년차" },
+  { company: "대우건설", position: "경영 지원", exp: "4년차" },
+  { company: "유한양행", position: "퍼포먼스 마케터", exp: "3년차" },
+  { company: "에스원", position: "서비스 기획", exp: "4년차" },
+  { company: "한온시스템", position: "프로덕트 매니저", exp: "5년차" },
+  { company: "한섬", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "NHN", position: "콘텐츠 마케터", exp: "4년차" },
+  { company: "KB국민은행", position: "백엔드 개발자", exp: "4년차" },
+  { company: "신한은행", position: "서비스 기획", exp: "5년차" },
+  { company: "하나은행", position: "UX 디자이너", exp: "3년차" },
+  { company: "IBK기업은행", position: "데이터 분석가", exp: "4년차" },
+  { company: "현대차증권", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "KB캐피탈", position: "마케팅 기획", exp: "4년차" },
+  { company: "미래에셋증권", position: "백엔드 개발자", exp: "5년차" },
+  { company: "네이버", position: "브랜드 마케터", exp: "4년차" },
+  { company: "네이버", position: "QA 엔지니어", exp: "3년차" },
+  { company: "네이버웹툰", position: "프론트엔드 개발자", exp: "4년차" },
+  { company: "네이버파이낸셜", position: "프로덕트 디자이너", exp: "3년차" },
+  { company: "카카오", position: "데이터 엔지니어", exp: "4년차" },
+  { company: "카카오", position: "인사 기획", exp: "5년차" },
+  { company: "카카오페이", position: "서비스 기획", exp: "4년차" },
+  { company: "카카오모빌리티", position: "백엔드 개발자", exp: "3년차" },
+  { company: "쿠팡", position: "프로덕트 매니저", exp: "5년차" },
+  { company: "쿠팡", position: "UX 디자이너", exp: "4년차" },
+  { company: "배달의민족", position: "콘텐츠 마케터", exp: "3년차" },
+  { company: "배달의민족", position: "서버 개발자", exp: "5년차" },
+  { company: "토스", position: "백엔드 개발자", exp: "4년차" },
+  { company: "토스뱅크", position: "서비스 기획", exp: "3년차" },
+  { company: "당근", position: "프로덕트 디자이너", exp: "4년차" },
+  { company: "당근", position: "데이터 분석가", exp: "3년차" },
+  { company: "라인플러스", position: "마케팅 기획", exp: "4년차" },
+  { company: "크래프톤", position: "프론트엔드 개발자", exp: "5년차" },
+  { company: "하이브", position: "데이터 엔지니어", exp: "4년차" },
+  { company: "스노우", position: "프로덕트 매니저", exp: "3년차" },
+  { company: "무신사", position: "백엔드 개발자", exp: "4년차" },
+  { company: "무신사", position: "서비스 기획", exp: "3년차" },
+  { company: "29CM", position: "UX 디자이너", exp: "4년차" },
+  { company: "지그재그", position: "그로스 마케터", exp: "3년차" },
+  { company: "에이블리", position: "iOS 개발자", exp: "4년차" },
+  { company: "오늘의집", position: "프로덕트 매니저", exp: "5년차" },
+  { company: "뉴발란스코리아", position: "데이터 분석가", exp: "3년차" },
+  { company: "번개장터", position: "백엔드 개발자", exp: "4년차" },
+  { company: "마켓컬리", position: "UX 디자이너", exp: "3년차" },
+  { company: "브랜디", position: "안드로이드 개발자", exp: "3년차" },
+  { company: "야놀자", position: "프로덕트 디자이너", exp: "4년차" },
+  { company: "여기어때", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "마이리얼트립", position: "백엔드 개발자", exp: "4년차" },
+  { company: "쏘카", position: "데이터 분석가", exp: "3년차" },
+  { company: "뤼튼", position: "프로덕트 매니저", exp: "4년차" },
+  { company: "업스테이지", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "루닛", position: "서비스 기획", exp: "4년차" },
+  { company: "뷰노", position: "백엔드 개발자", exp: "3년차" },
+  { company: "채널톡", position: "프로덕트 디자이너", exp: "4년차" },
+  { company: "센드버드", position: "콘텐츠 마케터", exp: "3년차" },
+  { company: "아시아나IDT", position: "경영 기획", exp: "4년차" },
+  { company: "플렉스", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "레몬베이스", position: "프로덕트 매니저", exp: "4년차" },
+  { company: "핀다", position: "UX 디자이너", exp: "3년차" },
+  { company: "뱅크샐러드", position: "콘텐츠 기획", exp: "4년차" },
+  { company: "두나무", position: "서비스 기획", exp: "5년차" },
+  { company: "페이히어", position: "프로덕트 디자이너", exp: "3년차" },
+  { company: "인프런", position: "백엔드 개발자", exp: "3년차" },
+  { company: "팀스파르타", position: "그로스 마케터", exp: "4년차" },
+  { company: "코드잇", position: "프론트엔드 개발자", exp: "3년차" },
+  { company: "클래스101", position: "서비스 기획", exp: "4년차" },
+  { company: "리디", position: "데이터 엔지니어", exp: "3년차" },
+  { company: "왓챠", position: "백엔드 개발자", exp: "4년차" },
+  { company: "대학내일", position: "프로덕트 디자이너", exp: "3년차" },
+  { company: "닥터나우", position: "프론트엔드 개발자", exp: "4년차" },
+  { company: "휴온스메디텍", position: "마케팅 기획", exp: "3년차" },
+  { company: "강남언니", position: "백엔드 개발자", exp: "4년차" },
+  { company: "직방", position: "데이터 분석가", exp: "3년차" },
+  { company: "다방", position: "서비스 기획", exp: "4년차" },
+  { company: "데브시스터즈", position: "프로덕트 매니저", exp: "3년차" },
+  { company: "펄어비스", position: "UX 디자이너", exp: "4년차" },
+  { company: "토스랩", position: "콘텐츠 마케터", exp: "3년차" },
+  { company: "다우기술", position: "프론트엔드 개발자", exp: "4년차" },
+  { company: "한글과컴퓨터", position: "서비스 기획", exp: "3년차" },
+  { company: "안랩", position: "프로덕트 매니저", exp: "4년차" },
+  { company: "오픈서베이", position: "백엔드 개발자", exp: "3년차" },
+  { company: "원티드랩", position: "UX 디자이너", exp: "4년차" },
+  { company: "리멤버", position: "그로스 마케터", exp: "3년차" },
+  { company: "트레바리", position: "프론트엔드 개발자", exp: "4년차" },
+  { company: "버킷플레이스", position: "데이터 엔지니어", exp: "3년차" },
+  { company: "스포카", position: "서비스 기획", exp: "4년차" },
+  { company: "교촌에프앤비", position: "마케팅 기획", exp: "3년차" },
+  { company: "비바리퍼블리카", position: "프로덕트 디자이너", exp: "4년차" },
+  { company: "NHN애드", position: "데이터 분석가", exp: "3년차" },
+  { company: "삼성전자", position: "백엔드 개발자", exp: "신입" },
+  { company: "LG전자", position: "마케팅 기획", exp: "신입" },
+  { company: "현대자동차", position: "경영 지원", exp: "신입" },
+  { company: "IBK기업은행", position: "서비스 기획", exp: "신입" },
+  { company: "롯데그룹", position: "UX 디자이너", exp: "신입" },
+  { company: "한화솔루션", position: "데이터 분석가", exp: "신입" },
+  { company: "쿠팡", position: "콘텐츠 마케터", exp: "신입" },
+  { company: "CJ ENM", position: "프론트엔드 개발자", exp: "신입" },
+];
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function useRollingSeeds() {
+  const [index, setIndex] = useState(0);
+  const [seeds] = useState(() =>
+    shuffleArray(RECENT_JOBS).map((j) => ({
+      ...j,
+      minutesAgo: Math.random() < 0.6
+        ? 1 + Math.floor(Math.random() * 30)
+        : Math.random() < 0.7
+          ? 30 + Math.floor(Math.random() * 90)
+          : 120 + Math.floor(Math.random() * 240),
+    }))
+  );
+  useEffect(() => {
+    const t = setInterval(() => setIndex((i) => (i + 1) % seeds.length), 3000);
+    return () => clearInterval(t);
+  }, [seeds.length]);
+  const item = seeds[index];
+  const timeLabel = item.minutesAgo >= 60
+    ? `${Math.floor(item.minutesAgo / 60)}시간 전`
+    : `${item.minutesAgo}분 전`;
+  return { index, item, timeLabel };
+}
+
+function StyleA() {
+  const { index, item, timeLabel } = useRollingSeeds();
+  return (
+    <div>
+      <div className="h-[20px] overflow-hidden relative">
+        <AnimatePresence mode="popLayout">
+          <motion.p
+            key={index}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="absolute inset-x-0 text-center text-[13px] text-[var(--gray-500)] whitespace-nowrap"
+          >
+            <span className="font-semibold text-[var(--gray-700)]">{item.company}</span>
+            <span className="mx-3 text-[var(--gray-300)]">&middot;</span>
+            {item.position}
+            <span className="mx-3 text-[var(--gray-300)]">&middot;</span>
+            <span className="text-[var(--gray-400)]">{timeLabel}</span>
+          </motion.p>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function StyleC() {
+  const { index, item, timeLabel } = useRollingSeeds();
+  const [todayCount] = useState(() => 80 + Math.floor(Math.random() * 120));
+  return (
+    <div className="rounded-xl bg-[var(--gray-100)] px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+        </span>
+        <p className="text-[13px] text-[var(--gray-600)]">
+          오늘 <span className="font-bold text-[var(--gray-900)]">{todayCount}명</span>이 면접 연습했어요
+        </p>
+      </div>
+      <div className="h-[18px] overflow-hidden relative ml-4">
+        <AnimatePresence mode="popLayout">
+          <motion.p
+            key={index}
+            initial={{ y: 18, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -18, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="absolute text-[12px] text-[var(--gray-400)]"
+          >
+            {item.company} &middot; {item.position} &middot; {timeLabel}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function RecentJobsRolling() {
+  return <StyleA />;
+}
+
 const LOADING_TEXTS = [
   "회사 정보를 가져오는 중...",
   "공고 내용 분석 중...",
@@ -250,9 +469,22 @@ export default function JobPostingPage() {
         {/* URL Tab */}
         {activeTab === "url" && (
           <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5">
-            <label className="text-[13px] font-semibold text-[var(--gray-700)] mb-2 block">
-              채용공고 URL
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[13px] font-semibold text-[var(--gray-700)]">
+                채용공고 URL
+              </label>
+              {!showDirectInput && status !== "success" && status !== "loading" && (
+                <button
+                  onClick={() => setShowDirectInput(true)}
+                  className="flex items-center gap-1 text-[12px] text-[var(--blue-primary)] font-medium underline underline-offset-2 decoration-[var(--blue-primary)]/40"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  직접 입력
+                </button>
+              )}
+            </div>
             <input
               type="url"
               value={url}
@@ -362,14 +594,9 @@ export default function JobPostingPage() {
           </div>
         )}
 
-        {/* Direct input link — URL tab only */}
+        {/* 소셜 프루프 — URL 입력 카드 아래, idle 상태에서만 */}
         {activeTab === "url" && !showDirectInput && status !== "success" && status !== "loading" && (
-          <button
-            onClick={() => setShowDirectInput(true)}
-            className="w-full text-center text-[13px] text-[var(--gray-500)]"
-          >
-            URL 없이 <span className="text-[var(--blue-primary)] font-medium underline underline-offset-2">직접 입력</span>하기
-          </button>
+          <RecentJobsRolling />
         )}
 
         <AnimatePresence mode="wait">
