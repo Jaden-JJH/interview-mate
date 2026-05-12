@@ -1,9 +1,7 @@
-// AI 생성·자소서 작성 등 프리미엄 기능을 트리거하는 글로우 버튼 컴포넌트
+// 자소서메이트(/jasoseo)로 진입하는 프리미엄 글로우 버튼 컴포넌트
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface PremiumGenerateButtonProps {
   variant?: "card" | "compact";
@@ -20,12 +18,7 @@ export default function PremiumGenerateButton({
   disabled = false,
   disabledReason,
 }: PremiumGenerateButtonProps) {
-  const [showToast, setShowToast] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const router = useRouter();
 
   const handleClick = () => {
     if (disabled) return;
@@ -33,8 +26,7 @@ export default function PremiumGenerateButton({
       onClick();
       return;
     }
-    setShowToast(true);
-    window.setTimeout(() => setShowToast(false), 2200);
+    router.push("/jasoseo");
   };
 
   const isCompact = variant === "compact";
@@ -113,42 +105,6 @@ export default function PremiumGenerateButton({
         </span>
       </button>
 
-      {/* Coming soon toast — rendered via portal to document.body so the
-          fixed positioning is anchored to the viewport, not to any
-          framer-motion parent that may set `transform` (which would
-          re-anchor `position: fixed` to the parent). */}
-      {mounted &&
-        createPortal(
-          <AnimatePresence>
-            {showToast && (
-              <div
-                className="pointer-events-none fixed inset-x-0 bottom-[110px] z-[200] flex justify-center px-4"
-                role="status"
-                aria-live="polite"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 12 }}
-                  transition={{ duration: 0.2 }}
-                  className="pointer-events-auto flex w-full max-w-[420px] items-center gap-2 rounded-2xl bg-[var(--gray-900)] px-4 py-3 text-white shadow-lg"
-                >
-                  <svg
-                    className="h-4 w-4 shrink-0 text-[#FFD66E]"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61z" />
-                  </svg>
-                  <p className="text-[13px] font-medium leading-[18px]">
-                    곧 만나보실 수 있어요. 조금만 기다려 주세요!
-                  </p>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
     </>
   );
 }

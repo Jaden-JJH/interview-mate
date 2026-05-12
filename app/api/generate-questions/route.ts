@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { findDuration, resolvePersona, RANDOM_PERSONA_ID } from "@/lib/personas";
 import { getOrCreateAppUserId } from "@/lib/db/users";
-import { consumeCredit } from "@/lib/db/credits";
+import { consumeCredits } from "@/lib/db/credits";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { isGuestMode } from "@/lib/guest";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { captureServerError } from "@/lib/posthog-server";
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
   // race conditions; null = out of credits. Skipped in guest mode.
   let balance: { free: number; paid: number } | null = null;
   if (!guest && userId) {
-    balance = await consumeCredit(userId);
+    balance = await consumeCredits(userId, CREDIT_COSTS.interview);
     if (!balance) {
       return NextResponse.json(
         { error: "insufficient_credits" },

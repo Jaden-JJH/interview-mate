@@ -1,13 +1,15 @@
 // 직무 정보를 입력받아 한국어 자기소개서(4개 섹션)를 AI로 생성하는 API 라우트
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { getOrCreateAppUserId } from "@/lib/db/users";
+import { consumeCredits } from "@/lib/db/credits";
+import { isGuestMode } from "@/lib/guest";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const RESUME_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
 
 const SYSTEM_PROMPT = `You are an expert Korean resume writer specializing in self-introduction letters (자기소개서) for Korean job seekers.
 Given the user's career information, write a compelling 자기소개서 they can submit to Korean companies.
@@ -36,7 +38,7 @@ interface Body {
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = checkRateLimit(ip, "generate-resume", RESUME_LIMIT);
+  const rl = checkRateLimit(ip, "generate-resume", RATE_LIMITS["generate-resume"]);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
@@ -54,6 +56,21 @@ export async function POST(req: NextRequest) {
   const position = body.position?.trim();
   if (!position) {
     return NextResponse.json({ error: "지원 직무를 입력해 주세요." }, { status: 400 });
+  }
+
+  const guest = isGuestMode();
+  if (!guest) {
+    const userId = await getOrCreateAppUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const balance = await consumeCredits(userId, CREDIT_COSTS.resumeGenerate);
+    if (!balance) {
+      return NextResponse.json(
+        { error: "insufficient_credits" },
+        { status: 402 }
+      );
+    }
   }
 
   const lines = [

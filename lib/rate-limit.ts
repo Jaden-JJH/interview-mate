@@ -61,4 +61,6 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "generate-feedback":   { limit: 10,  windowMs: 60 * 60 * 1000 },
   "parse-pdf":           { limit: 10,  windowMs: 60 * 60 * 1000 },
   "parse-job-posting":   { limit: 15,  windowMs: 60 * 60 * 1000 },
+  "analyze-resume":      { limit: 5,   windowMs: 60 * 60 * 1000 },
+  "generate-resume":     { limit: 5,   windowMs: 60 * 60 * 1000 },
 };

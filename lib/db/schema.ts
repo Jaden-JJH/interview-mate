@@ -25,8 +25,8 @@ export const credits = pgTable("credits", {
   freeRemaining: integer("free_remaining").default(1).notNull(),
   paidRemaining: integer("paid_remaining").default(0).notNull(),
   totalUsed: integer("total_used").default(0).notNull(),
-  // Lifetime free 1회 사용 여부. paidRemaining > 0이면 무시(무제한).
   aiAssistUsed: boolean("ai_assist_used").default(false).notNull(),
+  jasoseoFreeUnlockUsed: boolean("jasoseo_free_unlock_used").default(false).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -68,6 +68,26 @@ export const transactions = pgTable("transactions", {
   amount: integer("amount").notNull(),
   currency: text("currency").default("KRW").notNull(),
   status: text("status").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const resumeAnalyses = pgTable("resume_analyses", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  resumeText: text("resume_text").notNull(),
+  jobPostingText: text("job_posting_text"),
+  jobPostingCompany: text("job_posting_company"),
+  jobPostingPosition: text("job_posting_position"),
+  overallScore: integer("overall_score").notNull(),
+  overallComment: text("overall_comment").notNull(),
+  axes: jsonb("axes").notNull(),
+  sections: jsonb("sections").notNull(),
+  unlockedSections: jsonb("unlocked_sections"),
+  unlockedAt: timestamp("unlocked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

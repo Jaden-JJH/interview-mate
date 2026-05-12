@@ -74,24 +74,22 @@ export async function claimAiAssist(
   return updated ? "consumed" : null;
 }
 
-export async function consumeCredit(
-  userId: string
+export async function consumeCredits(
+  userId: string,
+  amount: number = 1
 ): Promise<CreditBalance | null> {
   const result = await db.execute(sql`
     UPDATE ${credits}
     SET
-      free_remaining = CASE
-        WHEN free_remaining > 0 THEN free_remaining - 1
-        ELSE free_remaining
-      END,
-      paid_remaining = CASE
-        WHEN free_remaining = 0 AND paid_remaining > 0 THEN paid_remaining - 1
-        ELSE paid_remaining
-      END,
-      total_used = total_used + 1,
+      free_remaining = GREATEST(free_remaining - LEAST(free_remaining, ${amount}), 0),
+      paid_remaining = GREATEST(
+        paid_remaining - GREATEST(${amount} - free_remaining, 0),
+        0
+      ),
+      total_used = total_used + ${amount},
       updated_at = NOW()
     WHERE user_id = ${userId}
-      AND (free_remaining > 0 OR paid_remaining > 0)
+      AND (free_remaining + paid_remaining) >= ${amount}
     RETURNING free_remaining, paid_remaining
   `);
   const rows = result.rows ?? [];
@@ -102,5 +100,11 @@ export async function consumeCredit(
     paid: row.paid_remaining,
     total: row.free_remaining + row.paid_remaining,
   };
+}
+
+export async function consumeCredit(
+  userId: string
+): Promise<CreditBalance | null> {
+  return consumeCredits(userId, 1);
 }
 
