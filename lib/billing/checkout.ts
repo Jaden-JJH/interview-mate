@@ -2,6 +2,7 @@
 "use client";
 
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import posthog from "posthog-js";
 
 // 결제 완료 후 webhook이 DB에 반영될 때까지 잠깐 대기 후 잔액 refetch 트리거.
 const REFRESH_DELAY_MS = 3000;
@@ -21,6 +22,7 @@ function getPaddle(): Promise<Paddle | undefined> {
     token,
     eventCallback: (event) => {
       if (event.name === "checkout.completed") {
+        posthog.capture("funnel_payment_completed");
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("paddle:checkout-completed"));
         }, REFRESH_DELAY_MS);
@@ -42,6 +44,7 @@ export async function openCheckout(opts: {
   const paddle = await getPaddle();
   if (!paddle) return;
 
+  posthog.capture("funnel_payment_initiated");
   paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     customData: { clerkUserId: opts.clerkUserId },

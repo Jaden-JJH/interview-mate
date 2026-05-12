@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import posthog from "posthog-js";
 import ChatBubble from "@/components/ChatBubble";
 import TypingIndicator from "@/components/TypingIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -358,6 +359,12 @@ export default function InterviewPage() {
           `종합 코멘트를 생성하지 못했어요(${msg}). 평균 점수는 ${fallbackScore}점입니다.`
         );
       }
+      posthog.capture("funnel_interview_completed", {
+        questionCount: results.length,
+        avgScore: results.length > 0
+          ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
+          : 0,
+      });
       router.push("/result");
     },
     [router, setOverall]

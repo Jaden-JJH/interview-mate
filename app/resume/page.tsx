@@ -4,6 +4,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import posthog from "posthog-js";
 import StepIndicator from "@/components/StepIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import PremiumGenerateButton from "@/components/PremiumGenerateButton";
@@ -296,6 +297,7 @@ export default function ResumePage() {
             await res.json().catch(() => null);
           }
           setResume(content, uploadedFileName);
+          posthog.capture("funnel_resume_submitted", { method: "pdf" });
           router.push("/job-posting");
         } finally {
           setIsSubmitting(false);
@@ -304,6 +306,7 @@ export default function ResumePage() {
         // Direct-text input is ephemeral — used for this interview only.
         if (!textContent.trim()) return;
         setResume(textContent.trim());
+        posthog.capture("funnel_resume_submitted", { method: "text" });
         router.push("/job-posting");
       }
       return;
@@ -313,6 +316,7 @@ export default function ResumePage() {
     const picked = list.find((s) => s.id === selectedId);
     if (!picked) return;
     setResume(picked.content, picked.fileName ?? undefined);
+    posthog.capture("funnel_resume_submitted", { method: "saved" });
     router.push("/job-posting");
   };
 

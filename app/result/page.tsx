@@ -4,6 +4,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import posthog from "posthog-js";
 import confetti from "canvas-confetti";
 import ScoreGauge from "@/components/ScoreGauge";
 import AccordionItem from "@/components/AccordionItem";
@@ -50,6 +51,7 @@ export default function ResultPage() {
   useEffect(() => {
     if (qaResults.length === 0 || savedRef.current) return;
     savedRef.current = true;
+    posthog.capture("funnel_result_viewed", { overallScore });
     fetch("/api/interview-history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

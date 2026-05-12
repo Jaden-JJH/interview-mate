@@ -4,6 +4,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import posthog from "posthog-js";
 import LottieAnimation from "@/components/LottieAnimation";
 
 const STEPS = [
@@ -150,7 +151,7 @@ export default function LandingPage() {
             className="relative z-10 flex flex-col gap-2.5 -mt-8"
           >
             <button
-              onClick={() => router.push("/resume")}
+              onClick={() => { posthog.capture("funnel_cta_clicked"); router.push("/resume"); }}
               className="w-full rounded-2xl bg-[var(--blue-primary)] py-[18px] text-[16px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(27,100,218,0.5)] transition-transform active:scale-[0.98]"
             >
               무료로 면접 준비 시작하기
@@ -296,7 +297,7 @@ export default function LandingPage() {
               이력서를 올리는 순간, 맞춤 질문이 생성돼요
             </p>
             <button
-              onClick={() => router.push("/resume")}
+              onClick={() => { posthog.capture("funnel_cta_clicked"); router.push("/resume"); }}
               className="mt-6 w-full rounded-2xl bg-white py-[16px] text-[15px] font-bold text-[var(--gray-900)] transition-transform active:scale-[0.98]"
             >
               지금 바로 시작하기

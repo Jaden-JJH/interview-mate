@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import posthog from "posthog-js";
 import StepIndicator from "@/components/StepIndicator";
 import LottieAnimation from "@/components/LottieAnimation";
 import Toast from "@/components/Toast";
@@ -147,6 +148,10 @@ export default function InterviewPrepPage() {
       if (typeof data.resolvedPersonaId === "string") {
         setPersona(selectedPersonaId, data.resolvedPersonaId);
       }
+      posthog.capture("funnel_interview_started", {
+        persona: finalPersona.id,
+        duration: selectedDuration,
+      });
       router.push("/interview");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "질문 생성 실패";

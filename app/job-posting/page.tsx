@@ -9,6 +9,7 @@ import LottieAnimation from "@/components/LottieAnimation";
 import BottomSheet from "@/components/BottomSheet";
 import Toast from "@/components/Toast";
 import { useInterview, type JobPostingStructured } from "@/contexts/InterviewContext";
+import posthog from "posthog-js";
 import { usePostHog } from "posthog-js/react";
 
 const TABS = [
@@ -453,6 +454,7 @@ export default function JobPostingPage() {
       setErrorMsg("채용공고 정보가 없어요.");
       return;
     }
+    posthog.capture("funnel_job_posting_submitted");
     router.push("/interview-prep");
   };
 
