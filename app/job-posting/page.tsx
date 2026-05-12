@@ -1,4 +1,4 @@
-// Step 2/3 — 채용공고 입력 페이지 (URL·이미지·검색 탭, cheerio+Claude 파싱)
+// Step 2/3 — 채용공고 입력 페이지 (URL·이미지·공고찾기 탭, cheerio+Claude 파싱)
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -10,12 +10,11 @@ import BottomSheet from "@/components/BottomSheet";
 import Toast from "@/components/Toast";
 import { useInterview, type JobPostingStructured } from "@/contexts/InterviewContext";
 import { usePostHog } from "posthog-js/react";
-import { useUser } from "@clerk/nextjs";
 
 const TABS = [
   { key: "url" as const, label: "URL 입력" },
-  { key: "image" as const, label: "이미지" },
-  { key: "search" as const, label: "채용공고 검색" },
+  { key: "image" as const, label: "이미지 넣기" },
+  { key: "search" as const, label: "공고 찾기" },
 ];
 
 const RECENT_JOBS = [
@@ -238,6 +237,61 @@ function RecentJobsRolling() {
   return <StyleA />;
 }
 
+const JOB_SITES: { category: string; items: { name: string; url: string; desc: string }[] }[] = [
+  {
+    category: "채용 플랫폼",
+    items: [
+      { name: "원티드", url: "https://www.wanted.co.kr/wdlist", desc: "IT·스타트업 중심" },
+      { name: "사람인", url: "https://www.saramin.co.kr/", desc: "종합 채용 플랫폼" },
+      { name: "잡코리아", url: "https://www.jobkorea.co.kr/", desc: "대기업·공채 강점" },
+      { name: "점핏", url: "https://jumpit.saramin.co.kr/positions", desc: "개발자 전용" },
+      { name: "자소설닷컴", url: "https://jasoseol.com/", desc: "자소서·공채 달력" },
+      { name: "랠릿", url: "https://www.rallit.com/", desc: "IT 인재 채용" },
+      { name: "인크루트", url: "https://www.incruit.com/", desc: "종합 채용 플랫폼" },
+      { name: "링커리어", url: "https://linkareer.com/", desc: "대학생·신입 공채" },
+    ],
+  },
+  {
+    category: "IT · 테크",
+    items: [
+      { name: "네이버", url: "https://recruit.navercorp.com/", desc: "" },
+      { name: "카카오", url: "https://careers.kakao.com/jobs", desc: "" },
+      { name: "토스", url: "https://toss.im/career/jobs", desc: "" },
+      { name: "쿠팡", url: "https://www.coupang.jobs/", desc: "" },
+      { name: "배달의민족", url: "https://career.woowahan.com/", desc: "" },
+      { name: "당근", url: "https://about.daangn.com/jobs/", desc: "" },
+      { name: "라인플러스", url: "https://careers.linecorp.com/", desc: "" },
+      { name: "크래프톤", url: "https://recruit.krafton.com/", desc: "" },
+    ],
+  },
+  {
+    category: "대기업",
+    items: [
+      { name: "삼성", url: "https://www.samsungcareers.com/", desc: "" },
+      { name: "LG", url: "https://careers.lg.com/", desc: "" },
+      { name: "SK", url: "https://www.skcareers.com/", desc: "" },
+      { name: "현대자동차", url: "https://talent.hyundai.com/", desc: "" },
+      { name: "롯데", url: "https://recruit.lotte.co.kr/", desc: "" },
+      { name: "CJ", url: "https://www.cj.net/cj-careers/", desc: "" },
+      { name: "한화", url: "https://www.hanwha.com/careers.do", desc: "" },
+      { name: "포스코", url: "https://www.posco.co.kr/homepage/docs/kor6/jsp/hq/s91p8000001c.jsp", desc: "" },
+    ],
+  },
+  {
+    category: "금융",
+    items: [
+      { name: "KB국민은행", url: "https://recruit.incruit.com/kbstar/", desc: "은행" },
+      { name: "신한은행", url: "https://shinhan.recruiter.co.kr/career/home", desc: "은행" },
+      { name: "하나은행", url: "https://hanabank.recruiter.co.kr/career/home", desc: "은행" },
+      { name: "우리은행", url: "https://wooribank.careerlink.kr/", desc: "은행" },
+      { name: "NH투자증권", url: "https://nhqv.recruiter.co.kr/career/home", desc: "증권" },
+      { name: "한국투자증권", url: "https://recruit.truefriend.com/", desc: "증권" },
+      { name: "삼성화재", url: "https://www.samsungcareers.com/", desc: "보험 (삼성 통합)" },
+      { name: "미래에셋증권", url: "https://career.miraeasset.com/", desc: "증권" },
+    ],
+  },
+];
+
 const LOADING_TEXTS = [
   "회사 정보를 가져오는 중...",
   "공고 내용 분석 중...",
@@ -272,14 +326,7 @@ export default function JobPostingPage() {
   const [showDirectInput, setShowDirectInput] = useState(false);
   const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const ph = usePostHog();
-  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<"url" | "image" | "search">("url");
-  const [notifyRequested, setNotifyRequested] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    setNotifyRequested(!!localStorage.getItem(`job_search_notify_${user.id}`));
-  }, [user?.id]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -356,20 +403,9 @@ export default function JobPostingPage() {
     setStatus("success");
   };
 
-  const handleNotifyRequest = () => {
-    if (!user?.id) {
-      router.push("/sign-in");
-      return;
-    }
-    if (notifyRequested) return;
-    localStorage.setItem(`job_search_notify_${user.id}`, "1");
-    setNotifyRequested(true);
-    ph?.capture("job_search_notify_requested", { userId: user.id });
-  };
-
   const handleTabChange = (tab: "url" | "image" | "search") => {
     setActiveTab(tab);
-    if (tab === "search") ph?.capture("job_search_interest_clicked");
+    if (tab === "search") ph?.capture("job_search_tab_clicked");
     if (status !== "success") {
       setStatus("idle");
       setErrorMsg(null);
@@ -575,23 +611,48 @@ export default function JobPostingPage() {
 
         {/* Search Tab (fake door) */}
         {activeTab === "search" && (
-          <div className="rounded-2xl border border-[var(--gray-200)] shadow-sm bg-white p-5 flex flex-col items-center gap-3 py-10">
-            <LottieAnimation src="/lottie/Loading 51 _ Monoplane.json" className="w-16 h-16" />
-            <p className="text-[15px] font-bold text-[var(--gray-900)]">채용공고 검색</p>
-            <p className="text-[13px] text-[var(--gray-500)] text-center leading-[20px]">
-              곧 출시 예정이에요.<br />알림 신청하시면 오픈 후 이메일 알림을 드릴게요.
-            </p>
-            <button
-              onClick={handleNotifyRequest}
-              disabled={notifyRequested}
-              className={`mt-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                notifyRequested
-                  ? "bg-[var(--gray-100)] text-[var(--gray-400)] cursor-default"
-                  : "bg-[var(--blue-primary)] text-white active:scale-[0.98]"
-              }`}
-            >
-              {notifyRequested ? "알림 신청 완료 ✓" : "오픈 알림받기"}
-            </button>
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[13px] text-[var(--gray-500)] leading-[20px]">
+                아래 사이트에서 원하는 공고를 찾은 뒤,<br />
+                URL을 복사해서 <span className="text-[var(--blue-primary)] font-semibold">URL 입력</span> 탭에 붙여넣으세요.
+              </p>
+              <button
+                onClick={() => setActiveTab("url")}
+                className="shrink-0 mt-3 mr-3 rounded-lg bg-[var(--blue-primary)] px-3 py-1.5 text-[12px] font-semibold text-white active:scale-[0.97] transition-all"
+              >
+                URL 입력
+              </button>
+            </div>
+            {JOB_SITES.map((group) => (
+              <div key={group.category}>
+                <p className="text-[12px] font-semibold text-[var(--gray-400)] uppercase tracking-wider mb-2">
+                  {group.category}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {group.items.map((site) => (
+                    <a
+                      key={site.name}
+                      href={site.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => ph?.capture("job_site_link_clicked", { site: site.name })}
+                      className="flex items-center gap-2 rounded-xl border border-[var(--gray-200)] bg-white px-3 py-2.5 transition-all active:scale-[0.98] hover:border-[var(--blue-primary)]/30"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-[var(--gray-900)] truncate">{site.name}</p>
+                        {site.desc && (
+                          <p className="text-[11px] text-[var(--gray-400)] truncate">{site.desc}</p>
+                        )}
+                      </div>
+                      <svg className="w-3.5 h-3.5 text-[var(--gray-300)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
