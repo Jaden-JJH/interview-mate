@@ -24,19 +24,7 @@ export function captureServerError(
   const client = getClient();
   if (!client) return;
 
-  const message = err instanceof Error ? err.message : String(err);
-  const stack = err instanceof Error ? err.stack : undefined;
-
-  client.capture({
-    distinctId: "server",
-    event: "$exception",
-    properties: {
-      $exception_message: message,
-      $exception_stack_trace_raw: stack,
-      route,
-      ...extra,
-    },
-  });
+  client.captureException(err, "server", { route, ...extra });
 }
 
 export function captureServerEvent(

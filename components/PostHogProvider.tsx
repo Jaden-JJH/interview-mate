@@ -48,6 +48,7 @@ if (typeof window !== "undefined") {
       capture_pageview: false, // manual via PostHogPageView
       capture_pageleave: true,
       autocapture: true,
+      capture_exceptions: true,
     });
   }
 }

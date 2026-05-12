@@ -20,6 +20,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@paddle/paddle-js": "^1.6.4",
     "@paddle/paddle-node-sdk": "^3.8.0",
+    "@posthog/nextjs-config": "^1.7.6",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",

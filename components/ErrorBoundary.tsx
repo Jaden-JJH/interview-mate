@@ -1,6 +1,7 @@
-// React 렌더링 오류를 잡아 fallback UI를 표시하는 클래스 기반 에러 바운더리
+// React 렌더링 오류를 잡아 PostHog에 보고하고 fallback UI를 표시하는 에러 바운더리
 "use client";
 
+import posthog from "posthog-js";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
@@ -21,6 +22,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", error, info);
+    posthog.captureException(error, { componentStack: info.componentStack });
   }
 
   reset = () => this.setState({ error: null });
