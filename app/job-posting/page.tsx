@@ -201,7 +201,7 @@ function StyleA() {
   );
 }
 
-function StyleC() {
+function _StyleC() {
   const { index, item, timeLabel } = useRollingSeeds();
   const [todayCount] = useState(() => 80 + Math.floor(Math.random() * 120));
   return (
