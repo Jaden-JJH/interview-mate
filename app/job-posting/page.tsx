@@ -201,7 +201,8 @@ function StyleA() {
   );
 }
 
-function _StyleC() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function StyleC() {
   const { index, item, timeLabel } = useRollingSeeds();
   const [todayCount] = useState(() => 80 + Math.floor(Math.random() * 120));
   return (
