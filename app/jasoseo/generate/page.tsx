@@ -1,4 +1,4 @@
-// 자소서 생성 페이지 — 직무 정보 입력 → 자기소개서 생성 (1크레딧)
+// 자소서 생성 페이지 — 직무 정보 입력 → 자기소개서 생성 (무료)
 "use client";
 
 import { useState, useRef } from "react";
@@ -338,7 +338,7 @@ export default function JasoseoGeneratePage() {
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
                 </svg>
-                자기소개서 생성하기 (1크레딧)
+                자소서 생성하기
               </span>
             </button>
           </div>

@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   const guest = isGuestMode();
-  if (!guest) {
+  if (!guest && CREDIT_COSTS.resumeDocGenerate > 0) {
     const userId = await getOrCreateAppUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
