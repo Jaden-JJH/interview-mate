@@ -14,6 +14,7 @@ import { renderCardToBuffer, type CardData } from "./card-renderer.js";
 import { uploadCardImage } from "./blob-uploader.js";
 import { getCtaCardUrl, assertCtaCardsReady } from "./cta-cards.js";
 import { checkForbiddenWords } from "../guards/forbidden-words.js";
+import { buildCampaignId } from "./utm.js";
 import type { IgCard } from "../agents/transformer-ig.js";
 
 const COUNT_IG_PUBLISHED = db.prepare<[], { cnt: number }>(`
@@ -22,9 +23,9 @@ const COUNT_IG_PUBLISHED = db.prepare<[], { cnt: number }>(`
 
 const INSERT_QUEUE = db.prepare(`
   INSERT INTO content_queue
-    (account, channel, text, media_url, format, scheduled_at)
+    (account, channel, text, media_url, format, topic, utm_campaign, scheduled_at)
   VALUES
-    (@account, @channel, @caption, @media_url, 'cardnews-carousel', @scheduled_at)
+    (@account, @channel, @caption, @media_url, 'cardnews-carousel', @topic, @utm_campaign, @scheduled_at)
 `);
 
 export type QueueCarouselResult = {
@@ -39,11 +40,13 @@ export type QueueCarouselResult = {
  *
  * @param cards transformer-ig 출력의 cover+insight×2 (정확히 3장)
  * @param caption IG/Threads 공용 캡션
+ * @param topicSlug utm_content + topic 컬럼 (성과 추적용)
  * @param scheduledAt ISO8601, 미지정 시 즉시
  */
 export async function queueCarouselPost(
   cards: IgCard[],
   caption: string,
+  topicSlug?: string,
   scheduledAt?: string,
 ): Promise<QueueCarouselResult> {
   if (cards.length !== 3) {
@@ -92,14 +95,17 @@ export async function queueCarouselPost(
   const igTime = scheduledAt ?? new Date().toISOString();
   const threadsTime = new Date(new Date(igTime).getTime() + 60 * 60 * 1000).toISOString();
   const mediaUrlJson = JSON.stringify(imageUrls);
+  const utm_campaign = buildCampaignId();
 
   const igResult = INSERT_QUEUE.run({
     caption, media_url: mediaUrlJson, scheduled_at: igTime,
     account: "main", channel: "instagram",
+    topic: topicSlug ?? null, utm_campaign,
   });
   const threadsResult = INSERT_QUEUE.run({
     caption, media_url: mediaUrlJson, scheduled_at: threadsTime,
     account: "main", channel: "threads",
+    topic: topicSlug ?? null, utm_campaign,
   });
 
   return {

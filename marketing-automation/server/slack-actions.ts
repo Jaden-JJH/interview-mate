@@ -95,7 +95,7 @@ export async function handleApprove(masterId: number): Promise<ActionResult> {
   }
 
   // 1. IG/Threads 큐 적재 (IG 즉시, Threads 1시간 후)
-  const result = await queueCarouselPost(cards, variant.text);
+  const result = await queueCarouselPost(cards, variant.text, master.topic_slug);
   db.prepare("UPDATE content_variants SET status = 'queued' WHERE id = ?").run(variant.id);
 
   // 2. Blog 큐 적재 (WordPress 설정 시)
