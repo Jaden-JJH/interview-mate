@@ -17,7 +17,7 @@ const services = [
   {
     title: "자소서 만들기",
     subtitle: "기업/직무 타겟형 지원동기/자기소개 생성",
-    tag: "무료",
+    tag: "1크레딧",
     route: "/jasoseo/generate",
     icon: "sparkle" as const,
   },

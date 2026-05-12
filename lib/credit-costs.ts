@@ -2,7 +2,7 @@
 export const CREDIT_COSTS = {
   interview: 2,
   resumeAnalysisUnlock: 1,
-  resumeGenerate: 0,
+  resumeGenerate: 1,
   careerGenerate: 1,
   resumeDocGenerate: 0,
   answersGenerate: 2,

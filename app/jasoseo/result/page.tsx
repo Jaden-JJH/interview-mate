@@ -13,6 +13,7 @@ import {
 import { useInterview } from "@/contexts/InterviewContext";
 import Toast from "@/components/Toast";
 import LottieAnimation from "@/components/LottieAnimation";
+import PaywallModal from "@/components/PaywallModal";
 
 const AXIS_LABELS: Record<keyof AnalysisAxes, string> = {
   logic: "논리성",
@@ -115,6 +116,7 @@ export default function JasoseoResultPage() {
   const [expandedSection, setExpandedSection] = useState<number>(0);
   const [freeUnlockAvailable, setFreeUnlockAvailable] = useState<boolean | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
   const unlockInFlight = useRef(false);
 
   useEffect(() => {
@@ -158,7 +160,7 @@ export default function JasoseoResultPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.error === "insufficient_credits") {
-          setUnlockError("크레딧이 부족해요. 충전 후 다시 시도해 주세요.");
+          setShowPaywall(true);
         } else {
           throw new Error(data.error ?? "unlock 실패");
         }
@@ -428,6 +430,7 @@ export default function JasoseoResultPage() {
           setToastMsg(null);
         }}
       />
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
     </div>
   );
 }

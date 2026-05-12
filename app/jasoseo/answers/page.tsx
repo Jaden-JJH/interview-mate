@@ -5,6 +5,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import LottieAnimation from "@/components/LottieAnimation";
+import PaywallModal from "@/components/PaywallModal";
 import { extractPdfText } from "@/lib/pdf";
 import { exportAsWord, exportAsPDF } from "@/lib/export-document";
 
@@ -88,8 +89,9 @@ export default function AnswersPage() {
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // Error
+  // Error / Paywall
   const [error, setError] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const backgroundText = tab === "pdf" ? pdfText : directText;
   const validQuestions = questions.filter((q) => q.text.trim().length > 0);
@@ -170,7 +172,9 @@ export default function AnswersPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.error === "insufficient_credits") {
-          throw new Error("크레딧이 부족해요. 충전 후 다시 시도해 주세요.");
+          setStep("form");
+          setShowPaywall(true);
+          return;
         }
         throw new Error(data.error ?? "생성 실패");
       }
@@ -731,6 +735,8 @@ export default function AnswersPage() {
           </div>
         </>
       )}
+
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
     </div>
   );
 }

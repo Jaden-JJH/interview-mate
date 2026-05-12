@@ -1,4 +1,4 @@
-// 자소서 생성 페이지 — 직무 정보 입력 → 자기소개서 생성 (무료)
+// 자소서 생성 페이지 — 직무 정보 입력 → 자기소개서 생성 (1크레딧)
 "use client";
 
 import { useState, useRef } from "react";
@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
 import { useJasoseo } from "@/contexts/JasoseoContext";
 import LottieAnimation from "@/components/LottieAnimation";
+import PaywallModal from "@/components/PaywallModal";
 import { exportAsWord, exportAsPDF } from "@/lib/export-document";
 
 type Step = "form" | "loading" | "result";
@@ -25,6 +26,7 @@ export default function JasoseoGeneratePage() {
   const [result, setResult] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const resultRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleGenerate() {
@@ -47,7 +49,9 @@ export default function JasoseoGeneratePage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.error === "insufficient_credits") {
-          throw new Error("크레딧이 부족해요. 충전 후 다시 시도해 주세요.");
+          setStep("form");
+          setShowPaywall(true);
+          return;
         }
         throw new Error(data.error ?? "생성 실패");
       }
@@ -338,12 +342,14 @@ export default function JasoseoGeneratePage() {
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
                 </svg>
-                자소서 생성하기
+                자소서 생성하기 (1크레딧)
               </span>
             </button>
           </div>
         </>
       )}
+
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
     </div>
   );
 }

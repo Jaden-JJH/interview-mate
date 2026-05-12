@@ -23,9 +23,9 @@ const COPY: Record<PaywallReason, { title: string; body: (free?: number, paid?: 
   credit: {
     title: "크레딧이 부족해요",
     body: (free, paid) =>
-      `면접 1회당 1 크레딧이 사용됩니다. 무료 크레딧${
+      `크레딧이 부족합니다${
         typeof free === "number" ? ` (남은 무료 ${free}회, 결제 ${paid ?? 0}회)` : ""
-      }를 모두 사용하면 패키지를 구매해 이어 사용할 수 있어요.`,
+      }. 패키지를 구매하면 면접·자소서·경력기술서 등 모든 유료 기능을 이용할 수 있어요.`,
   },
   "ai-assist": {
     title: "AI 도움받기는 무료 1회까지예요",

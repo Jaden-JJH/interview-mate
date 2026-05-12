@@ -1,4 +1,4 @@
-// 직무 정보를 입력받아 한국어 자기소개서(4개 섹션)를 AI로 생성하는 API 라우트
+// 직무 정보를 입력받아 한국어 자기소개서(4개 섹션)를 AI로 생성하는 API 라우트 (1크레딧)
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
 import { getOrCreateAppUserId } from "@/lib/db/users";
@@ -7,6 +7,7 @@ import { isGuestMode } from "@/lib/guest";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { captureServerError } from "@/lib/posthog-server";
+import { searchCompanyInfo, formatCompanyContext } from "@/lib/search-company";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,19 +16,20 @@ const SYSTEM_PROMPT = `You are an expert Korean resume writer specializing in se
 Given the user's career information, write a compelling 자기소개서 they can submit to Korean companies.
 
 Structure the output with these 4 sections, each clearly labeled with the header on its own line:
-1. 성장 과정 및 지원 동기 (Growth & Motivation)
-2. 직무 역량 및 주요 경험 (Key Skills & Experience)
-3. 성격 및 장단점 (Personality & Strengths)
-4. 입사 후 포부 (Future Goals)
+1. 지원 동기 — 왜 이 회사, 이 직무인지 구체적으로
+2. 직무 역량 및 주요 경험 — STAR 구조로 증명
+3. 성격 및 강점 — 직무와 연결되는 구체적 사례
+4. 입사 후 포부 — 이 회사에서 이루고 싶은 것
 
 Guidelines:
-- Each section: 150–250 Korean characters
+- Each section: 300–500 Korean characters (total 1200–2000 characters, A4 약 1.5–2장 분량)
 - Natural, professional Korean — not stiff or formulaic
 - Use STAR structure (상황·과제·행동·결과) for experience sections
-- Be specific — avoid generic phrases like "열심히 하겠습니다"
-- Address the target company/position directly where specified
+- Be specific — avoid generic phrases like "열심히 하겠습니다", "최선을 다하겠습니다"
+- If company reference info is provided, actively reference the company's values, culture, tech stack, or business direction in sections 1 and 4
 - If the user specifies emphasis points (강조하고 싶은 내용), prominently weave those themes into the relevant sections
-- Total length: 600–900 Korean characters across all 4 sections`;
+- Each section must include at least one concrete example, number, or outcome — no section should be purely abstract
+- Write as if the applicant is speaking in first person, with confident but humble tone`;
 
 interface Body {
   position?: string;
@@ -75,6 +77,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let companyContext = "";
+  if (body.targetCompany?.trim()) {
+    const info = await searchCompanyInfo(body.targetCompany.trim(), position);
+    if (info) companyContext = formatCompanyContext(info);
+  }
+
   const lines = [
     `지원 직무: ${position}`,
     body.yearsOfExperience ? `경력: ${body.yearsOfExperience}` : null,
@@ -82,6 +90,7 @@ export async function POST(req: NextRequest) {
     body.keyExperience ? `핵심 경험 및 강점:\n${body.keyExperience}` : null,
     body.emphasis ? `강조하고 싶은 내용:\n${body.emphasis}` : null,
     body.existingResume ? `기존 자기소개서 (참고용):\n${body.existingResume}` : null,
+    companyContext ? `\n${companyContext}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -89,7 +98,7 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: [
         {
           type: "text",
