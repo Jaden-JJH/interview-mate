@@ -1,9 +1,9 @@
-// 자소서 분석 결과 페이지 — 종합 점수·5축 바차트·문항별 피드백·유료 unlock 페이월
+// 자소서 분석 결과 페이지 — 종합 점수·5축 바차트·문항별 피드백·유료 unlock 페이월 + Toast·로딩 오버레이
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
 import {
   useJasoseo,
@@ -11,6 +11,8 @@ import {
   type UnlockedSection,
 } from "@/contexts/JasoseoContext";
 import { useInterview } from "@/contexts/InterviewContext";
+import Toast from "@/components/Toast";
+import LottieAnimation from "@/components/LottieAnimation";
 
 const AXIS_LABELS: Record<keyof AnalysisAxes, string> = {
   logic: "논리성",
@@ -111,13 +113,26 @@ export default function JasoseoResultPage() {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<number>(0);
+  const [freeUnlockAvailable, setFreeUnlockAvailable] = useState<boolean | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const unlockInFlight = useRef(false);
 
   useEffect(() => {
     if (!analysisResult) {
-      router.replace("/jasoseo");
+      router.replace("/jasoseo/analyze");
     }
   }, [analysisResult, router]);
+
+  useEffect(() => {
+    fetch("/api/me/credits", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setFreeUnlockAvailable(!data.jasoseoFreeUnlockUsed);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!analysisResult) return null;
 
@@ -151,6 +166,10 @@ export default function JasoseoResultPage() {
       }
       posthog.capture("jasoseo_unlock_completed");
       setUnlockedSections(data.sections as UnlockedSection[]);
+      if (data.balance !== undefined) {
+        const { free, paid } = data.balance;
+        setToastMsg(`잠금 해제 완료! 남은 크레딧: ${free + paid}개`);
+      }
     } catch (err) {
       setUnlockError(
         err instanceof Error ? err.message : "잠금 해제에 실패했어요."
@@ -337,36 +356,17 @@ export default function JasoseoResultPage() {
               약점 상세 분석 · 예상 꼬리질문 · AI 수정본
             </p>
           </div>
-          {unlockError && (
-            <p className="mb-3 text-center text-[12px] text-[var(--danger)] font-medium">
-              {unlockError}
-            </p>
-          )}
           <button
             onClick={handleUnlock}
             disabled={isUnlocking}
             className="w-full rounded-2xl bg-[var(--blue-primary)] py-3.5 text-[15px] font-bold text-white disabled:opacity-50 active:scale-[0.99] transition-transform"
           >
-            {isUnlocking ? (
-              <span className="flex items-center justify-center gap-2">
-                <motion.span
-                  className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                />
-                분석 생성 중...
-              </span>
-            ) : (
-              "잠금 해제 (1크레딧)"
-            )}
+            {isUnlocking
+              ? "분석 생성 중..."
+              : freeUnlockAvailable
+                ? "무료로 잠금 해제"
+                : "잠금 해제 (1크레딧)"}
           </button>
-          <p className="mt-2 text-center text-[11px] text-[var(--gray-400)]">
-            첫 1회는 무료로 제공돼요
-          </p>
         </div>
       )}
 
@@ -375,7 +375,7 @@ export default function JasoseoResultPage() {
       <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
         <div className="flex gap-2">
           <button
-            onClick={() => router.push("/jasoseo")}
+            onClick={() => router.push("/jasoseo/analyze")}
             className="flex-1 rounded-2xl border border-[var(--gray-200)] py-3.5 text-[14px] font-semibold text-[var(--gray-700)]"
           >
             다시 분석
@@ -392,6 +392,42 @@ export default function JasoseoResultPage() {
           </button>
         </div>
       </div>
+
+      {/* Unlock loading overlay */}
+      <AnimatePresence>
+        {isUnlocking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex justify-center"
+          >
+            <div className="w-full max-w-[640px] bg-white flex flex-col items-center justify-center px-6">
+              <div className="w-44 h-44 flex items-center justify-center">
+                <LottieAnimation
+                  src="/lottie/Sparkles Loop Loader ai.json"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h2 className="mt-1 text-[20px] font-extrabold text-[var(--gray-900)] tracking-tight text-center">
+                상세 분석을 생성하고 있어요
+              </h2>
+              <p className="mt-3 text-[14px] text-[var(--gray-500)] font-medium">
+                보통 15~30초 정도 걸려요
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast for errors and balance notifications */}
+      <Toast
+        message={unlockError || toastMsg}
+        onClose={() => {
+          setUnlockError(null);
+          setToastMsg(null);
+        }}
+      />
     </div>
   );
 }

@@ -1,43 +1,48 @@
-// 자소서 생성 페이지 — 직무 정보 입력 → AI 자기소개서 생성 (1크레딧)
+// 이력서 생성 페이지 — 이력 정보 입력 → AI 이력서 생성 (1크레딧)
 "use client";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import posthog from "posthog-js";
-import { useJasoseo } from "@/contexts/JasoseoContext";
 import LottieAnimation from "@/components/LottieAnimation";
 
 type Step = "form" | "loading" | "result";
 
-export default function JasoseoGeneratePage() {
+export default function ResumeGeneratePage() {
   const router = useRouter();
-  const { setResumeText } = useJasoseo();
 
   const [step, setStep] = useState<Step>("form");
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
   const [position, setPosition] = useState("");
-  const [yearsOfExperience, setYearsOfExperience] = useState("");
-  const [targetCompany, setTargetCompany] = useState("");
-  const [keyExperience, setKeyExperience] = useState("");
+  const [education, setEducation] = useState("");
+  const [experience, setExperience] = useState("");
+  const [skills, setSkills] = useState("");
   const [result, setResult] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLTextAreaElement>(null);
 
+  const canSubmit =
+    name.trim().length > 0 &&
+    position.trim().length > 0 &&
+    experience.trim().length >= 30;
+
   async function handleGenerate() {
-    if (!position.trim()) return;
+    if (!canSubmit) return;
     setError(null);
     setStep("loading");
-    posthog.capture("jasoseo_generate_requested", { position: position.trim() });
     try {
-      const res = await fetch("/api/generate-resume", {
+      const res = await fetch("/api/generate-resume-doc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: name.trim(),
+          contact: contact.trim() || undefined,
           position: position.trim(),
-          yearsOfExperience: yearsOfExperience.trim() || undefined,
-          targetCompany: targetCompany.trim() || undefined,
-          keyExperience: keyExperience.trim() || undefined,
+          education: education.trim() || undefined,
+          experience: experience.trim(),
+          skills: skills.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -47,7 +52,6 @@ export default function JasoseoGeneratePage() {
         }
         throw new Error(data.error ?? "생성 실패");
       }
-      posthog.capture("jasoseo_generate_completed");
       setResult(data.content);
       setStep("result");
     } catch (err) {
@@ -65,20 +69,15 @@ export default function JasoseoGeneratePage() {
     } catch {}
   }
 
-  function handleAnalyzeWithResult() {
-    setResumeText(result);
-    router.push("/jasoseo/analyze");
-  }
-
   return (
     <div className="flex flex-1 flex-col px-5 pt-6 pb-32">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">
-          자소서 생성
+          이력서 생성
         </h1>
         <p className="mt-1 text-[14px] text-[var(--gray-500)]">
-          AI가 합격형 자기소개서를 작성해 드려요
+          지금 바로 사용할 수 있는 깔끔한 이력서를 만들어 드려요
         </p>
       </div>
 
@@ -92,54 +91,79 @@ export default function JasoseoGeneratePage() {
 
           <div>
             <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
+              이름 <span className="text-[var(--blue-primary)]">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="홍길동"
+              className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
+              연락처
+            </label>
+            <input
+              type="text"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder="이메일 또는 전화번호"
+              className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
               지원 직무 <span className="text-[var(--blue-primary)]">*</span>
             </label>
             <input
               type="text"
               value={position}
               onChange={(e) => setPosition(e.target.value)}
-              placeholder="예: 프론트엔드 개발자, 마케터, 기획자"
+              placeholder="예: 백엔드 개발자"
               className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
-                총 경력
-              </label>
-              <input
-                type="text"
-                value={yearsOfExperience}
-                onChange={(e) => setYearsOfExperience(e.target.value)}
-                placeholder="예: 3년, 신입"
-                className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
-                지원 회사
-              </label>
-              <input
-                type="text"
-                value={targetCompany}
-                onChange={(e) => setTargetCompany(e.target.value)}
-                placeholder="예: 카카오, 토스"
-                className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
-              />
-            </div>
+          <div>
+            <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
+              학력
+            </label>
+            <input
+              type="text"
+              value={education}
+              onChange={(e) => setEducation(e.target.value)}
+              placeholder="예: 서울대학교 컴퓨터공학과 졸업"
+              className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
+            />
           </div>
 
           <div>
             <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
-              핵심 경험 및 강점
+              경력 요약 <span className="text-[var(--blue-primary)]">*</span>
             </label>
             <textarea
-              rows={5}
-              value={keyExperience}
-              onChange={(e) => setKeyExperience(e.target.value)}
-              placeholder="어필하고 싶은 프로젝트, 성과, 역량을 자유롭게 적어주세요.&#10;예: React로 사내 대시보드 개발, MAU 2만 → 8만 성장"
+              rows={8}
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
+              placeholder={"경력을 자유롭게 적어주세요.\n\n예:\n- ABC 주식회사 프론트엔드 개발자 (2021.03~현재)\n- XYZ 스타트업 인턴 (2020.06~2020.12)"}
               className="w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[21px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-1.5 block">
+              보유 기술
+            </label>
+            <input
+              type="text"
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="예: React, TypeScript, Python, AWS"
+              className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
             />
           </div>
         </div>
@@ -158,10 +182,10 @@ export default function JasoseoGeneratePage() {
             />
           </div>
           <h2 className="mt-1 text-[20px] font-extrabold text-[var(--gray-900)] tracking-tight text-center">
-            AI가 자기소개서를 작성하고 있어요
+            AI가 이력서를 작성하고 있어요
           </h2>
           <p className="mt-3 text-[14px] text-[var(--gray-500)] font-medium">
-            보통 10~20초 정도 걸려요
+            보통 15~30초 정도 걸려요
           </p>
         </motion.div>
       )}
@@ -170,7 +194,7 @@ export default function JasoseoGeneratePage() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <p className="text-[14px] font-bold text-[var(--gray-900)]">
-              생성된 자기소개서
+              생성된 이력서
             </p>
             <button
               onClick={handleCopy}
@@ -226,12 +250,6 @@ export default function JasoseoGeneratePage() {
 
           <div className="mt-2 space-y-2">
             <button
-              onClick={handleAnalyzeWithResult}
-              className="w-full rounded-2xl bg-[var(--blue-primary)] py-3.5 text-[14px] font-bold text-white active:scale-[0.99] transition-transform"
-            >
-              이 자소서 분석하기
-            </button>
-            <button
               onClick={() => {
                 setStep("form");
                 setResult("");
@@ -251,7 +269,7 @@ export default function JasoseoGeneratePage() {
           <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
             <button
               onClick={handleGenerate}
-              disabled={!position.trim()}
+              disabled={!canSubmit}
               className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99] transition-transform"
             >
               <span
@@ -262,7 +280,7 @@ export default function JasoseoGeneratePage() {
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
                 </svg>
-                자기소개서 생성하기 (1크레딧)
+                이력서 생성하기 (1크레딧)
               </span>
             </button>
           </div>

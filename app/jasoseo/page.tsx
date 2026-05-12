@@ -1,374 +1,165 @@
-// 자소서메이트 입력 페이지 — 자기소개서 텍스트 입력(붙여넣기/PDF) + 선택적 채용공고
+// 자소서메이트 서비스 허브 — 자기소개서·경력기술서·이력서 생성 서비스 선택 페이지
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import posthog from "posthog-js";
-import { useJasoseo } from "@/contexts/JasoseoContext";
-import { extractPdfText } from "@/lib/pdf";
+import { motion } from "framer-motion";
+import LottieAnimation from "@/components/LottieAnimation";
 
-type InputTab = "text" | "pdf";
+const services = [
+  {
+    title: "자기소개서 답변 생성",
+    subtitle: "기업 질문에 맞는 합격형 답변",
+    tag: "1크레딧",
+    route: "/jasoseo/generate",
+    icon: "sparkle" as const,
+  },
+  {
+    title: "경력기술서 생성",
+    subtitle: "성과 중심 스토리텔링 3~5장",
+    tag: "1크레딧",
+    route: "/jasoseo/career",
+    icon: "briefcase" as const,
+  },
+  {
+    title: "이력서 생성",
+    subtitle: "깔끔한 실전용 이력서 1~2장",
+    tag: "1크레딧",
+    route: "/jasoseo/resume-gen",
+    icon: "user" as const,
+  },
+];
 
-export default function JasoseoPage() {
-  const router = useRouter();
-  const {
-    resumeText,
-    setResumeText,
-    setJobPostingText,
-    setAnalysisResult,
-  } = useJasoseo();
-
-  const [tab, setTab] = useState<InputTab>("text");
-  const [text, setText] = useState(resumeText);
-  const [pdfText, setPdfText] = useState("");
-  const [pdfName, setPdfName] = useState("");
-  const [jobUrl, setJobUrl] = useState("");
-  const [jobText, setJobText] = useState("");
-  const [showJobInput, setShowJobInput] = useState(false);
-  const [isParsing, setIsParsing] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    posthog.capture("jasoseo_input_started");
-  }, []);
-
-  const activeText = tab === "pdf" ? pdfText : text;
-  const canSubmit = activeText.trim().length >= 50 && !isAnalyzing;
-
-  const handlePdfUpload = useCallback(
-    async (file: File) => {
-      if (!file.name.toLowerCase().endsWith(".pdf")) {
-        setError("PDF 파일만 업로드할 수 있어요.");
-        return;
-      }
-      setIsParsing(true);
-      setError(null);
-      try {
-        let extracted = await extractPdfText(file);
-        if (!extracted || extracted.trim().length < 30) {
-          const formData = new FormData();
-          formData.append("file", file);
-          const res = await fetch("/api/parse-pdf", {
-            method: "POST",
-            body: formData,
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "PDF 파싱 실패");
-          extracted = data.text;
-        }
-        setPdfText(extracted);
-        setPdfName(file.name);
-        setTab("pdf");
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "PDF 파싱에 실패했어요."
-        );
-      } finally {
-        setIsParsing(false);
-      }
-    },
-    []
-  );
-
-  const handleAnalyze = async () => {
-    if (!canSubmit) return;
-    setIsAnalyzing(true);
-    setError(null);
-    posthog.capture("jasoseo_analysis_requested", { hasJobPosting: !!(jobUrl.trim() || jobText.trim()), inputMethod: tab });
-
-    let resolvedJobText = jobText.trim();
-    if (jobUrl.trim() && !resolvedJobText) {
-      try {
-        const res = await fetch("/api/parse-job-posting", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: jobUrl.trim() }),
-        });
-        const data = await res.json();
-        if (data.success && data.raw) {
-          resolvedJobText = data.raw;
-        }
-      } catch {
-        // 채용공고 파싱 실패는 무시 — 범용 분석으로 fallback
-      }
-    }
-
-    try {
-      const res = await fetch("/api/analyze-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resumeText: activeText.trim(),
-          jobPostingText: resolvedJobText || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.error === "insufficient_credits") {
-          setError("크레딧이 부족해요. 충전 후 다시 시도해 주세요.");
-        } else {
-          throw new Error(data.error ?? "분석 실패");
-        }
-        return;
-      }
-
-      posthog.capture("jasoseo_analysis_completed", { overallScore: data.overallScore });
-      setResumeText(activeText.trim());
-      setJobPostingText(resolvedJobText);
-      setAnalysisResult(data);
-      router.push("/jasoseo/result");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "분석에 실패했어요."
+function ServiceIcon({ type, className }: { type: "sparkle" | "briefcase" | "user"; className?: string }) {
+  switch (type) {
+    case "sparkle":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
+        </svg>
       );
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+    case "briefcase":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+      );
+    case "user":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <circle cx="9" cy="11" r="2.5" />
+          <path d="M5 17c0-2 1.8-3 4-3s4 1 4 3" />
+          <line x1="15" y1="9" x2="19" y2="9" />
+          <line x1="15" y1="13" x2="19" y2="13" />
+        </svg>
+      );
+  }
+}
+
+export default function JasoseoHubPage() {
+  const router = useRouter();
 
   return (
-    <div className="flex flex-1 flex-col px-5 pt-6 pb-32">
+    <div className="flex flex-1 flex-col px-5 pt-6 pb-12">
       {/* Header */}
-      <div className="mb-6">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center"
+      >
         <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">
-          자소서 분석
+          AI 문서 작성소
         </h1>
         <p className="mt-1 text-[14px] text-[var(--gray-500)]">
-          면접관 관점에서 자기소개서를 분석해 드려요
+          합격을 부르는 서류, AI가 대신 써 드려요
         </p>
-      </div>
+      </motion.div>
 
-      {/* Tab */}
-      <div className="mb-4 flex rounded-xl bg-[var(--gray-100)] p-1">
-        {(["text", "pdf"] as InputTab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-colors ${
-              tab === t
-                ? "bg-white text-[var(--gray-900)] shadow-sm"
-                : "text-[var(--gray-500)]"
-            }`}
+      {/* Lottie character */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex justify-center my-4"
+      >
+        <LottieAnimation src="/lottie/alex.json" className="w-32 h-32" />
+      </motion.div>
+
+      {/* Service cards */}
+      <div className="flex flex-col gap-3">
+        {services.map((service, index) => (
+          <motion.div
+            key={service.route}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * index }}
           >
-            {t === "text" ? "직접 입력" : "PDF 업로드"}
-          </button>
+            <button
+              type="button"
+              onClick={() => router.push(service.route)}
+              className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] active:scale-[0.99] transition-transform"
+            >
+              {/* Animated conic gradient border */}
+              <span
+                aria-hidden
+                className="absolute inset-[-1000%] animate-[premiumSpin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#1B64DA_0%,#7C5CFF_25%,#E2CBFF_50%,#7C5CFF_75%,#1B64DA_100%)]"
+              />
+
+              {/* Inner content */}
+              <span className="relative flex w-full items-center gap-3 rounded-[14px] bg-[var(--gray-900)] px-5 py-4 text-left">
+                {/* Icon circle */}
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#1B64DA]">
+                  <ServiceIcon type={service.icon} className="h-5 w-5" />
+                </span>
+
+                {/* Text block */}
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[14px] font-bold text-white">
+                    {service.title}
+                  </span>
+                  <span className="text-[12px] text-white/60">
+                    {service.subtitle}
+                  </span>
+                  <span className="mt-1 inline-flex w-fit rounded-full bg-white/10 px-2 py-[2px] text-[10px] font-semibold text-white/80">
+                    {service.tag}
+                  </span>
+                </span>
+
+                {/* Chevron */}
+                <svg
+                  className="h-4 w-4 shrink-0 text-white/50 transition-transform group-hover:translate-x-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </span>
+            </button>
+          </motion.div>
         ))}
       </div>
 
-      {/* Input area */}
-      <AnimatePresence mode="wait">
-        {tab === "text" ? (
-          <motion.div
-            key="text"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.15 }}
-          >
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="자기소개서 전체를 붙여넣어 주세요.&#10;&#10;문항 구분이 있으면 AI가 자동으로 파싱합니다."
-              rows={10}
-              className="w-full resize-none rounded-2xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
-            />
-            <p className="mt-1.5 text-right text-[11px] text-[var(--gray-400)]">
-              {text.length.toLocaleString()}자
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="pdf"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.15 }}
-          >
-            {pdfText ? (
-              <div className="rounded-2xl bg-[var(--gray-100)] p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[13px] font-semibold text-[var(--gray-900)]">
-                    {pdfName}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setPdfText("");
-                      setPdfName("");
-                    }}
-                    className="text-[12px] text-[var(--danger)] font-semibold"
-                  >
-                    삭제
-                  </button>
-                </div>
-                <p className="text-[13px] leading-[20px] text-[var(--gray-700)] whitespace-pre-line line-clamp-6">
-                  {pdfText.slice(0, 400)}
-                  {pdfText.length > 400 && "…"}
-                </p>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={isParsing}
-                className="w-full rounded-2xl border-2 border-dashed border-[var(--gray-200)] py-12 text-center transition-colors hover:border-[var(--blue-primary)]/40"
-              >
-                {isParsing ? (
-                  <p className="text-[14px] text-[var(--gray-500)]">
-                    PDF를 읽고 있어요...
-                  </p>
-                ) : (
-                  <>
-                    <svg
-                      className="mx-auto mb-2 h-8 w-8 text-[var(--gray-400)]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 16V4m0 0l-4 4m4-4l4 4M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4"
-                      />
-                    </svg>
-                    <p className="text-[14px] font-semibold text-[var(--gray-700)]">
-                      PDF 파일을 업로드하세요
-                    </p>
-                    <p className="mt-0.5 text-[12px] text-[var(--gray-400)]">
-                      자기소개서가 담긴 PDF 파일
-                    </p>
-                  </>
-                )}
-              </button>
-            )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handlePdfUpload(f);
-                e.target.value = "";
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Optional job posting */}
-      <div className="mt-6">
-        <button
-          onClick={() => setShowJobInput(!showJobInput)}
-          className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--blue-primary)]"
+      {/* Bottom analyze link */}
+      <button
+        onClick={() => router.push("/jasoseo/analyze")}
+        className="mt-6 flex items-center justify-center gap-1 text-[13px] font-semibold text-[var(--gray-500)] hover:text-[var(--blue-primary)] transition-colors"
+      >
+        이미 작성한 자소서 분석하기
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <svg
-            className={`h-4 w-4 transition-transform ${
-              showJobInput ? "rotate-90" : ""
-            }`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-          채용공고 추가 (선택)
-        </button>
-
-        <AnimatePresence>
-          {showJobInput && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 space-y-3">
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">
-                    채용공고 URL
-                  </label>
-                  <input
-                    type="url"
-                    value={jobUrl}
-                    onChange={(e) => setJobUrl(e.target.value)}
-                    placeholder="https://www.wanted.co.kr/wd/..."
-                    className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">
-                    또는 공고 본문 붙여넣기
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={jobText}
-                    onChange={(e) => setJobText(e.target.value)}
-                    placeholder="채용공고 내용을 붙여넣어 주세요"
-                    className="w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none"
-                  />
-                </div>
-                <p className="text-[11px] text-[var(--gray-400)]">
-                  채용공고를 추가하면 직무에 맞춤화된 분석을 받을 수 있어요
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600 font-medium">
-          {error}
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => router.push("/jasoseo/generate")}
-          className="rounded-2xl border border-[var(--gray-200)] px-4 py-3 text-[13px] font-semibold text-[var(--gray-700)] transition-colors hover:bg-[var(--gray-50)]"
-        >
-          자소서 생성
-        </button>
-      </div>
-
-      {/* Bottom CTA */}
-      <div className="pointer-events-none fixed bottom-[88px] left-1/2 w-full max-w-[640px] h-16 -translate-x-1/2 bg-gradient-to-t from-white to-transparent z-40" />
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[640px] -translate-x-1/2 bg-white px-5 pb-8 pt-3 border-t border-[var(--gray-200)] z-50">
-        <button
-          onClick={handleAnalyze}
-          disabled={!canSubmit}
-          className="w-full rounded-2xl bg-[var(--blue-primary)] py-4 text-[15px] font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99] transition-transform"
-        >
-          {isAnalyzing ? (
-            <span className="flex items-center justify-center gap-2">
-              <motion.span
-                className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              분석 중...
-            </span>
-          ) : (
-            "자소서 분석하기"
-          )}
-        </button>
-        {activeText.length > 0 && activeText.length < 50 && (
-          <p className="mt-2 text-center text-[11px] text-[var(--gray-400)]">
-            50자 이상 입력해 주세요 ({activeText.length}/50)
-          </p>
-        )}
-      </div>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
   );
 }

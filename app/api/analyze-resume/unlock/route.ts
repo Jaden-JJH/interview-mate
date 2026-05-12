@@ -16,7 +16,7 @@ import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const UNLOCK_SYSTEM_PROMPT = `당신은 한국 대기업 면접관 10년 경력의 자기소개서 코칭 전문가입니다.
 
@@ -140,13 +140,12 @@ export async function POST(req: NextRequest) {
     weaknesses: Array<{ title: string }>;
   }>;
 
-  const userMessage = `[자기소개서]\n${analysis.resumeText}\n\n[기존 분석 결과]\n${JSON.stringify(
+  const userMessage = `[자기소개서]\n${analysis.resumeText}\n\n[분석된 문항 목록]\n${JSON.stringify(
     sections.map((s) => ({
       questionTitle: s.questionTitle,
-      originalText: s.originalText,
-      weaknesses: s.weaknesses,
+      weaknesses: s.weaknesses.map((w) => w.title),
     }))
-  )}\n\n위 분석 결과의 각 문항 약점에 대해 상세 분석, 꼬리질문, 수정본을 생성하세요.`;
+  )}\n\n위 자기소개서의 각 문항별 약점에 대해 상세 분석, 꼬리질문, 수정본을 생성하세요.`;
 
   try {
     const message = await anthropic.messages.create({
