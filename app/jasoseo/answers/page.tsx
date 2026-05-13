@@ -409,25 +409,40 @@ export default function AnswersPage() {
                     className="w-full resize-none rounded-xl bg-white px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
                   />
 
-                  {/* Max length row */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-[12px] text-[var(--gray-500)]">글자수 제한</span>
-                    <input
-                      type="number"
-                      value={q.maxLength ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        updateQuestion(q.id, "maxLength", val ? parseInt(val, 10) : null);
-                      }}
-                      placeholder="제한 없음"
-                      className="w-24 rounded-lg bg-white px-3 py-1.5 text-[13px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
-                    />
-                    <span className="text-[12px] text-[var(--gray-500)]">자</span>
-                    {q.text.length > 0 && (
-                      <span className="ml-auto text-[11px] text-[var(--gray-400)]">
-                        현재 {q.text.length}자
-                      </span>
-                    )}
+                  {/* Max length chips */}
+                  <div className="mt-2">
+                    <span className="text-[12px] text-[var(--gray-500)] mb-1.5 block">글자수 제한</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[null, 200, 300, 500, 800, 1000].map((opt) => {
+                        const isActive = q.maxLength === opt;
+                        return (
+                          <button key={String(opt)} type="button"
+                            onClick={() => updateQuestion(q.id, "maxLength", opt)}
+                            className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                              isActive
+                                ? "bg-[var(--blue-primary)] text-white"
+                                : "bg-white text-[var(--gray-600)] hover:bg-[var(--gray-200)]"
+                            }`}>
+                            {opt === null ? "제한 없음" : `${opt}자`}
+                          </button>
+                        );
+                      })}
+                      {q.maxLength !== null && ![200, 300, 500, 800, 1000].includes(q.maxLength) && (
+                        <span className="rounded-full px-3 py-1.5 text-[12px] font-semibold bg-[var(--blue-primary)] text-white">
+                          {q.maxLength}자
+                        </span>
+                      )}
+                      <button type="button"
+                        onClick={() => {
+                          const val = prompt("글자수를 직접 입력하세요 (숫자만)");
+                          if (val && /^\d+$/.test(val.trim())) {
+                            updateQuestion(q.id, "maxLength", parseInt(val.trim(), 10));
+                          }
+                        }}
+                        className="rounded-full px-3 py-1.5 text-[12px] font-semibold border border-dashed border-[var(--gray-300)] text-[var(--gray-500)] hover:border-[var(--blue-primary)] hover:text-[var(--blue-primary)] transition-colors">
+                        직접 입력
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -724,7 +739,11 @@ export default function AnswersPage() {
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
                 </svg>
-                답변 생성하기 (2크레딧)
+                답변 생성하기
+                <span className="inline-flex items-center rounded-full bg-white/15 pl-0.5 pr-1.5 py-[1px]">
+                  <LottieAnimation src="/lottie/Coin.json" loop={false} autoplay={false} className="h-4 w-4" />
+                  <span className="text-[11px] font-semibold text-white/90">2</span>
+                </span>
               </span>
             </button>
             {backgroundText.length > 0 && backgroundText.length < 50 && (

@@ -557,7 +557,11 @@ export default function CareerDescriptionPage() {
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 3l1.9 4.6L19 9.5l-4 3.9.9 5.6L12 16.4 8.1 19l.9-5.6-4-3.9 5.1-1.9z" />
                   </svg>
-                  경력기술서 생성하기 (1크레딧)
+                  경력기술서 생성하기
+                  <span className="inline-flex items-center rounded-full bg-white/15 pl-0.5 pr-1.5 py-[1px]">
+                    <LottieAnimation src="/lottie/Coin.json" loop={false} autoplay={false} className="h-4 w-4" />
+                    <span className="text-[11px] font-semibold text-white/90">1</span>
+                  </span>
                 </span>
               </button>
             )}
