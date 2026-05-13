@@ -78,8 +78,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "직무/포지션을 입력해 주세요." }, { status: 400 });
   }
 
-  const keyExperience = body.keyExperience?.trim();
-  if (!keyExperience || keyExperience.length < 30) {
+  const keyExperience = body.keyExperience?.trim() || "";
+  const hasProjects = Array.isArray(body.projects) && body.projects.some((p: { name?: string }) => p.name?.trim());
+  if (!hasProjects && keyExperience.length < 30) {
     return NextResponse.json({ error: "핵심 경력 및 성과를 30자 이상 입력해 주세요." }, { status: 400 });
   }
 
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
     body.yearsOfExperience ? `총 경력: ${body.yearsOfExperience}` : null,
     body.targetCompany ? `지원 회사: ${body.targetCompany}` : null,
     projectLines ? `구조화된 프로젝트 정보:\n\n${projectLines}` : null,
-    `핵심 경력 및 성과:\n${keyExperience}`,
+    keyExperience ? `핵심 경력 및 성과:\n${keyExperience}` : null,
     companyContext ? `\n${companyContext}` : null,
   ]
     .filter(Boolean)
