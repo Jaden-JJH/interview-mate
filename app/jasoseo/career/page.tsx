@@ -1,7 +1,7 @@
 // 경력기술서 생성 페이지 — 위저드 플로우로 프로젝트별 STAR 가이드 입력 → 3~5장 (1크레딧)
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -41,7 +41,26 @@ const SAMPLES = {
   },
 };
 
-const WIZARD_LABELS = ["기본 정보", "프로젝트", "배경·목표", "성과·행동", "정리"];
+const WIZARD_CHEERS = [
+  "간단한 정보만 알려주세요",
+  "좋아요! 프로젝트 하나만 알려주세요",
+  "절반 왔어요! 배경만 간단히",
+  "거의 다 됐어요! 마지막 한 걸음",
+  "완벽해요! 확인하고 생성하세요",
+];
+
+const TOTAL_STEPS = 5;
+
+const POSITION_PRESETS = [
+  "프론트엔드 개발자", "백엔드 개발자", "풀스택 개발자", "iOS 개발자", "Android 개발자",
+  "DevOps 엔지니어", "데이터 엔지니어", "데이터 분석가", "데이터 사이언티스트", "ML 엔지니어",
+  "PM / PO", "서비스 기획자", "UX 디자이너", "UI 디자이너", "프로덕트 디자이너",
+  "QA 엔지니어", "보안 엔지니어", "클라우드 엔지니어", "DBA", "임베디드 개발자",
+  "게임 개발자", "블록체인 개발자", "마케팅 매니저", "콘텐츠 마케터", "그로스 해커",
+  "HR 매니저", "경영기획", "영업 매니저", "CS 매니저", "재무/회계",
+];
+
+const EXPERIENCE_OPTIONS = ["신입", "1~3년", "3~5년", "5~7년", "7~10년", "10년+"];
 
 export default function CareerDescriptionPage() {
   const router = useRouter();
@@ -51,6 +70,7 @@ export default function CareerDescriptionPage() {
 
   // Form data
   const [position, setPosition] = useState("");
+  const [positionOpen, setPositionOpen] = useState(false);
   const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
   const [projects, setProjects] = useState<Project[]>([emptyProject()]);
@@ -64,6 +84,18 @@ export default function CareerDescriptionPage() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const resultRef = useRef<HTMLTextAreaElement>(null);
+  const positionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!positionOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (positionRef.current && !positionRef.current.contains(e.target as Node)) {
+        setPositionOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [positionOpen]);
 
   const currentProject = projects[currentProjectIdx] ?? emptyProject();
 
@@ -201,25 +233,23 @@ export default function CareerDescriptionPage() {
       {/* ===== WIZARD FORM ===== */}
       {pageStep === "form" && (
         <>
-          {/* Progress bar */}
+          {/* Progress bar + cheer */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              {WIZARD_LABELS.map((label, i) => (
-                <span
-                  key={label}
-                  className={`text-[10px] font-semibold ${i <= wizardStep ? "text-[var(--blue-primary)]" : "text-[var(--gray-400)]"}`}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="h-1.5 rounded-full bg-[var(--gray-100)] overflow-hidden">
+            <div className="h-1 rounded-full bg-[var(--gray-100)] overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-[var(--blue-primary)]"
-                animate={{ width: `${((wizardStep + 1) / WIZARD_LABELS.length) * 100}%` }}
+                animate={{ width: `${((wizardStep + 1) / TOTAL_STEPS) * 100}%` }}
                 transition={{ type: "spring", damping: 20, stiffness: 200 }}
               />
             </div>
+            <motion.p
+              key={wizardStep}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-2 text-[12px] font-medium text-[var(--blue-primary)]"
+            >
+              {WIZARD_CHEERS[wizardStep]}
+            </motion.p>
           </div>
 
           {error && (
@@ -240,40 +270,71 @@ export default function CareerDescriptionPage() {
                 className="flex flex-col gap-4"
               >
                 <p className="text-[15px] font-bold text-[var(--gray-900)]">어떤 직무에 지원하시나요?</p>
-                <div>
+
+                {/* 직무 자동완성 combobox */}
+                <div className="relative" ref={positionRef}>
                   <label className={labelCls}>
                     직무/포지션 <span className="text-[var(--blue-primary)]">*</span>
                   </label>
                   <input
                     type="text"
                     value={position}
-                    onChange={(e) => setPosition(e.target.value)}
-                    placeholder="예: 프론트엔드 개발자, 데이터 분석가"
+                    onChange={(e) => { setPosition(e.target.value); setPositionOpen(true); }}
+                    onFocus={() => setPositionOpen(true)}
+                    placeholder="입력하거나 선택하세요"
                     className={inputCls}
                     autoFocus
                   />
+                  {positionOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 max-h-[200px] overflow-y-auto rounded-xl bg-white border border-[var(--gray-200)] shadow-lg z-20">
+                      {POSITION_PRESETS
+                        .filter((p) => !position.trim() || p.includes(position.trim()))
+                        .map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => { setPosition(p); setPositionOpen(false); }}
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-[var(--gray-700)] hover:bg-[var(--gray-50)] transition-colors"
+                          >
+                            {p}
+                          </button>
+                        ))
+                      }
+                    </div>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>총 경력</label>
-                    <input
-                      type="text"
-                      value={yearsOfExperience}
-                      onChange={(e) => setYearsOfExperience(e.target.value)}
-                      placeholder="예: 5년"
-                      className={inputCls}
-                    />
+
+                {/* 경력 칩 선택 */}
+                <div>
+                  <label className={labelCls}>총 경력</label>
+                  <div className="flex flex-wrap gap-2">
+                    {EXPERIENCE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setYearsOfExperience(yearsOfExperience === opt ? "" : opt)}
+                        className={`rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
+                          yearsOfExperience === opt
+                            ? "bg-[var(--blue-primary)] text-white"
+                            : "bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[var(--gray-200)]"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label className={labelCls}>지원 회사</label>
-                    <input
-                      type="text"
-                      value={targetCompany}
-                      onChange={(e) => setTargetCompany(e.target.value)}
-                      placeholder="예: 카카오"
-                      className={inputCls}
-                    />
-                  </div>
+                </div>
+
+                {/* 지원 회사 */}
+                <div>
+                  <label className={labelCls}>지원 회사</label>
+                  <input
+                    type="text"
+                    value={targetCompany}
+                    onChange={(e) => setTargetCompany(e.target.value)}
+                    placeholder="예: 카카오"
+                    className={inputCls}
+                  />
                 </div>
               </motion.div>
             )}
