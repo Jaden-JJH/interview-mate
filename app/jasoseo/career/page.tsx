@@ -285,11 +285,24 @@ export default function CareerDescriptionPage() {
                     className={inputCls}
                     autoFocus
                   />
-                  {positionOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1 max-h-[200px] overflow-y-auto rounded-xl bg-white border border-[var(--gray-200)] shadow-lg z-20">
-                      {POSITION_PRESETS
-                        .filter((p) => !position.trim() || p.includes(position.trim()))
-                        .map((p) => (
+                  {positionOpen && (() => {
+                    const trimmed = position.trim();
+                    const filtered = POSITION_PRESETS.filter((p) => !trimmed || p.includes(trimmed));
+                    const isExactMatch = POSITION_PRESETS.some((p) => p === trimmed);
+                    const showCustom = trimmed.length > 0 && !isExactMatch;
+                    if (!showCustom && filtered.length === 0) return null;
+                    return (
+                      <div className="absolute left-0 right-0 top-full mt-1 max-h-[200px] overflow-y-auto rounded-xl bg-white border border-[var(--gray-200)] shadow-lg z-20">
+                        {showCustom && (
+                          <button
+                            type="button"
+                            onClick={() => { setPosition(trimmed); setPositionOpen(false); }}
+                            className="w-full text-left px-4 py-2.5 text-[13px] text-[var(--gray-900)] font-semibold hover:bg-[var(--gray-50)] transition-colors border-b border-[var(--gray-100)]"
+                          >
+                            {trimmed} <span className="text-[var(--gray-400)] font-normal">(직접 입력)</span>
+                          </button>
+                        )}
+                        {filtered.map((p) => (
                           <button
                             key={p}
                             type="button"
@@ -298,10 +311,10 @@ export default function CareerDescriptionPage() {
                           >
                             {p}
                           </button>
-                        ))
-                      }
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* 경력 칩 선택 */}
