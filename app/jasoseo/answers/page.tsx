@@ -289,7 +289,16 @@ export default function AnswersPage() {
                     placeholder={"이력, 경력, 주요 성과를 자유롭게 적어주세요.\n\n면접에서 어필하고 싶은 경험을 상세하게 적을수록 좋은 답변이 나와요."}
                     rows={6}
                     className="w-full resize-none rounded-2xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20" />
-                  <p className="mt-1.5 text-right text-[11px] text-[var(--gray-400)]">{directText.length.toLocaleString()}자</p>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    {!directText ? (
+                      <button type="button"
+                        onClick={() => setDirectText("5년차 백엔드 개발자. 네이버에서 검색 서비스 개발 3년, MSA 전환 프로젝트 리드. Spring Boot + Kubernetes 기반 대규모 트래픽 처리 경험. 일일 검색 쿼리 1,000만건 처리 시스템 설계 및 운영. 레거시 모놀리식 구조를 마이크로서비스로 전환하며 배포 주기를 2주 → 하루로 단축. 장애율 90% 감소, API 응답 속도 40% 개선.")}
+                        className="text-[11px] font-semibold text-[var(--blue-primary)] hover:underline">
+                        샘플로 채우기
+                      </button>
+                    ) : <span />}
+                    <p className="text-[11px] text-[var(--gray-400)]">{directText.length.toLocaleString()}자</p>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div key="pdf" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
@@ -479,6 +488,17 @@ export default function AnswersPage() {
       {/* ===== FORM (wizard) ===== */}
       {pageStep === "form" && (
         <>
+          {/* Progress bar */}
+          <div className="mb-5">
+            <div className="h-1 rounded-full bg-[var(--gray-100)] overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-[var(--blue-primary)]"
+                animate={{ width: `${((micro + 1) / MICRO_STEPS.length) * 100}%` }}
+                transition={{ type: "spring", damping: 20, stiffness: 200 }}
+              />
+            </div>
+          </div>
+
           {error && (
             <div className="rounded-xl bg-red-50 px-4 py-3 text-[13px] text-red-600 font-medium mb-4">{error}</div>
           )}
@@ -519,42 +539,48 @@ export default function AnswersPage() {
 
               <div className="rounded-2xl border border-[var(--gray-200)] p-4 space-y-3 mb-4">
                 {/* Background */}
-                <div>
-                  <p className="text-[11px] text-[var(--gray-500)] mb-1">이력/경력</p>
-                  <p className="text-[13px] font-bold text-[var(--gray-900)]">
-                    {pdfName || `직접 입력 (${directText.length.toLocaleString()}자)`}
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[11px] text-[var(--gray-500)] mb-1">이력/경력</p>
+                    <p className="text-[13px] font-bold text-[var(--gray-900)]">
+                      {pdfName || `직접 입력 (${directText.length.toLocaleString()}자)`}
+                    </p>
+                  </div>
+                  <button onClick={() => setMicro(0)} className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
                 </div>
 
                 {/* Job posting */}
-                {(jobText || jobParsed) && (
-                  <div className="border-t border-[var(--gray-100)] pt-2">
+                <div className="border-t border-[var(--gray-100)] pt-2 flex items-start justify-between">
+                  <div>
                     <p className="text-[11px] text-[var(--gray-500)] mb-1">채용공고</p>
                     <p className="text-[12px] text-[var(--gray-700)] line-clamp-2">
-                      {jobParsed ? "URL 분석 완료" : `${jobText.length.toLocaleString()}자 입력`}
+                      {jobParsed ? "URL 분석 완료" : jobText ? `${jobText.length.toLocaleString()}자 입력` : "미입력"}
                     </p>
                   </div>
-                )}
+                  <button onClick={() => setMicro(1)} className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                </div>
 
                 {/* Company / Position */}
-                {(targetCompany || targetPosition) && (
-                  <div className="border-t border-[var(--gray-100)] pt-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-[11px] text-[var(--gray-500)]">회사</p>
-                        <p className="text-[13px] font-bold text-[var(--gray-900)]">{targetCompany || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-[var(--gray-500)]">직무</p>
-                        <p className="text-[13px] font-bold text-[var(--gray-900)]">{targetPosition || "—"}</p>
-                      </div>
+                <div className="border-t border-[var(--gray-100)] pt-2 flex items-start justify-between">
+                  <div className="grid grid-cols-2 gap-4 flex-1">
+                    <div>
+                      <p className="text-[11px] text-[var(--gray-500)]">회사</p>
+                      <p className="text-[13px] font-bold text-[var(--gray-900)]">{targetCompany || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-[var(--gray-500)]">직무</p>
+                      <p className="text-[13px] font-bold text-[var(--gray-900)]">{targetPosition || "—"}</p>
                     </div>
                   </div>
-                )}
+                  <button onClick={() => setMicro(2)} className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                </div>
 
                 {/* Questions summary */}
                 <div className="border-t border-[var(--gray-100)] pt-2">
-                  <p className="text-[11px] text-[var(--gray-500)] mb-1">서류전형 질문 ({validQuestions.length}개)</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] text-[var(--gray-500)]">서류전형 질문 ({validQuestions.length}개)</p>
+                    <button onClick={() => setMicro(3)} className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                  </div>
                   <div className="space-y-1.5">
                     {validQuestions.map((q, idx) => (
                       <div key={q.id} className="flex items-start gap-2">
