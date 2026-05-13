@@ -78,8 +78,16 @@ export default function AnswersPage() {
     { id: nextQuestionId++, text: "", maxLength: null },
   ]);
 
-  // Optional info
-  const [showOptional, setShowOptional] = useState(false);
+  // Job posting
+  type JobTab = "url" | "text";
+  const [jobTab, setJobTab] = useState<JobTab>("url");
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobText, setJobText] = useState("");
+  const [jobParsing, setJobParsing] = useState(false);
+  const [jobParsed, setJobParsed] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
+
+  // Company / position
   const [targetCompany, setTargetCompany] = useState("");
   const [targetPosition, setTargetPosition] = useState("");
 
@@ -96,6 +104,39 @@ export default function AnswersPage() {
   const backgroundText = tab === "pdf" ? pdfText : directText;
   const validQuestions = questions.filter((q) => q.text.trim().length > 0);
   const canSubmit = backgroundText.trim().length >= 50 && validQuestions.length > 0;
+
+  async function handleJobUrlParse() {
+    if (!jobUrl.trim()) return;
+    setJobParsing(true);
+    setJobError(null);
+    try {
+      const res = await fetch("/api/parse-job-posting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: jobUrl.trim() }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const parts = [
+          data.data.company && `회사: ${data.data.company}`,
+          data.data.position && `포지션: ${data.data.position}`,
+          data.data.description && `설명: ${data.data.description}`,
+          data.data.requirements && `자격요건: ${data.data.requirements}`,
+          data.data.preferredQualifications && `우대사항: ${data.data.preferredQualifications}`,
+        ].filter(Boolean).join("\n");
+        setJobText(data.raw || parts);
+        if (data.data.company && !targetCompany) setTargetCompany(data.data.company);
+        if (data.data.position && !targetPosition) setTargetPosition(data.data.position);
+        setJobParsed(true);
+      } else {
+        setJobError(data.error ?? "공고 분석에 실패했어요. 직접 붙여넣기를 이용해 주세요.");
+      }
+    } catch {
+      setJobError("네트워크 오류. 직접 붙여넣기를 이용해 주세요.");
+    } finally {
+      setJobParsing(false);
+    }
+  }
 
   // PDF upload handler
   const handlePdfUpload = useCallback(async (file: File) => {
@@ -167,6 +208,7 @@ export default function AnswersPage() {
           })),
           targetCompany: targetCompany.trim() || undefined,
           targetPosition: targetPosition.trim() || undefined,
+          jobPostingText: jobText.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -462,71 +504,78 @@ export default function AnswersPage() {
             </button>
           </div>
 
-          {/* Optional info toggle */}
+          {/* Job posting section */}
           <div>
-            <button
-              onClick={() => setShowOptional(!showOptional)}
-              className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--blue-primary)]"
-            >
-              <svg
-                className={`h-4 w-4 transition-transform ${
-                  showOptional ? "rotate-90" : ""
-                }`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-              지원 정보 추가 (선택)
-            </button>
+            <label className="text-[13px] font-semibold text-[var(--gray-900)] mb-2 block">
+              채용공고 <span className="text-[12px] font-normal text-[var(--gray-400)]">(선택 — 입력하면 맞춤도 UP)</span>
+            </label>
 
-            <AnimatePresence>
-              {showOptional && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">
-                        지원 회사
-                      </label>
-                      <input
-                        type="text"
-                        value={targetCompany}
-                        onChange={(e) => setTargetCompany(e.target.value)}
-                        placeholder="예: 카카오"
-                        className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
-                      />
+            {/* Tabs */}
+            <div className="mb-3 flex rounded-xl bg-[var(--gray-100)] p-1">
+              {([["url", "URL 입력"], ["text", "직접 붙여넣기"]] as [JobTab, string][]).map(([key, label]) => (
+                <button key={key} onClick={() => setJobTab(key)}
+                  className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-colors ${
+                    jobTab === key ? "bg-white text-[var(--gray-900)] shadow-sm" : "text-[var(--gray-500)]"
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <AnimatePresence mode="wait">
+              {jobTab === "url" ? (
+                <motion.div key="job-url" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
+                  {jobParsed ? (
+                    <div className="rounded-xl bg-[var(--gray-100)] p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[12px] font-semibold text-green-600">✓ 공고 분석 완료</span>
+                        <button onClick={() => { setJobParsed(false); setJobText(""); setJobUrl(""); }}
+                          className="text-[11px] text-[var(--gray-500)] underline underline-offset-2">다시 입력</button>
+                      </div>
+                      <p className="text-[12px] text-[var(--gray-600)] line-clamp-3">{jobText.slice(0, 150)}…</p>
                     </div>
-                    <div>
-                      <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">
-                        지원 직무
-                      </label>
-                      <input
-                        type="text"
-                        value={targetPosition}
-                        onChange={(e) => setTargetPosition(e.target.value)}
-                        placeholder="예: 백엔드"
-                        className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20"
-                      />
+                  ) : (
+                    <div className="flex gap-2">
+                      <input type="url" value={jobUrl} onChange={(e) => setJobUrl(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleJobUrlParse(); } }}
+                        placeholder="채용공고 URL을 붙여넣으세요"
+                        className="flex-1 rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20" />
+                      <button onClick={handleJobUrlParse} disabled={!jobUrl.trim() || jobParsing}
+                        className="shrink-0 rounded-xl bg-[var(--blue-primary)] px-4 py-3 text-[13px] font-semibold text-white disabled:opacity-40">
+                        {jobParsing ? "분석 중..." : "분석"}
+                      </button>
                     </div>
-                  </div>
-                  <p className="mt-2 text-[11px] text-[var(--gray-400)]">
-                    지원 정보를 추가하면 기업에 맞춤화된 답변을 받을 수 있어요
-                  </p>
+                  )}
+                  {jobError && <p className="mt-2 text-[12px] text-red-500">{jobError}</p>}
+                </motion.div>
+              ) : (
+                <motion.div key="job-text" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
+                  <textarea value={jobText} onChange={(e) => setJobText(e.target.value)}
+                    placeholder={"채용공고 전문을 붙여넣으세요.\n\n자격요건, 우대사항, 인재상 등이 포함되면 맞춤 답변 품질이 크게 올라갑니다."}
+                    rows={4}
+                    className="w-full resize-none rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] leading-[22px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20" />
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Company / Position */}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">지원 회사</label>
+                <input type="text" value={targetCompany} onChange={(e) => setTargetCompany(e.target.value)}
+                  placeholder="예: 카카오"
+                  className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold text-[var(--gray-700)]">지원 직무</label>
+                <input type="text" value={targetPosition} onChange={(e) => setTargetPosition(e.target.value)}
+                  placeholder="예: 백엔드"
+                  className="w-full rounded-xl bg-[var(--gray-100)] px-4 py-3 text-[14px] text-[var(--gray-900)] placeholder:text-[var(--gray-400)] focus:outline-none focus:ring-2 focus:ring-[var(--blue-primary)]/20" />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-[var(--gray-400)]">
+              채용공고가 있으면 우선 반영, 없으면 회사명으로 기업 정보를 자동 검색해요
+            </p>
           </div>
         </div>
       )}

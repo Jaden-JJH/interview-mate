@@ -1,4 +1,4 @@
-// 서류전형 질문별 답변 생성 API — 이력 정보 + N개 질문 → 맞춤 답변
+// 서류전형 질문별 답변 생성 API — 이력 + 채용공고(선택) + N개 질문 → 맞춤 답변 (Serper 웹서치 fallback)
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText, parseJsonFromText } from "@/lib/anthropic";
 import { getOrCreateAppUserId } from "@/lib/db/users";
@@ -7,6 +7,7 @@ import { isGuestMode } from "@/lib/guest";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { captureServerError } from "@/lib/posthog-server";
+import { searchCompanyInfo, formatCompanyContext } from "@/lib/search-company";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -19,7 +20,9 @@ const SYSTEM_PROMPT = `한국 취업 서류전형 전문 컨설턴트입니다. 
 - 질문마다 가능한 다른 경험을 활용하여 중복 방지
 - 자연스럽고 진정성 있는 한국어
 - 구체적인 수치와 성과 포함
+- 채용공고가 제공되면 자격요건·우대사항·인재상에 직접 맞추어 답변 작성
 - 지원 회사/직무가 명시되면 해당 기업 문화와 직무 요구사항에 맞게 톤 조정
+- 기업 참고 정보가 제공되면 기업 가치관·사업 방향에 자연스럽게 연결
 
 응답은 반드시 아래 JSON 배열 형식으로만 출력하세요. 다른 텍스트 없이 JSON만:
 [
@@ -37,6 +40,7 @@ interface Body {
   questions: QuestionInput[];
   targetCompany?: string;
   targetPosition?: string;
+  jobPostingText?: string;
 }
 
 interface AnswerItem {
@@ -104,6 +108,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // --- Web search fallback (only if no job posting but company given) ---
+  let companyContext = "";
+  const jobPostingText = body.jobPostingText?.trim() || "";
+  if (!jobPostingText && body.targetCompany?.trim()) {
+    const info = await searchCompanyInfo(body.targetCompany.trim(), body.targetPosition?.trim() || "");
+    if (info) companyContext = formatCompanyContext(info);
+  }
+
   // --- Build user message ---
   const questionLines = questions
     .map((q, i) => {
@@ -116,6 +128,8 @@ export async function POST(req: NextRequest) {
     `[지원자 이력/경력]\n${backgroundText}`,
     body.targetCompany?.trim() ? `[지원 회사] ${body.targetCompany.trim()}` : null,
     body.targetPosition?.trim() ? `[지원 직무] ${body.targetPosition.trim()}` : null,
+    jobPostingText ? `[채용공고 전문]\n${jobPostingText}` : null,
+    companyContext ? `\n${companyContext}` : null,
     `[서류전형 질문]\n${questionLines}`,
     "위 질문들에 대한 답변을 JSON 배열로 작성해 주세요.",
   ]
