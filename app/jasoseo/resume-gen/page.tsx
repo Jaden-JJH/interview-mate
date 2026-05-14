@@ -53,7 +53,6 @@ const DEGREE_OPTIONS = ["학사", "석사", "박사", "전문학사", "고졸"];
 const EDU_STATUS_OPTIONS = ["졸업", "재학", "수료", "중퇴", "졸업예정"];
 
 const STEP_HINTS: Record<string, string> = {
-  contact: "이메일·전화 중 하나만 입력해도 괜찮아요.",
   education: "없으면 바로 다음으로 넘어가도 괜찮아요.",
   career: "신입이면 항목 추가 없이 다음으로 넘어가세요.",
   certs: "없으면 바로 다음으로 넘어가도 괜찮아요.",
@@ -241,11 +240,17 @@ export default function ResumeGeneratePage() {
               placeholder="이메일 (예: hong@gmail.com)" className={inputCls} autoFocus />
             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
               placeholder="전화번호 (예: 010-1234-5678)" className={inputCls} />
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <svg className="h-3.5 w-3.5 shrink-0 text-[var(--gray-400)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              <p className="text-[11px] text-[var(--gray-400)]">저장되지 않아요. 이력서 생성에만 사용되며, AI에 학습되지 않아요.</p>
+            <div className="mt-1 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <ul className="space-y-1">
+                <li className="flex items-start gap-2 text-[12px] text-amber-800">
+                  <span className="shrink-0">•</span>
+                  <span>꼭 입력하지 않아도 돼요.</span>
+                </li>
+                <li className="flex items-start gap-2 text-[12px] text-amber-800">
+                  <span className="shrink-0">•</span>
+                  <span>이력서 생성에만 사용되며 저장되거나 AI 학습되지 않아요.</span>
+                </li>
+              </ul>
             </div>
           </div>
         );
