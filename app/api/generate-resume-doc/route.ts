@@ -1,11 +1,7 @@
-// 이력서 생성 API — 이력 정보 → 실전용 이력서 텍스트
+// 이력서 생성 API — 확장 이력 정보 (학력·경력·자격증 배열 포함) → 실전용 이력서 텍스트 (무료)
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, CLAUDE_MODEL, extractText } from "@/lib/anthropic";
-import { getOrCreateAppUserId } from "@/lib/db/users";
-import { consumeCredits } from "@/lib/db/credits";
-import { isGuestMode } from "@/lib/guest";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { CREDIT_COSTS } from "@/lib/credit-costs";
 import { captureServerError } from "@/lib/posthog-server";
 
 export const runtime = "nodejs";
@@ -31,13 +27,17 @@ For each role:
   · Key achievement or responsibility
 
 ■ 학력
-- 학교명 | 전공 | 졸업년도
+For each entry:
+- 학교명 | 전공 | 학위 | 졸업연도 | 재학상태
 
 ■ 보유 기술
 Comma-separated list of relevant skills
 
-■ 기타 (only if relevant info provided)
-Certifications, awards, languages, etc.
+■ 자격증 / 어학 (only if provided)
+- 자격증명 (취득일/점수)
+
+■ 대외활동 / 수상 (only if provided)
+(relevant activities and awards)
 
 Guidelines:
 - Write in natural, professional Korean
@@ -47,13 +47,36 @@ Guidelines:
 - Prioritize recent and relevant experience
 - Use consistent formatting with bullet points`;
 
+interface EduEntry {
+  school: string;
+  major?: string;
+  degree?: string;
+  graduationYear?: string;
+  status?: string;
+}
+
+interface CarEntry {
+  company: string;
+  role?: string;
+  period?: string;
+  description?: string;
+}
+
+interface CertItem {
+  name: string;
+  detail?: string;
+}
+
 interface Body {
   name?: string;
   contact?: string;
   position?: string;
-  education?: string;
-  experience?: string;
+  yearsOfExperience?: string;
+  educations?: EduEntry[];
+  careers?: CarEntry[];
+  certs?: CertItem[];
   skills?: string;
+  activities?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -83,33 +106,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "지원 직무를 입력해 주세요." }, { status: 400 });
   }
 
-  const experience = body.experience?.trim();
-  if (!experience || experience.length < 30) {
-    return NextResponse.json({ error: "경력 요약을 30자 이상 입력해 주세요." }, { status: 400 });
-  }
-
-  const guest = isGuestMode();
-  if (!guest && CREDIT_COSTS.resumeDocGenerate > 0) {
-    const userId = await getOrCreateAppUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const balance = await consumeCredits(userId, CREDIT_COSTS.resumeDocGenerate);
-    if (!balance) {
-      return NextResponse.json(
-        { error: "insufficient_credits" },
-        { status: 402 }
-      );
-    }
-  }
+  const edus = (body.educations ?? []).filter((e) => e.school?.trim());
+  const cars = (body.careers ?? []).filter((c) => c.company?.trim());
+  const certItems = (body.certs ?? []).filter((c) => c.name?.trim());
 
   const lines = [
     `이름: ${name}`,
     body.contact ? `연락처: ${body.contact}` : null,
     `지원 직무: ${position}`,
-    body.education ? `학력: ${body.education}` : null,
-    `경력 요약:\n${experience}`,
+    body.yearsOfExperience ? `총 경력: ${body.yearsOfExperience}` : null,
+    edus.length > 0
+      ? `학력:\n${edus.map((e) =>
+          `- ${e.school}${e.major ? ` ${e.major}` : ""}${e.degree ? ` (${e.degree})` : ""}${e.graduationYear ? ` ${e.graduationYear}` : ""}${e.status ? ` ${e.status}` : ""}`
+        ).join("\n")}`
+      : null,
+    cars.length > 0
+      ? `경력 사항:\n${cars.map((c) =>
+          [
+            `- ${c.company}${c.role ? ` | ${c.role}` : ""}${c.period ? ` | ${c.period}` : ""}`,
+            c.description ? `  ${c.description}` : null,
+          ].filter(Boolean).join("\n")
+        ).join("\n")}`
+      : null,
+    certItems.length > 0
+      ? `자격증/어학:\n${certItems.map((c) => `- ${c.name}${c.detail ? ` (${c.detail})` : ""}`).join("\n")}`
+      : null,
     body.skills ? `보유 기술: ${body.skills}` : null,
+    body.activities ? `대외활동/수상:\n${body.activities}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");
