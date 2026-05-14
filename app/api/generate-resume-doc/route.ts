@@ -77,6 +77,7 @@ interface Body {
   certs?: CertItem[];
   skills?: string;
   activities?: string;
+  extraInfo?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
       : null,
     body.skills ? `보유 기술: ${body.skills}` : null,
     body.activities ? `대외활동/수상:\n${body.activities}` : null,
+    body.extraInfo ? `기타/추가 정보:\n${body.extraInfo}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");

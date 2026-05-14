@@ -1,4 +1,4 @@
-// 이력서 생성 페이지 — 마이크로 스텝 위저드 (이름·연락처·직무·경력·학력·경력사항·자격증·기술·대외활동 → 리뷰) → 이력서 생성 (무료)
+// 이력서 생성 페이지 — 마이크로 스텝 위저드 (이름·연락처·직무·경력·학력·경력사항·자격증·기술·대외활동·추가정보 → 리뷰) → 이력서 생성 (무료)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -53,12 +53,13 @@ const DEGREE_OPTIONS = ["학사", "석사", "박사", "전문학사", "고졸"];
 const EDU_STATUS_OPTIONS = ["졸업", "재학", "수료", "중퇴", "졸업예정"];
 
 const STEP_HINTS: Record<string, string> = {
-  contact: "선택사항이에요. 비워두고 넘어가도 괜찮아요.",
+  contact: "이메일·전화 중 하나만 입력해도 괜찮아요.",
   education: "없으면 바로 다음으로 넘어가도 괜찮아요.",
   career: "신입이면 항목 추가 없이 다음으로 넘어가세요.",
   certs: "없으면 바로 다음으로 넘어가도 괜찮아요.",
   skills: "선택사항이에요. 비워두고 넘어가도 괜찮아요.",
   activities: "없으면 비워두고 넘어가도 괜찮아요.",
+  extra: "없으면 비워두고 넘어가도 괜찮아요.",
 };
 
 interface MicroStepDef {
@@ -78,7 +79,8 @@ const MICRO_STEPS: MicroStepDef[] = [
   { id: "career",     question: "경력 사항을 입력해주세요",          cheer: "성과 중심으로 적으면 최고예요!", required: false, label: "경력 사항" },
   { id: "certs",      question: "자격증이나 어학 성적이 있나요?",     cheer: "선택사항이에요",             required: false, label: "자격증/어학" },
   { id: "skills",     question: "보유 기술을 알려주세요",            cheer: "핵심 기술 위주로!",           required: false, label: "기술 스택" },
-  { id: "activities", question: "대외활동이나 수상 경력이 있나요?",   cheer: "마지막이에요!",              required: false, label: "대외활동/수상" },
+  { id: "activities", question: "대외활동이나 수상 경력이 있나요?",   cheer: "거의 다 왔어요!",             required: false, label: "대외활동/수상" },
+  { id: "extra",      question: "추가로 넣고 싶은 내용이 있나요?",   cheer: "마지막이에요!",               required: false, label: "추가 정보" },
   { id: "review",     question: "입력한 내용을 확인하세요",          cheer: "완벽해요! 확인하고 생성하세요", required: false, label: "" },
 ];
 
@@ -89,12 +91,14 @@ export default function ResumeGeneratePage() {
   const [micro, setMicro] = useState(0);
 
   const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
   const [positionOpen, setPositionOpen] = useState(false);
   const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [skills, setSkills] = useState("");
   const [activities, setActivities] = useState("");
+  const [extraInfo, setExtraInfo] = useState("");
 
   const [educations, setEducations] = useState<EducationEntry[]>([]);
   const [eduBuffer, setEduBuffer] = useState<EducationEntry>(emptyEdu());
@@ -123,7 +127,7 @@ export default function ResumeGeneratePage() {
   function getFieldSummary(id: string): string {
     switch (id) {
       case "name":       return name;
-      case "contact":    return contact;
+      case "contact":    return [email, phone].filter(Boolean).join(" · ");
       case "position":   return position;
       case "experience": return yearsOfExperience;
       case "education":
@@ -137,6 +141,7 @@ export default function ResumeGeneratePage() {
         return certs.length === 1 ? certs[0].name : `${certs.length}개 입력됨`;
       case "skills":     return skills;
       case "activities": return activities ? activities.slice(0, 40) + (activities.length > 40 ? "…" : "") : "";
+      case "extra":      return extraInfo ? extraInfo.slice(0, 40) + (extraInfo.length > 40 ? "…" : "") : "";
       default:           return "";
     }
   }
@@ -192,7 +197,7 @@ export default function ResumeGeneratePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          contact: contact.trim() || undefined,
+          contact: [email.trim(), phone.trim()].filter(Boolean).join(" / ") || undefined,
           position: position.trim(),
           yearsOfExperience: yearsOfExperience || undefined,
           educations: educations.length > 0 ? educations : undefined,
@@ -200,6 +205,7 @@ export default function ResumeGeneratePage() {
           certs: certs.length > 0 ? certs : undefined,
           skills: skills.trim() || undefined,
           activities: activities.trim() || undefined,
+          extraInfo: extraInfo.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -229,7 +235,20 @@ export default function ResumeGeneratePage() {
         return <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 홍길동" className={inputCls} autoFocus />;
 
       case "contact":
-        return <input type="text" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="이메일 또는 전화번호" className={inputCls} autoFocus />;
+        return (
+          <div className="flex flex-col gap-3">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="이메일 (예: hong@gmail.com)" className={inputCls} autoFocus />
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+              placeholder="전화번호 (예: 010-1234-5678)" className={inputCls} />
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <svg className="h-3.5 w-3.5 shrink-0 text-[var(--gray-400)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <p className="text-[11px] text-[var(--gray-400)]">저장되지 않아요. 이력서 생성에만 사용되며, AI에 학습되지 않아요.</p>
+            </div>
+          </div>
+        );
 
       case "position":
         return (
@@ -432,6 +451,11 @@ export default function ResumeGeneratePage() {
           placeholder="대외활동, 수상 경력, 교육 이수 등을 자유롭게 적어주세요"
           className={textareaCls} autoFocus />;
 
+      case "extra":
+        return <textarea rows={5} value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)}
+          placeholder={"특허, 포트폴리오 링크, 외국어 능력, 병역, 봉사활동 등\n자유롭게 추가 입력해주세요"}
+          className={textareaCls} autoFocus />;
+
       default:
         return null;
     }
@@ -523,17 +547,21 @@ export default function ResumeGeneratePage() {
                   <p className="text-[12px] font-medium text-[var(--blue-primary)] mb-1">{currentStep.cheer}</p>
                   <h2 className="text-[18px] font-extrabold text-[var(--gray-900)]">{currentStep.question}</h2>
 
-                  {/* 기본 정보 */}
-                  <div className="rounded-xl bg-[var(--gray-50)] px-4 py-3 space-y-2">
+                  {/* 기본 정보 — 항목별 수정 버튼 */}
+                  <div className="flex flex-col gap-2">
                     {[
-                      { l: "이름",   v: name },
-                      { l: "연락처", v: contact },
-                      { l: "직무",   v: position },
-                      { l: "경력",   v: yearsOfExperience },
+                      { l: "이름",   v: name,                                                   id: "name" },
+                      { l: "연락처", v: [email, phone].filter(Boolean).join(" · "),              id: "contact" },
+                      { l: "직무",   v: position,                                               id: "position" },
+                      { l: "경력",   v: yearsOfExperience,                                      id: "experience" },
                     ].filter((r) => r.v).map((r) => (
-                      <div key={r.l} className="flex items-baseline gap-3">
-                        <span className="shrink-0 text-[11px] font-medium text-[var(--gray-400)] w-[48px]">{r.l}</span>
-                        <span className="text-[13px] font-semibold text-[var(--gray-800)]">{r.v}</span>
+                      <div key={r.l} className="flex items-center justify-between rounded-xl bg-[var(--gray-50)] px-4 py-3">
+                        <div className="flex items-baseline gap-3 flex-1 min-w-0">
+                          <span className="shrink-0 text-[11px] font-medium text-[var(--gray-400)] w-[48px]">{r.l}</span>
+                          <span className="text-[13px] font-semibold text-[var(--gray-800)] truncate">{r.v}</span>
+                        </div>
+                        <button onClick={() => setMicro(MICRO_STEPS.findIndex((s) => s.id === r.id))}
+                          className="ml-3 shrink-0 text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
                       </div>
                     ))}
                   </div>
@@ -602,21 +630,39 @@ export default function ResumeGeneratePage() {
                     </div>
                   )}
 
-                  {/* 기술 / 대외활동 */}
-                  {(skills || activities) && (
-                    <div className="rounded-xl bg-[var(--gray-50)] px-4 py-3 space-y-2">
-                      {skills && (
-                        <div className="flex items-baseline gap-3">
-                          <span className="shrink-0 text-[11px] font-medium text-[var(--gray-400)] w-[48px]">기술</span>
-                          <span className="text-[13px] font-semibold text-[var(--gray-800)]">{skills}</span>
-                        </div>
-                      )}
-                      {activities && (
-                        <div className="flex items-baseline gap-3">
-                          <span className="shrink-0 text-[11px] font-medium text-[var(--gray-400)] w-[48px]">활동</span>
-                          <span className="text-[13px] text-[var(--gray-800)] line-clamp-2">{activities}</span>
-                        </div>
-                      )}
+                  {/* 기술 스택 */}
+                  {skills && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[13px] font-bold text-[var(--gray-900)]">기술 스택</p>
+                        <button onClick={() => setMicro(MICRO_STEPS.findIndex((s) => s.id === "skills"))}
+                          className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                      </div>
+                      <p className="text-[13px] text-[var(--gray-700)]">{skills}</p>
+                    </div>
+                  )}
+
+                  {/* 대외활동/수상 */}
+                  {activities && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[13px] font-bold text-[var(--gray-900)]">대외활동/수상</p>
+                        <button onClick={() => setMicro(MICRO_STEPS.findIndex((s) => s.id === "activities"))}
+                          className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                      </div>
+                      <p className="text-[13px] text-[var(--gray-700)] line-clamp-3">{activities}</p>
+                    </div>
+                  )}
+
+                  {/* 추가 정보 */}
+                  {extraInfo && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[13px] font-bold text-[var(--gray-900)]">추가 정보</p>
+                        <button onClick={() => setMicro(MICRO_STEPS.findIndex((s) => s.id === "extra"))}
+                          className="text-[12px] font-semibold text-[var(--blue-primary)]">수정</button>
+                      </div>
+                      <p className="text-[13px] text-[var(--gray-700)] line-clamp-3">{extraInfo}</p>
                     </div>
                   )}
                 </motion.div>
