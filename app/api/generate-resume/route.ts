@@ -29,7 +29,11 @@ Guidelines:
 - If company reference info is provided, actively reference the company's values, culture, tech stack, or business direction in sections 1 and 4
 - If the user specifies emphasis points (강조하고 싶은 내용), prominently weave those themes into the relevant sections
 - Each section must include at least one concrete example, number, or outcome — no section should be purely abstract
-- Write as if the applicant is speaking in first person, with confident but humble tone`;
+- Write as if the applicant is speaking in first person, with confident but humble tone
+- Do NOT use emojis under any circumstances
+- Use only headers up to ### (never ####, #####, or deeper)
+- Use only basic markdown: bold (**text**), lists (- item), dividers (---)
+- Avoid any markdown syntax that might not render correctly in a plain textarea`;
 
 interface Body {
   position?: string;
@@ -38,6 +42,7 @@ interface Body {
   targetCompany?: string;
   emphasis?: string;
   existingResume?: string;
+  language?: "ko" | "en";
 }
 
 export async function POST(req: NextRequest) {
@@ -109,7 +114,9 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `다음 정보를 바탕으로 한국어 자기소개서를 작성해 주세요.\n\n${lines}`,
+          content: body.language === "en"
+            ? `Please write a professional self-introduction letter entirely in English based on the following information.\n\n${lines}`
+            : `다음 정보를 바탕으로 한국어 자기소개서를 작성해 주세요.\n\n${lines}`,
         },
       ],
     });

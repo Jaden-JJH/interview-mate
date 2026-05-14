@@ -1,4 +1,4 @@
-// 자소서 생성 페이지 — 마이크로 스텝 위저드 (칩 멀티셀렉트 + 직접 입력) → 자기소개서 (1크레딧)
+// 자소서 생성 페이지 — 마이크로 스텝 위저드 (칩 멀티셀렉트 + 직접 입력) → 자기소개서 (1크레딧) + 언어 선택
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -80,6 +80,7 @@ export default function JasoseoGeneratePage() {
   const [aspirationCustom, setAspirationCustom] = useState("");
   const [showAspirationInput, setShowAspirationInput] = useState(false);
 
+  const [language, setLanguage] = useState<"ko" | "en">("ko");
   const [result, setResult] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -168,6 +169,7 @@ export default function JasoseoGeneratePage() {
           targetCompany: company.trim() || undefined,
           keyExperience: keyExperience.trim() || undefined,
           emphasis: emphasisParts || undefined,
+          language,
         }),
       });
       const data = await res.json();
@@ -439,6 +441,26 @@ export default function JasoseoGeneratePage() {
                       ))}
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* Language selection */}
+              <div className="mt-4 rounded-xl bg-[var(--gray-50)] px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-[var(--gray-700)]">출력 언어</span>
+                  <div className="flex rounded-lg bg-[var(--gray-100)] p-0.5">
+                    {(["ko", "en"] as const).map((lang) => (
+                      <button key={lang} type="button" onClick={() => setLanguage(lang)}
+                        className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                          language === lang ? "bg-white text-[var(--gray-900)] shadow-sm" : "text-[var(--gray-500)]"
+                        }`}>
+                        {lang === "ko" ? "한국어" : "English"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {language === "en" && (
+                  <p className="mt-1.5 text-[12px] font-medium text-[var(--blue-primary)]">영문으로 생성해요!</p>
                 )}
               </div>
             </div>

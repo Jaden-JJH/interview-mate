@@ -35,7 +35,11 @@ For each project or role, use this storytelling framework with clear headers:
 - Quantify results wherever possible — if the user didn't provide metrics, describe impact qualitatively but DO NOT fabricate numbers
 - If company reference info is provided, tailor the narrative to emphasize skills and achievements relevant to that company
 - End with a brief "핵심 역량 요약" section (3–5 bullet points) tying everything together
-- Use markdown headers (##, ###) and bullet points for readability`;
+- Use markdown headers (##, ###) and bullet points for readability
+- Do NOT use emojis under any circumstances
+- Use only headers up to ### (never ####, #####, or deeper)
+- Use only basic markdown: bold (**text**), lists (- item), dividers (---)
+- Avoid any markdown syntax that might not render correctly in a plain textarea`;
 
 interface Project {
   name: string;
@@ -54,6 +58,7 @@ interface Body {
   keyExperience?: string;
   targetCompany?: string;
   projects?: Project[];
+  language?: "ko" | "en";
 }
 
 export async function POST(req: NextRequest) {
@@ -148,7 +153,9 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `다음 정보를 바탕으로 성과 중심의 경력기술서를 작성해 주세요.\n\n${lines}`,
+          content: body.language === "en"
+            ? `Please write an achievement-focused career description document entirely in English based on the following information.\n\n${lines}`
+            : `다음 정보를 바탕으로 성과 중심의 경력기술서를 작성해 주세요.\n\n${lines}`,
         },
       ],
     });

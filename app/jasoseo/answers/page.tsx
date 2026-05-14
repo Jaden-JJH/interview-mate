@@ -1,4 +1,4 @@
-// 서류전형 답변 생성 페이지 — 위저드 플로우 (이력→채용공고→회사/직무→질문→리뷰) → 맞춤 답변 (2크레딧)
+// 서류전형 답변 생성 페이지 — 위저드 플로우 (이력→채용공고→회사/직무→질문→리뷰) → 맞춤 답변 (2크레딧) + 언어 선택
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -104,6 +104,9 @@ export default function AnswersPage() {
   const [openAccordion, setOpenAccordion] = useState<number>(0);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // Language
+  const [language, setLanguage] = useState<"ko" | "en">("ko");
 
   // Error / Paywall
   const [error, setError] = useState<string | null>(null);
@@ -234,6 +237,7 @@ export default function AnswersPage() {
           targetCompany: targetCompany.trim() || undefined,
           targetPosition: targetPosition.trim() || undefined,
           jobPostingText: jobText.trim() || undefined,
+          language,
         }),
       });
       const data = await res.json();
@@ -481,7 +485,10 @@ export default function AnswersPage() {
         자소서메이트
       </button>
       <div className="mb-6">
-        <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">서류전형 답변 생성</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[22px] font-extrabold text-[var(--gray-900)]">서류전형 답변 생성</h1>
+          <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">NEW</span>
+        </div>
         <p className="mt-1 text-[14px] text-[var(--gray-500)]">기업 질문에 맞춘 맞춤형 답변을 만들어 드려요</p>
       </div>
 
@@ -595,6 +602,26 @@ export default function AnswersPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Language selection */}
+              <div className="mt-4 rounded-xl bg-[var(--gray-50)] px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-[var(--gray-700)]">출력 언어</span>
+                  <div className="flex rounded-lg bg-[var(--gray-100)] p-0.5">
+                    {(["ko", "en"] as const).map((lang) => (
+                      <button key={lang} type="button" onClick={() => setLanguage(lang)}
+                        className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                          language === lang ? "bg-white text-[var(--gray-900)] shadow-sm" : "text-[var(--gray-500)]"
+                        }`}>
+                        {lang === "ko" ? "한국어" : "English"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {language === "en" && (
+                  <p className="mt-1.5 text-[12px] font-medium text-[var(--blue-primary)]">영문으로 생성해요!</p>
+                )}
               </div>
             </div>
           )}

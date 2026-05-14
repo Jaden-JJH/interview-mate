@@ -1,4 +1,4 @@
-// 이력서 생성 페이지 — 마이크로 스텝 위저드 (이름·연락처·직무·경력·학력·경력사항·자격증·기술·대외활동·추가정보 → 리뷰) → 이력서 생성 (무료)
+// 이력서 생성 페이지 — 마이크로 스텝 위저드 (이름·연락처·직무·경력·학력·경력사항·자격증·기술·대외활동·추가정보 → 리뷰) → 이력서 생성 (무료) + 언어 선택
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -106,6 +106,7 @@ export default function ResumeGeneratePage() {
   const [certs, setCerts] = useState<CertEntry[]>([]);
   const [certBuffer, setCertBuffer] = useState<CertEntry>(emptyCert());
 
+  const [language, setLanguage] = useState<"ko" | "en">("ko");
   const [result, setResult] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -205,6 +206,7 @@ export default function ResumeGeneratePage() {
           skills: skills.trim() || undefined,
           activities: activities.trim() || undefined,
           extraInfo: extraInfo.trim() || undefined,
+          language,
         }),
       });
       const data = await res.json();
@@ -670,6 +672,26 @@ export default function ResumeGeneratePage() {
                       <p className="text-[13px] text-[var(--gray-700)] line-clamp-3">{extraInfo}</p>
                     </div>
                   )}
+
+                  {/* Language selection */}
+                  <div className="rounded-xl bg-[var(--gray-50)] px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] font-semibold text-[var(--gray-700)]">출력 언어</span>
+                      <div className="flex rounded-lg bg-[var(--gray-100)] p-0.5">
+                        {(["ko", "en"] as const).map((lang) => (
+                          <button key={lang} type="button" onClick={() => setLanguage(lang)}
+                            className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                              language === lang ? "bg-white text-[var(--gray-900)] shadow-sm" : "text-[var(--gray-500)]"
+                            }`}>
+                            {lang === "ko" ? "한국어" : "English"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {language === "en" && (
+                      <p className="mt-1.5 text-[12px] font-medium text-[var(--blue-primary)]">영문으로 생성해요!</p>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

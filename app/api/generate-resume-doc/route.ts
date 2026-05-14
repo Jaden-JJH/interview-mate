@@ -45,7 +45,11 @@ Guidelines:
 - Quantify achievements where the user provided numbers
 - Do NOT fabricate information — only use what's provided
 - Prioritize recent and relevant experience
-- Use consistent formatting with bullet points`;
+- Use consistent formatting with bullet points
+- Do NOT use emojis under any circumstances
+- Use only headers up to ### (never ####, #####, or deeper)
+- Use only basic markdown: bold (**text**), lists (- item), dividers (---)
+- Avoid any markdown syntax that might not render correctly in a plain textarea`;
 
 interface EduEntry {
   school: string;
@@ -78,6 +82,7 @@ interface Body {
   skills?: string;
   activities?: string;
   extraInfo?: string;
+  language?: "ko" | "en";
 }
 
 export async function POST(req: NextRequest) {
@@ -153,7 +158,9 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `다음 정보를 바탕으로 깔끔한 이력서를 작성해 주세요.\n\n${lines}`,
+          content: body.language === "en"
+            ? `Please write a clean, professional resume entirely in English based on the following information.\n\n${lines}`
+            : `다음 정보를 바탕으로 깔끔한 이력서를 작성해 주세요.\n\n${lines}`,
         },
       ],
     });

@@ -23,6 +23,9 @@ const SYSTEM_PROMPT = `한국 취업 서류전형 전문 컨설턴트입니다. 
 - 채용공고가 제공되면 자격요건·우대사항·인재상에 직접 맞추어 답변 작성
 - 지원 회사/직무가 명시되면 해당 기업 문화와 직무 요구사항에 맞게 톤 조정
 - 기업 참고 정보가 제공되면 기업 가치관·사업 방향에 자연스럽게 연결
+- 이모지 사용 절대 금지
+- 마크다운 헤더는 ###까지만 사용 (#### 이하 금지)
+- 볼드(**text**), 리스트(- item) 등 기본 마크다운만 사용
 
 응답은 반드시 아래 JSON 배열 형식으로만 출력하세요. 다른 텍스트 없이 JSON만:
 [
@@ -41,6 +44,7 @@ interface Body {
   targetCompany?: string;
   targetPosition?: string;
   jobPostingText?: string;
+  language?: "ko" | "en";
 }
 
 interface AnswerItem {
@@ -131,7 +135,9 @@ export async function POST(req: NextRequest) {
     jobPostingText ? `[채용공고 전문]\n${jobPostingText}` : null,
     companyContext ? `\n${companyContext}` : null,
     `[서류전형 질문]\n${questionLines}`,
-    "위 질문들에 대한 답변을 JSON 배열로 작성해 주세요.",
+    body.language === "en"
+      ? "위 질문들에 대한 답변을 JSON 배열로 작성해 주세요. 모든 답변 내용은 영어(English)로 작성하세요. Professional business English."
+      : "위 질문들에 대한 답변을 JSON 배열로 작성해 주세요.",
   ]
     .filter(Boolean)
     .join("\n\n");
