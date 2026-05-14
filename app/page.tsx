@@ -157,10 +157,17 @@ export default function LandingPage() {
               무료로 면접 준비 시작하기
             </button>
             <button
+              type="button"
               onClick={() => { posthog.capture("funnel_jasoseo_cta_clicked"); router.push("/jasoseo"); }}
-              className="w-full rounded-2xl border border-[var(--gray-300)] bg-white py-[15px] text-[15px] font-semibold text-[var(--gray-700)] transition-transform active:scale-[0.98]"
+              className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] active:scale-[0.99] transition-transform"
             >
-              서류 전형 준비하기
+              <span
+                aria-hidden
+                className="absolute inset-[-1000%] animate-[premiumSpin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#1B64DA_0%,#7C5CFF_25%,#E2CBFF_50%,#7C5CFF_75%,#1B64DA_100%)]"
+              />
+              <span className="relative flex w-full items-center justify-center rounded-[14px] bg-[var(--gray-900)] py-[14px] text-[15px] font-bold text-white">
+                서류 전형 준비하기
+              </span>
             </button>
           </motion.div>
         </div>
