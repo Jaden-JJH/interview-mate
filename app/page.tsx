@@ -165,7 +165,7 @@ export default function LandingPage() {
                 aria-hidden
                 className="absolute inset-[-1000%] animate-[premiumSpin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#1B64DA_0%,#7C5CFF_25%,#E2CBFF_50%,#7C5CFF_75%,#1B64DA_100%)]"
               />
-              <span className="relative flex w-full items-center justify-center rounded-[14px] bg-[var(--gray-900)] py-[14px] text-[15px] font-bold text-white">
+              <span className="relative flex w-full items-center justify-center rounded-[14px] bg-[var(--gray-900)] py-[17px] text-[16px] font-bold text-white">
                 서류 전형 준비하기
               </span>
             </button>
