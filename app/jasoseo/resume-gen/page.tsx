@@ -240,7 +240,7 @@ export default function ResumeGeneratePage() {
               placeholder="이메일 (예: hong@gmail.com)" className={inputCls} autoFocus />
             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
               placeholder="전화번호 (예: 010-1234-5678)" className={inputCls} />
-            <div className="mt-1 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+            <div className="mt-1 rounded-xl bg-amber-50 px-4 py-3">
               <ul className="space-y-1">
                 <li className="flex items-start gap-2 text-[12px] text-amber-800">
                   <span className="shrink-0">•</span>
