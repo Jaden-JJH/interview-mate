@@ -4,7 +4,6 @@ import {
   Paragraph,
   TextRun,
   HeadingLevel,
-  AlignmentType,
   Packer,
   BorderStyle,
 } from "docx";
