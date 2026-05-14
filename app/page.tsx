@@ -1,4 +1,4 @@
-// 서비스 소개 랜딩 페이지 — 3단계 플로우 안내, 주요 기능 소개, 면접 시작 CTA
+// 서비스 소개 랜딩 페이지 — 3단계 플로우 안내, 주요 기능 소개, 면접/서류 시작 CTA
 "use client";
 
 import { useEffect } from "react";
@@ -155,6 +155,12 @@ export default function LandingPage() {
               className="w-full rounded-2xl bg-[var(--blue-primary)] py-[18px] text-[16px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(27,100,218,0.5)] transition-transform active:scale-[0.98]"
             >
               무료로 면접 준비 시작하기
+            </button>
+            <button
+              onClick={() => { posthog.capture("funnel_jasoseo_cta_clicked"); router.push("/jasoseo"); }}
+              className="w-full rounded-2xl border border-[var(--gray-300)] bg-white py-[15px] text-[15px] font-semibold text-[var(--gray-700)] transition-transform active:scale-[0.98]"
+            >
+              서류 전형 준비하기
             </button>
           </motion.div>
         </div>

@@ -1,4 +1,4 @@
-// 합격 서류 준비 — 자기소개서·경력기술서·이력서 만들기
+// 자소서메이트 허브 — 서비스 카드 목록 (stagger 없이 단일 페이드인)
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -118,12 +118,12 @@ export default function JasoseoHubPage() {
 
       {/* Service cards */}
       <div className="flex flex-col gap-3">
-        {services.map((service, index) => (
+        {services.map((service) => (
           <motion.div
             key={service.route}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 * index }}
+            transition={{ duration: 0.3, delay: 0.1 }}
           >
             <button
               type="button"

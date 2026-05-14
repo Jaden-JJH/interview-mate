@@ -352,11 +352,11 @@ export default function ResumePage() {
         className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 text-center transition-all ${
           uploadedFileName
             ? opts.compact
-              ? "pt-10 pb-6 cursor-default"
-              : "pt-14 pb-10 cursor-default"
+              ? "pt-8 pb-5 cursor-default"
+              : "pt-6 pb-4 cursor-default"
             : opts.compact
-            ? "py-10 cursor-pointer"
-            : "py-14 cursor-pointer"
+            ? "py-8 cursor-pointer"
+            : "py-8 cursor-pointer"
         } ${
           isDragOver
             ? "border-[var(--blue-primary)] bg-[var(--blue-light)]"
@@ -377,7 +377,7 @@ export default function ResumePage() {
                   ? "/lottie/Search a file.json"
                   : "/lottie/success confetti.json"
               }
-              className={opts.compact ? "w-40 h-40 -my-8" : "w-56 h-56 -my-12"}
+              className={opts.compact ? "w-32 h-32 -my-6" : "w-40 h-40 -my-6"}
               loop={isParsingPdf}
             />
             <div className="rounded-lg bg-white px-5 py-2.5 text-[15px] font-medium text-[var(--gray-700)] shadow-sm">
@@ -428,7 +428,7 @@ export default function ResumePage() {
           <>
             <LottieAnimation
               src="/lottie/File Search.json"
-              className="w-28 h-28 mb-1"
+              className="w-20 h-20 mb-1"
             />
             <p className="text-[14px] font-medium text-[var(--gray-700)]">
               PDF 파일을 업로드해 주세요
@@ -467,21 +467,13 @@ export default function ResumePage() {
       {/* Top bar */}
       <div className="bg-white">
         <StepIndicator currentStep={1} totalSteps={3} />
-        <div className="px-5 pt-6 pb-2 flex items-end justify-between relative">
-          <div className="relative z-10 pb-4 pt-2">
-            <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
-              자기소개서를 입력해 주세요
-            </h1>
-            <p className="mt-1.5 text-[14px] text-[var(--gray-500)] font-medium">
-              면접 질문 생성에 활용돼요
-            </p>
-          </div>
-          <div className="w-32 h-32 shrink-0 pointer-events-none flex items-end justify-end relative right-1">
-            <LottieAnimation
-              src="/lottie/Young programmers working with computer.json"
-              className="w-[130%] h-[130%] object-contain"
-            />
-          </div>
+        <div className="px-5 pt-6 pb-2">
+          <h1 className="text-[22px] font-bold text-[var(--gray-900)] leading-tight">
+            자기소개서를 입력해 주세요
+          </h1>
+          <p className="mt-1.5 text-[14px] text-[var(--gray-500)] font-medium">
+            면접 질문 생성에 활용돼요
+          </p>
         </div>
 
         {/* Tabs only when there are no saved slots. */}
