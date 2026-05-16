@@ -1,9 +1,9 @@
-// Clerk 인증 미들웨어 — 보호된 라우트 목록을 정의하고 미인증 접근을 차단
+// Clerk 인증 미들웨어 — 인앱 브라우저 감지 + 보호된 라우트 인증 차단
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import { isGuestMode } from "@/lib/guest";
+import { isInAppBrowser } from "@/lib/in-app-browser";
 
-// Routes that require an authenticated user. Public landing, sign-in/up,
-// and the Clerk webhook endpoint stay open.
 const isProtectedRoute = createRouteMatcher([
   "/resume(.*)",
   "/job-posting(.*)",
@@ -26,10 +26,20 @@ const isProtectedRoute = createRouteMatcher([
   "/api/generate-resume-doc(.*)",
 ]);
 
+const isAuthPage = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
+
 export default clerkMiddleware(async (auth, req) => {
-  // Guest mode bypasses auth entirely so testers can run the full flow
-  // without sign-in. User-bound API routes return memory/no-op responses
-  // — see lib/guest.ts and individual route handlers.
+  const ua = req.headers.get("user-agent") ?? "";
+  if (isInAppBrowser(ua)) {
+    const needsAuth = isAuthPage(req) || isProtectedRoute(req);
+    if (needsAuth && !req.nextUrl.pathname.startsWith("/open-in-browser")) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/open-in-browser";
+      url.searchParams.set("redirect", req.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (isGuestMode()) return;
   if (isProtectedRoute(req)) {
     await auth.protect();
