@@ -1,6 +1,7 @@
-// Clerk SignUp 컴포넌트를 렌더링하는 회원가입 페이지
+// Clerk SignUp 페이지 — 인앱 브라우저 감지 시 외부 브라우저 유도
 import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
+import InAppBrowserGuard from "@/components/InAppBrowserGuard";
 
 export const metadata: Metadata = {
   title: "회원가입",
@@ -10,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className="flex flex-1 items-center justify-center py-12">
-      <SignUp />
-    </div>
+    <InAppBrowserGuard>
+      <div className="flex flex-1 items-center justify-center py-12">
+        <SignUp />
+      </div>
+    </InAppBrowserGuard>
   );
 }
