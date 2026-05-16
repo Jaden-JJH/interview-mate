@@ -13,7 +13,9 @@ export default function InAppBrowserGuard({
 }: {
   children: ReactNode;
 }) {
-  const [blocked, setBlocked] = useState(false);
+  const [status, setStatus] = useState<"checking" | "blocked" | "ok">(
+    "checking"
+  );
   const [appName, setAppName] = useState("");
   const [android, setAndroid] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -21,13 +23,16 @@ export default function InAppBrowserGuard({
   useEffect(() => {
     const ua = navigator.userAgent;
     if (isInAppBrowser(ua)) {
-      setBlocked(true);
+      setStatus("blocked");
       setAppName(getInAppBrowserName(ua));
       setAndroid(isAndroid(ua));
+    } else {
+      setStatus("ok");
     }
   }, []);
 
-  if (!blocked) return <>{children}</>;
+  if (status === "checking") return null;
+  if (status === "ok") return <>{children}</>;
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
