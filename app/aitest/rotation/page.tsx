@@ -279,9 +279,9 @@ export default function RotationGame() {
 
   const canvasSize = typeof window !== "undefined"
     ? window.innerWidth <= 640
-      ? Math.min(Math.floor(window.innerWidth * 0.42), 170)
+      ? Math.min(Math.floor((window.innerWidth - 80) / 2), 140)
       : Math.min(window.innerWidth - 48, 280)
-    : 160;
+    : 140;
 
   const renderCanvases = useCallback(() => {
     if (!problem || !beforeRef.current || !afterRef.current) return;
@@ -568,32 +568,32 @@ export default function RotationGame() {
             />
           </div>
 
-          {/* CANVASES */}
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-[14px] font-bold text-[var(--gray-500)]">
-              전
-            </div>
-            <div className="rounded-xl border-2 border-[var(--gray-200)] bg-white p-2">
-              <canvas
-                ref={beforeRef}
-                width={canvasSize}
-                height={canvasSize}
-                style={{ width: canvasSize, height: canvasSize }}
-              />
+          {/* CANVASES - 가로 나란히 */}
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-[12px] font-bold text-[var(--gray-500)]">전</div>
+              <div className="rounded-xl border-2 border-[var(--gray-200)] bg-white p-1.5">
+                <canvas
+                  ref={beforeRef}
+                  width={canvasSize}
+                  height={canvasSize}
+                  style={{ width: canvasSize, height: canvasSize }}
+                />
+              </div>
             </div>
 
-            <div className="text-[20px] text-[var(--success)]">↓</div>
+            <div className="text-[18px] text-[var(--success)] shrink-0">→</div>
 
-            <div className="text-[14px] font-bold text-[var(--success)]">
-              후
-            </div>
-            <div className="rounded-xl border-2 border-green-200 bg-green-50/50 p-2">
-              <canvas
-                ref={afterRef}
-                width={canvasSize}
-                height={canvasSize}
-                style={{ width: canvasSize, height: canvasSize }}
-              />
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-[12px] font-bold text-[var(--success)]">후</div>
+              <div className="rounded-xl border-2 border-green-200 bg-green-50/50 p-1.5">
+                <canvas
+                  ref={afterRef}
+                  width={canvasSize}
+                  height={canvasSize}
+                  style={{ width: canvasSize, height: canvasSize }}
+                />
+              </div>
             </div>
           </div>
 
