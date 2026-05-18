@@ -150,24 +150,27 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="relative z-10 flex flex-col gap-2.5 -mt-8"
           >
-            <button
-              onClick={() => { posthog.capture("funnel_cta_clicked"); router.push("/resume"); }}
-              className="w-full rounded-2xl bg-[var(--blue-primary)] py-[18px] text-[16px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(27,100,218,0.5)] transition-transform active:scale-[0.98]"
-            >
-              무료로 면접 준비 시작하기
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { posthog.capture("funnel_cta_clicked"); router.push("/resume"); }}
+                className="flex-1 rounded-2xl bg-[var(--blue-primary)] py-[16px] text-[15px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(27,100,218,0.5)] transition-transform active:scale-[0.98]"
+              >
+                면접 준비 시작
+              </button>
+              <button
+                type="button"
+                onClick={() => { posthog.capture("funnel_jasoseo_cta_clicked"); router.push("/jasoseo"); }}
+                className="flex-1 rounded-2xl bg-[var(--gray-900)] py-[16px] text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
+              >
+                서류 전형 준비
+              </button>
+            </div>
             <button
               type="button"
-              onClick={() => { posthog.capture("funnel_jasoseo_cta_clicked"); router.push("/jasoseo"); }}
-              className="group relative w-full overflow-hidden rounded-2xl p-[1.5px] active:scale-[0.99] transition-transform"
+              onClick={() => { posthog.capture("funnel_aitest_cta_clicked"); router.push("/aitest"); }}
+              className="w-full rounded-2xl bg-white border border-gray-200 py-[14px] text-[14px] font-bold text-gray-600 shadow-sm transition-transform active:scale-[0.98]"
             >
-              <span
-                aria-hidden
-                className="absolute inset-[-1000%] animate-[premiumSpin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#1B64DA_0%,#7C5CFF_25%,#E2CBFF_50%,#7C5CFF_75%,#1B64DA_100%)]"
-              />
-              <span className="relative flex w-full items-center justify-center rounded-[14px] bg-[var(--gray-900)] py-[17px] text-[16px] font-bold text-white">
-                서류 전형 준비하기
-              </span>
+              🧠 AI 역량검사 준비
             </button>
           </motion.div>
         </div>

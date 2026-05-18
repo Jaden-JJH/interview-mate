@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>도형 회전하기 (45° 전용)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+  .container{background:#fff;border-radius:20px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:1000px;width:100%}
+  h1{text-align:center;color:#333;margin-bottom:10px;font-size:32px}
+  .subtitle{text-align:center;color:#666;margin-bottom:30px;font-size:14px}
+  .game-info{display:flex;justify-content:space-between;margin-bottom:30px;padding:15px;background:#f8f9fa;border-radius:10px}
+  .info-item{text-align:center}.info-label{font-size:12px;color:#666;margin-bottom:5px}.info-value{font-size:20px;font-weight:bold;color:#333}
+  .main-content{display:flex;gap:30px;margin-bottom:30px}
+  .left-panel{flex:1;display:flex;flex-direction:column;gap:20px}
+  .shape-box{background:#fff;border:2px solid #e0e0e0;border-radius:15px;padding:20px;text-align:center}
+  .shape-label{font-size:14px;color:#666;margin-bottom:15px}
+  .shape{width:160px;height:160px;display:flex;justify-content:center;align-items:center;margin:0 auto}
+  canvas{max-width:100%;max-height:100%}
+  .arrow-down{font-size:40px;color:#4caf50;text-align:center;margin:10px 0}
+  .shape-box.after{background:#e8f5e9}
+  .right-panel{flex:1}
+  .control-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+  .btn-control{display:flex;align-items:center;justify-content:center;padding:12px 15px;border:2px solid #e0e0e0;border-radius:12px;background:#fff;cursor:pointer;transition:.2s;gap:10px}
+  .btn-control:hover{background:#f5f5f5;border-color:#4caf50}
+  .btn-icon{width:35px;height:35px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .btn-label{font-size:13px;color:#333}
+  .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}
+  .step-slot{aspect-ratio:1;border:2px solid #e0e0e0;border-radius:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#fafafa;cursor:pointer;transition:.2s;position:relative;font-size:12px;color:#999}
+  .step-slot:hover{background:#f0f0f0}.step-slot.filled{background:#fff;border-color:#4caf50}
+  .step-indicator{position:absolute;top:3px;left:3px;font-size:10px;color:#999}
+  .click-info{text-align:right;margin-bottom:10px}.click-count{font-size:18px;font-weight:bold;color:#333}.click-label{font-size:12px;color:#666}
+  .action-buttons{display:flex;gap:10px;margin-bottom:20px}
+  .btn-action{flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;transition:.2s}
+  .btn-action:hover{background:#f5f5f5;border-color:#999}
+  .btn-submit{width:100%;padding:15px;background:#5c6bc0;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;transition:.3s}
+  .btn-submit:hover{background:#3f51b5}
+  .message{text-align:center;padding:15px;border-radius:10px;margin-bottom:20px;font-weight:bold;display:none}
+  .message.show{display:block}.message.success{background:#d4edda;color:#155724}.message.error{background:#f8d7da;color:#721c24}.message.info{background:#d1ecf1;color:#0c5460}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>도형 회전하기 (45° 전용)</h1>
+  <div class="subtitle">회전/반전은 현재 상태 기준으로 누적 적용됩니다</div>
+
+  <div class="game-info">
+    <div class="info-item"><div class="info-label">라운드</div><div class="info-value" id="round">1/2</div></div>
+    <div class="info-item"><div class="info-label">시간</div><div class="info-value" id="timer">1:00</div></div>
+    <div class="info-item"><div class="info-label">문제</div><div class="info-value" id="problem">1</div></div>
+    <div class="info-item"><div class="info-label">정답</div><div class="info-value" id="correct">0</div></div>
+  </div>
+
+  <div class="main-content">
+    <div class="left-panel">
+      <div class="shape-box">
+        <div class="shape-label">전</div>
+        <div class="shape"><canvas id="beforeCanvas" width="160" height="160"></canvas></div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="shape-box after">
+        <div class="shape-label">후</div>
+        <div class="shape"><canvas id="afterCanvas" width="160" height="160"></canvas></div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="control-buttons">
+        <div class="btn-control" onclick="addOperation('rotate-left')"><div class="btn-icon">↶</div><div class="btn-label">왼쪽 45°</div></div>
+        <div class="btn-control" onclick="addOperation('rotate-right')"><div class="btn-icon">↷</div><div class="btn-label">오른쪽 45°</div></div>
+        <div class="btn-control" onclick="addOperation('flip-h')"><div class="btn-icon">↔</div><div class="btn-label">좌우반전</div></div>
+        <div class="btn-control" onclick="addOperation('flip-v')"><div class="btn-icon">↕</div><div class="btn-label">상하반전</div></div>
+      </div>
+
+      <div class="click-info">
+        <span class="click-label">남은 클릭 횟수</span><br/>
+        <span class="click-count" id="clicks">20</span>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:14px;color:#666;">과정 미리보기</span>
+        <label style="display:flex;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="previewToggle" onchange="togglePreview()" style="margin-right:5px;">
+          <span style="font-size:12px;color:#666;">쉬움 모드</span>
+        </label>
+      </div>
+
+      <div class="steps-grid" id="stepsGrid"></div>
+
+      <div class="action-buttons">
+        <button class="btn-action" onclick="deleteLastStep()">하나 지움</button>
+        <button class="btn-action" onclick="resetSteps()">전체 초기화</button>
+      </div>
+
+      <div class="message" id="message"></div>
+
+      <button class="btn-submit" onclick="submitAnswer()">답안 제출</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 설정값 ---------- */
+const CANVAS_SIZE_MAIN = 180;
+const CANVAS_SIZE_PREV = 64;
+const MAIN_SCALE = 0.78;
+const PREVIEW_SCALE = 0.6;
+const GRID_LINE_WIDTH = 1.5;
+
+/* ---------- 행렬/렌더 ---------- */
+function I(){return [1,0,0,1];}
+function mul(A,B){const a=A[0]*B[0]+A[2]*B[1];const c=A[1]*B[0]+A[3]*B[1];const b=A[0]*B[2]+A[2]*B[3];const d=A[1]*B[2]+A[3]*B[3];return [a,c,b,d];}
+function Rdeg(k){const rad=(k*45)*Math.PI/180;const cos=Math.cos(rad),sin=Math.sin(rad);return [cos,-sin,sin,cos];}
+function FH(){return[-1,0,0,1];}function FV(){return[1,0,0,-1];}
+
+function drawPattern(ctx,pattern){
+  const size=160,cell=size/4;ctx.fillStyle='#888';
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++)if(pattern[i][j])ctx.fillRect(j*cell-size/2,i*cell-size/2,cell,cell);
+  ctx.strokeStyle='#333';ctx.lineWidth=GRID_LINE_WIDTH;
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(-size/2,i*cell-size/2);ctx.lineTo(size/2,i*cell-size/2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(i*cell-size/2,-size/2);ctx.lineTo(i*cell-size/2,size/2);ctx.stroke();}
+}
+function drawAlphabet(ctx,ch){ctx.fillStyle='#333';ctx.font='bold 120px Segoe UI, Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ch,0,10);}
+function renderTo(canvas,symbol,M,isPattern,scale=1){const ctx=canvas.getContext('2d');const size=canvas.width=canvas.height=CANVAS_SIZE_MAIN;
+  ctx.clearRect(0,0,size,size);ctx.save();ctx.translate(size/2,size/2);ctx.scale(scale,scale);
+  ctx.transform(M[0],M[2],M[1],M[3],0,0);
+  if(isPattern)drawPattern(ctx,symbol);else drawAlphabet(ctx,symbol);
+  ctx.restore();}
+
+/* ---------- 패턴/문제 생성 ---------- */
+function generateHardPattern(){
+  function nbs(r,c){return[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([x,y])=>x>=0&&x<4&&y>=0&&y<4);}
+  function isConn(g){const ones=[];for(let i=0;i<4;i++)for(let j=0;j<4;j++)if(g[i][j])ones.push([i,j]);if(!ones.length)return false;
+    const seen=new Set([[ones[0][0],ones[0][1]].join(',')]);const q=[ones[0]];
+    while(q.length){const[r,c]=q.shift();for(const[nr,nc]of nbs(r,c)){const k=[nr,nc].join(',');if(g[nr][nc]&&!seen.has(k)){seen.add(k);q.push([nr,nc]);}}}
+    return seen.size===ones.length;}
+  for(let t=0;t<500;t++){
+    const target=8+Math.floor(Math.random()*5); // 8~12칸: 난이도↑
+    const g=Array.from({length:4},()=>Array(4).fill(0));
+    let r=Math.floor(Math.random()*4),c=Math.floor(Math.random()*4);g[r][c]=1;let cnt=1;
+    while(cnt<target){const nb=nbs(r,c);[r,c]=nb[Math.floor(Math.random()*nb.length)];
+      if(!g[r][c]){g[r][c]=1;cnt++;}}
+    if(!isConn(g))continue;
+    return g;
+  }
+  return [[1,0,1,0],[0,1,0,1],[1,0,1,0],[0,1,0,1]];
+}
+
+/* ---------- 픽셀 비교(정답 판정) ---------- */
+function equalByPixels(symbol,isPattern,M1,M2){
+  const s=200,c1=document.createElement('canvas'),c2=document.createElement('canvas');
+  c1.width=c1.height=c2.width=c2.height=s;const ctx1=c1.getContext('2d'),ctx2=c2.getContext('2d');
+  for(const c of [ctx1,ctx2]){c.fillStyle='#fff';c.fillRect(0,0,s,s);}
+  for(const [ctx,M]of[[ctx1,M1],[ctx2,M2]]){ctx.save();ctx.translate(s/2,s/2);ctx.transform(M[0],M[2],M[1],M[3],0,0);
+    if(isPattern)drawPattern(ctx,symbol);else drawAlphabet(ctx,symbol);ctx.restore();}
+  const d1=ctx1.getImageData(0,0,s,s).data,d2=ctx2.getImageData(0,0,s,s).data;let diff=0;
+  for(let i=0;i<d1.length;i+=4)diff+=Math.abs(d1[i]-d2[i])+Math.abs(d1[i+1]-d2[i+1])+Math.abs(d1[i+2]-d2[i+2]);
+  return diff/(s*s*3*255)<0.01;
+}
+
+/* ---------- 게임 상태 ---------- */
+let currentRound=1,currentProblem=1,round1Correct=0,round2Correct=0,round1Total=0,round2Total=0;
+let clickCount=0,maxClicks=20,userSteps=[],showStepPreview=false,hasSubmittedAnswer=false;
+let currentSymbol=null,isPattern=false,beforeMat=I(),afterMat=I();
+const alphabets=['R','P','Q','F'];
+
+// 타이머
+let roundTimeLimit=60,remainingTime=60,timerInterval=null;
+function startTimer(){remainingTime=roundTimeLimit;updateTimerDisplay();if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{remainingTime--;updateTimerDisplay();if(remainingTime<=0)endRound();},1000);}
+function updateTimerDisplay(){const m=Math.floor(remainingTime/60),s=(remainingTime%60).toString().padStart(2,'0');
+  document.getElementById('timer').textContent=`${m}:${s}`;document.getElementById('timer').style.color=remainingTime<=10?'#f44336':'#333';}
+function endRound(){clearInterval(timerInterval);
+  if(currentRound===1){round1Total=currentProblem;currentRound=2;currentProblem=1;clickCount=0;
+    showMessage(`라운드 1 종료! ${round1Correct}/${round1Total} 정답. 라운드 2 시작!`,'info');
+    setTimeout(()=>{hideMessage();generateProblem();startTimer();},1200);
+  }else{round2Total=currentProblem;showFinalResult();}}
+
+/* ---------- 문제 생성 ---------- */
+function generateProblem(){
+  isPattern=(currentRound===2);hasSubmittedAnswer=false;userSteps=[];
+  currentSymbol=isPattern?generateHardPattern():alphabets[Math.floor(Math.random()*alphabets.length)];
+  beforeMat=Rdeg(Math.floor(Math.random()*8));
+  // 꼬기: 5~8 스텝, 회전2+반전1 이상, 연속상쇄 방지
+  let M=beforeMat;const stepsMin=5,stepsMax=8;const steps=stepsMin+Math.floor(Math.random()*(stepsMax-stepsMin+1));
+  let usedRot=0,usedFlip=0,prevOp=null;
+  for(let i=0;i<steps;i++){
+    const bag=['rotate-left','rotate-right','flip-h','flip-v','rotate-left','rotate-right'];
+    let op=bag[Math.floor(Math.random()*bag.length)];
+    if((prevOp==='rotate-left'&&op==='rotate-right')||(prevOp==='rotate-right'&&op==='rotate-left'))op=Math.random()<0.5?'flip-h':'flip-v';
+    if(op==='rotate-right'){M=mul(M,Rdeg(1));usedRot++;}else if(op==='rotate-left'){M=mul(M,Rdeg(-1));usedRot++;}
+    else if(op==='flip-h'){M=mul(M,FH());usedFlip++;}else if(op==='flip-v'){M=mul(M,FV());usedFlip++;}
+    prevOp=op;
+  }
+  if(usedRot<2)M=mul(M,Rdeg((Math.random()<0.5)?2:-2));
+  if(usedFlip<1)M=mul(M,(Math.random()<0.5)?FH():FV());
+  afterMat=M;
+  if(equalByPixels(currentSymbol,isPattern,beforeMat,afterMat))return generateProblem();
+  updateDisplay();
+}
+
+/* ---------- 표시/입력 ---------- */
+function renderMain(){
+  renderTo(document.getElementById('beforeCanvas'),currentSymbol,beforeMat,isPattern,MAIN_SCALE);
+  renderTo(document.getElementById('afterCanvas'), currentSymbol,afterMat ,isPattern,MAIN_SCALE);
+}
+function updateDisplay(){
+  renderMain();
+  const grid=document.getElementById('stepsGrid');grid.innerHTML='';
+  for(let i=0;i<8;i++){
+    const slot=document.createElement('div');slot.className='step-slot';slot.id=`step-${i}`;
+    slot.onclick=()=>removeStep(i);slot.innerHTML=`<span class="step-indicator">${i+1}</span>`;
+    if(i<userSteps.length){
+      slot.classList.add('filled');let M=beforeMat;
+      for(let j=0;j<=i;j++){const op=userSteps[j];
+        if(op==='rotate-right')M=mul(M,Rdeg(1));else if(op==='rotate-left')M=mul(M,Rdeg(-1));
+        else if(op==='flip-h')M=mul(M,FH());else if(op==='flip-v')M=mul(M,FV());}
+      const icon=userSteps[i]==='rotate-left'?'↶':userSteps[i]==='rotate-right'?'↷':userSteps[i]==='flip-h'?'↔':'↕';
+      if(showStepPreview){
+        slot.innerHTML=`<span class="step-indicator">${i+1}</span>
+          <canvas id="stepCanvas${i}" width="${CANVAS_SIZE_PREV}" height="${CANVAS_SIZE_PREV}"></canvas>
+          <div style="position:absolute;bottom:3px;right:3px;background:#4caf50;color:#fff;padding:2px 4px;border-radius:3px;font-size:10px;">${icon}</div>`;
+        setTimeout(()=>{
+          const c=document.getElementById(`stepCanvas${i}`),ctx=c.getContext('2d');
+          ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+          ctx.save();ctx.translate(c.width/2,c.height/2);ctx.scale(PREVIEW_SCALE,PREVIEW_SCALE);
+          ctx.transform(M[0],M[2],M[1],M[3],0,0);
+          if(isPattern)drawPattern(ctx,currentSymbol);else drawAlphabet(ctx,currentSymbol);
+          ctx.restore();
+        },0);
+      }else{
+        slot.innerHTML=`<span class="step-indicator">${i+1}</span><div style="font-size:24px;margin-top:10px;">${icon}</div>`;
+      }
+    }
+    grid.appendChild(slot);
+  }
+  document.getElementById('round').textContent=`${currentRound}/2`;
+  document.getElementById('problem').textContent=currentProblem;
+  document.getElementById('clicks').textContent=maxClicks-clickCount;
+  document.getElementById('correct').textContent=currentRound===1?round1Correct:round2Correct;
+}
+function addOperation(op){
+  if(hasSubmittedAnswer) return showMessage('이미 답안을 제출했습니다','error');
+  if(clickCount>=maxClicks) return showMessage('클릭 횟수를 초과했습니다','error');
+  if(userSteps.length>=8) return showMessage('최대 8단계까지만 입력할 수 있습니다','error');
+  userSteps.push(op); clickCount++; updateDisplay();
+}
+function deleteLastStep(){ if(hasSubmittedAnswer) return showMessage('이미 답안을 제출했습니다','error'); if(!userSteps.length) return showMessage('삭제할 단계가 없습니다','error'); userSteps.pop(); clickCount++; updateDisplay(); }
+function removeStep(i){ if(hasSubmittedAnswer) return showMessage('이미 답안을 제출했습니다','error'); if(i>=userSteps.length) return; userSteps.splice(i,1); clickCount++; updateDisplay(); }
+function resetSteps(){ if(hasSubmittedAnswer) return showMessage('이미 답안을 제출했습니다','error'); userSteps=[]; clickCount++; updateDisplay(); }
+function togglePreview(){ showStepPreview=document.getElementById('previewToggle').checked; updateDisplay(); }
+
+/* ---------- 제출/결과 ---------- */
+function submitAnswer(){
+  if(hasSubmittedAnswer) return showMessage('이미 답안을 제출했습니다','error');
+  hasSubmittedAnswer=true;
+  let M=beforeMat;
+  for(const op of userSteps){
+    if(op==='rotate-right')M=mul(M,Rdeg(1));
+    else if(op==='rotate-left')M=mul(M,Rdeg(-1));
+    else if(op==='flip-h')M=mul(M,FH());
+    else if(op==='flip-v')M=mul(M,FV());
+  }
+  const ok = equalByPixels(currentSymbol,isPattern,M,afterMat);
+  console.log('[DEBUG] steps=',userSteps,' match=',ok);
+  if(ok){ if(currentRound===1) round1Correct++; else round2Correct++; showMessage('정답!','success'); setTimeout(()=>{hideMessage(); nextProblem();},800); }
+  else { showMessage('오답입니다.','error'); setTimeout(()=>{hideMessage(); nextProblem();},1500); }
+  updateDisplay();
+}
+function nextProblem(){ currentProblem++; clickCount=0; hideMessage(); generateProblem(); }
+function showFinalResult(){
+  const r1p=round1Total?round1Correct/round1Total*100:0, r2p=round2Total?round2Correct/round2Total*100:0;
+  const tot=round1Correct+round2Correct, probs=round1Total+round2Total; const tp=probs?tot/probs*100:0;
+  const pass=(tp>=60 && r1p>=50 && r2p>=50);
+  const grade=tp>=80?'우수':tp>=70?'적정':tp>=60?'보통':'노력 필요';
+  const gradeColor=tp>=80?'#155724':tp>=70?'#0c5460':tp>=60?'#856404':'#721c24';
+  const res=pass?'합격':'불합격', resColor=pass?'#155724':'#721c24';
+  const m=document.getElementById('message');
+  m.innerHTML=`<div style="font-size:24px;margin-bottom:15px;color:${resColor};font-weight:bold;">${res}</div>
+  <div style="font-size:20px;color:${gradeColor};margin-bottom:15px;">${grade}</div>
+  <div style="margin-bottom:20px;">
+    <div style="font-size:18px;margin-bottom:10px;">전체: ${tot}/${probs} (${tp.toFixed(1)}%)</div>
+    <div style="font-size:14px;color:#666;">라운드 1: ${round1Correct}/${round1Total} (${r1p.toFixed(1)}%)</div>
+    <div style="font-size:14px;color:#666;">라운드 2: ${round2Correct}/${round2Total} (${r2p.toFixed(1)}%)</div>
+  </div>
+  <div style="font-size:12px;color:#666;border-top:1px solid #ddd;padding-top:10px;">합격 기준: 전체 60% 이상 + 각 라운드 50% 이상</div>`;
+  m.className='message show success';
+  setTimeout(()=>{ if(confirm('다시 시작할까요?')) location.reload(); }, 5000);
+}
+function showMessage(t,type){ const m=document.getElementById('message'); m.textContent=t; m.className=`message ${type} show`; }
+function hideMessage(){ document.getElementById('message').className='message'; }
+
+/* ---------- 시작 ---------- */
+function init(){ generateProblem(); startTimer(); updateDisplay(); }
+init();
+</script>
+</body>
+</html>

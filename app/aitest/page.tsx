@@ -24,7 +24,7 @@ const TESTS = [
   {
     id: "nback",
     title: "N-Back 도형 기억력",
-    desc: "도형을 기억하고 N번째 전과 비교하는\n작업기억 훈련 게임",
+    desc: "N번째 전 도형을 기억하는 게임",
     ability: "작업기억력",
     lottie: "/lottie/Morphing shapes.json",
     lottieSize: "w-20 h-20",
@@ -36,7 +36,7 @@ const TESTS = [
   {
     id: "potion",
     title: "마법약 확률 추론",
-    desc: "재료 조합의 확률 패턴을 파악해\n결과를 예측하는 추론 게임",
+    desc: "재료 조합 패턴을 파악하고\n예측하는 게임",
     ability: "패턴인식력",
     lottie: "/lottie/Animation - Magic Potion.json",
     lottieSize: "w-20 h-20",
@@ -185,7 +185,7 @@ export default function AiTestHub() {
               면접 · 서류 준비
             </h2>
             <p className="mt-2 text-[13px] text-[var(--gray-400)] font-medium">
-              24개 빅데이터 기반으로 맞춤 면접 및 서류 전형을 도와드려요
+              24개 빅데이터 기반 맞춤 면접, 서류 전형 준비
             </p>
             <div className="mt-5 flex gap-2">
               <button

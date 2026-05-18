@@ -1,0 +1,399 @@
+import React, { useState, useEffect } from 'react';
+
+const PotionGame = () => {
+  const [gameState, setGameState] = useState('tutorial');
+  const [round, setRound] = useState(0);
+  const [score, setScore] = useState(0);
+  const [currentCombo, setCurrentCombo] = useState(null);
+  const [actualResult, setActualResult] = useState(null);
+  const [userPrediction, setUserPrediction] = useState(null);
+  const [feedback, setFeedback] = useState('');
+  const [history, setHistory] = useState([]);
+  const [showResult, setShowResult] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(3);
+
+  // 재료 이모지
+  const herbs = ['🌿', '🍀', '🌾', '🌱'];
+
+  // 14가지 조합 정의 (최소 1개, 최대 3개 재료)
+  const combos = [
+    { id: 1, grid: [0, 1, 0, 0], redProb: 0.7 },
+    { id: 2, grid: [0, 0, 1, 0], redProb: 0.3 },
+    { id: 3, grid: [0, 0, 0, 1], redProb: 0.6 },
+    { id: 4, grid: [1, 0, 0, 0], redProb: 0.4 },
+    { id: 5, grid: [1, 1, 0, 0], redProb: 0.8 },
+    { id: 6, grid: [0, 0, 1, 1], redProb: 0.5 },
+    { id: 7, grid: [1, 0, 1, 0], redProb: 0.65 },
+    { id: 8, grid: [0, 1, 0, 1], redProb: 0.35 },
+    { id: 9, grid: [1, 1, 1, 0], redProb: 0.75 },
+    { id: 10, grid: [1, 1, 0, 1], redProb: 0.55 },
+    { id: 11, grid: [1, 0, 1, 1], redProb: 0.45 },
+    { id: 12, grid: [0, 1, 1, 1], redProb: 0.4 },
+    { id: 13, grid: [1, 0, 0, 1], redProb: 0.6 },
+    { id: 14, grid: [0, 1, 1, 0], redProb: 0.7 }
+  ];
+
+  // 타이머 효과
+  useEffect(() => {
+    if (gameState === 'playing' && !showResult && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (gameState === 'playing' && !showResult && timeLeft === 0) {
+      // 시간 초과시 오답 처리
+      handleTimeout();
+    }
+  }, [timeLeft, gameState, showResult]);
+
+  const startGame = () => {
+    setGameState('playing');
+    setRound(0);
+    setScore(0);
+    setHistory([]);
+    setFeedback('');
+    generateNextRound();
+  };
+
+  const generateNextRound = () => {
+    // 랜덤 조합 선택
+    const combo = combos[Math.floor(Math.random() * combos.length)];
+    setCurrentCombo(combo);
+    setUserPrediction(null);
+    setShowResult(false);
+    setActualResult(null);
+    setFeedback('');
+    setTimeLeft(3); // 타이머 리셋
+  };
+
+  const generateResult = (combo) => {
+    // 확률에 따라 결과 생성
+    const rand = Math.random();
+    return rand < combo.redProb ? 'red' : 'blue';
+  };
+
+  const handleTimeout = () => {
+    const result = generateResult(currentCombo);
+    setActualResult(result);
+    setShowResult(true);
+    setFeedback('시간 초과 - 오답');
+
+    const newHistory = [...history, {
+      combo: currentCombo,
+      prediction: null,
+      result: result,
+      correct: false,
+      timeout: true,
+      round: round + 1
+    }];
+    setHistory(newHistory);
+
+    setTimeout(() => {
+      if (round + 1 >= 20) {
+        setGameState('result');
+      } else {
+        setRound(round + 1);
+        generateNextRound();
+      }
+    }, 2000);
+  };
+
+  const submitPrediction = (prediction) => {
+    setUserPrediction(prediction);
+    const result = generateResult(currentCombo);
+    setActualResult(result);
+    setShowResult(true);
+
+    const isCorrect = (prediction === 'red' && result === 'red') || 
+                      (prediction === 'blue' && result === 'blue');
+    
+    if (isCorrect) {
+      setScore(score + 1);
+      setFeedback('정답!');
+    } else {
+      setFeedback('오답');
+    }
+
+    const newHistory = [...history, {
+      combo: currentCombo,
+      prediction: prediction,
+      result: result,
+      correct: isCorrect,
+      round: round + 1
+    }];
+    setHistory(newHistory);
+
+    setTimeout(() => {
+      if (round + 1 >= 20) {
+        setGameState('result');
+      } else {
+        setRound(round + 1);
+        generateNextRound();
+      }
+    }, 2000);
+  };
+
+  const resetGame = () => {
+    setGameState('tutorial');
+    setRound(0);
+    setScore(0);
+    setCurrentCombo(null);
+    setActualResult(null);
+    setUserPrediction(null);
+    setFeedback('');
+    setHistory([]);
+    setShowResult(false);
+  };
+
+  // 조합별 통계 계산
+  const getComboStats = (comboId) => {
+    const comboHistory = history.filter(h => h.combo.id === comboId);
+    if (comboHistory.length === 0) return null;
+    
+    const redCount = comboHistory.filter(h => h.result === 'red').length;
+    const blueCount = comboHistory.length - redCount;
+    
+    return {
+      total: comboHistory.length,
+      red: redCount,
+      blue: blueCount,
+      redPercent: Math.round((redCount / comboHistory.length) * 100),
+      bluePercent: Math.round((blueCount / comboHistory.length) * 100)
+    };
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-white text-center mb-2">마법약 만들기</h1>
+        <p className="text-blue-200 text-center mb-8">조합의 확률을 파악하여 예측하세요</p>
+
+        {gameState === 'tutorial' && (
+          <div className="bg-white rounded-lg shadow-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">게임 설명</h2>
+            <div className="space-y-3 mb-6">
+              <p>4분면 재료 조합으로 빨간약 또는 파란약이 만들어집니다.</p>
+              <p>각 조합은 빨간약/파란약을 만들 확률이 다릅니다.</p>
+              <p>같은 조합이 반복되므로 통계를 파악하세요.</p>
+              <p>20라운드 진행하며 더 높은 확률의 색을 예측하세요.</p>
+              <p className="font-bold text-red-600">중요: 라운드당 3초 이내에 선택해야 합니다!</p>
+              <p className="text-red-600">시간 초과시 자동 오답 처리됩니다.</p>
+            </div>
+            <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+              <p className="font-bold mb-2">예시:</p>
+              <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto mb-2">
+                <div className="aspect-square bg-green-100 rounded flex items-center justify-center text-4xl">🌿</div>
+                <div className="aspect-square bg-gray-300 rounded"></div>
+                <div className="aspect-square bg-gray-300 rounded"></div>
+                <div className="aspect-square bg-green-100 rounded flex items-center justify-center text-4xl">🌱</div>
+              </div>
+              <p className="text-sm text-center">이런 조합이 여러 번 나타나면 통계를 확인하세요</p>
+            </div>
+            <button
+              onClick={startGame}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg transition"
+            >
+              게임 시작
+            </button>
+          </div>
+        )}
+
+        {gameState === 'playing' && currentCombo && (
+          <div className="bg-white rounded-lg shadow-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div className="text-lg font-bold">라운드: {round + 1} / 20</div>
+              <div className="text-lg font-bold">점수: {score}</div>
+            </div>
+
+            {!showResult && (
+              <div className="mb-6">
+                <div className="flex items-center justify-center gap-4 mb-2">
+                  <div className={`text-5xl font-bold ${
+                    timeLeft <= 1 ? 'text-red-600 animate-pulse' : 
+                    timeLeft === 2 ? 'text-yellow-600' : 'text-green-600'
+                  }`}>
+                    {timeLeft}
+                  </div>
+                  <div className="text-gray-600">초</div>
+                </div>
+                <div className="w-full bg-gray-300 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${
+                      timeLeft <= 1 ? 'bg-red-600' : 
+                      timeLeft === 2 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${(timeLeft / 3) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mb-8">
+              <h3 className="text-lg font-bold mb-4 text-center">재료 조합</h3>
+              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                {currentCombo.grid.map((hasHerb, idx) => (
+                  <div
+                    key={idx}
+                    className={`aspect-square rounded-lg flex items-center justify-center text-6xl ${
+                      hasHerb ? 'bg-green-100' : 'bg-gray-300'
+                    }`}
+                  >
+                    {hasHerb ? herbs[idx] : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {!showResult && (
+              <div className="mb-8">
+                <h3 className="text-lg font-bold mb-4 text-center">이 조합은 어떤 약을 더 많이 만들까요?</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => submitPrediction('blue')}
+                    className="p-8 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-2xl transition"
+                  >
+                    파란약
+                  </button>
+                  <button
+                    onClick={() => submitPrediction('red')}
+                    className="p-8 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-2xl transition"
+                  >
+                    빨간약
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showResult && (
+              <div className="mb-8">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-bold mb-2">결과</h3>
+                  <div className={`inline-block px-8 py-4 rounded-lg text-white text-2xl font-bold ${
+                    actualResult === 'red' ? 'bg-red-500' : 'bg-blue-500'
+                  }`}>
+                    {actualResult === 'red' ? '빨간약' : '파란약'}
+                  </div>
+                </div>
+                <div className={`text-center p-4 rounded-lg ${
+                  feedback.includes('시간 초과') ? 'bg-orange-100 text-orange-800' :
+                  feedback.includes('정답') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  <span className="text-xl font-bold">{feedback}</span>
+                </div>
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-bold mb-4">지금까지의 결과</h3>
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {history.slice().reverse().map((h, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <div className="flex gap-1">
+                        {h.combo.grid.map((hasHerb, i) => (
+                          <div
+                            key={i}
+                            className={`w-8 h-8 rounded flex items-center justify-center text-lg ${
+                              hasHerb ? 'bg-green-100' : 'bg-gray-300'
+                            }`}
+                          >
+                            {hasHerb ? herbs[i] : ''}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className={`px-3 py-1 rounded ${
+                          h.result === 'red' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800'
+                        }`}>
+                          {h.result === 'red' ? '빨강' : '파랑'}
+                        </span>
+                        <span className={h.timeout ? 'text-orange-600' : h.correct ? 'text-green-600 font-bold' : 'text-red-600'}>
+                          {h.timeout ? '⏱' : h.correct ? '✓' : '✗'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {gameState === 'result' && (
+          <div className="bg-white rounded-lg shadow-2xl p-8">
+            <h2 className="text-3xl font-bold text-center mb-6">게임 완료</h2>
+            <div className="text-center mb-8">
+              <div className="text-6xl font-bold text-purple-600 mb-2">{score} / 20</div>
+              <div className="text-xl mb-4">
+                정확도: {Math.round((score / 20) * 100)}%
+              </div>
+              
+              <div className={`inline-block px-8 py-4 rounded-lg text-2xl font-bold mb-4 ${
+                score >= 13 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+              }`}>
+                {score >= 13 ? '✓ 합격' : '✗ 불합격'}
+              </div>
+              
+              <div className="text-lg">
+                {score >= 17 && '탁월 (85% 이상)'}
+                {score >= 15 && score < 17 && '우수 (75% 이상)'}
+                {score >= 13 && score < 15 && '합격 (65% 이상)'}
+                {score < 13 && '불합격 (65% 미만)'}
+              </div>
+              
+              <div className="mt-4 text-sm text-gray-600">
+                <p>합격 기준: 13점(65%) 이상</p>
+                <p className="text-xs mt-1">랜덤 선택: 약 10점(50%) / 패턴 파악 필수</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-4">전체 결과</h3>
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {history.map((h, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold w-8">#{idx + 1}</span>
+                      <div className="flex gap-1">
+                        {h.combo.grid.map((hasHerb, i) => (
+                          <div
+                            key={i}
+                            className={`w-6 h-6 rounded flex items-center justify-center text-xs ${
+                              hasHerb ? 'bg-green-100' : 'bg-gray-300'
+                            }`}
+                          >
+                            {hasHerb ? herbs[i] : ''}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <span className="text-sm text-gray-600">
+                        예측: {h.timeout ? '⏱' : h.prediction === 'red' ? '🔴' : '🔵'}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        결과: {h.result === 'red' ? '🔴' : '🔵'}
+                      </span>
+                      <span className={h.timeout ? 'text-orange-600 text-xl' : h.correct ? 'text-green-600 font-bold text-xl' : 'text-red-600 text-xl'}>
+                        {h.timeout ? '⏱' : h.correct ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={resetGame}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg transition"
+            >
+              다시 하기
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PotionGame;

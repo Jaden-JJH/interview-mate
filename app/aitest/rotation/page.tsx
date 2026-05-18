@@ -245,6 +245,9 @@ const OP_LABELS: Record<Op, string> = {
   "flip-v": "상하반전",
 };
 
+const STEP_CANVAS_SIZE = 44;
+const STEP_PREVIEW_SCALE = 0.52;
+
 type GameState = "setup" | "playing" | "finished";
 
 export default function RotationGame() {
@@ -266,13 +269,19 @@ export default function RotationGame() {
   } | null>(null);
   const [remainingTime, setRemainingTime] = useState(60);
   const [problem, setProblem] = useState<ReturnType<typeof generateProblem> | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const beforeRef = useRef<HTMLCanvasElement>(null);
   const afterRef = useRef<HTMLCanvasElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stepCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const maxClicks = 20;
 
-  const canvasSize = typeof window !== "undefined" ? Math.min(window.innerWidth - 48, 280) : 240;
+  const canvasSize = typeof window !== "undefined"
+    ? window.innerWidth <= 640
+      ? Math.min(Math.floor(window.innerWidth * 0.42), 170)
+      : Math.min(window.innerWidth - 48, 280)
+    : 160;
 
   const renderCanvases = useCallback(() => {
     if (!problem || !beforeRef.current || !afterRef.current) return;
@@ -298,6 +307,28 @@ export default function RotationGame() {
   useEffect(() => {
     renderCanvases();
   }, [renderCanvases]);
+
+  useEffect(() => {
+    if (!showPreview || !problem) return;
+    for (let i = 0; i < userSteps.length; i++) {
+      const canvas = stepCanvasRefs.current[i];
+      if (!canvas) continue;
+      let M = problem.beforeMat;
+      for (let j = 0; j <= i; j++) M = applyOp(M, userSteps[j]);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+      canvas.width = canvas.height = STEP_CANVAS_SIZE;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, STEP_CANVAS_SIZE, STEP_CANVAS_SIZE);
+      ctx.save();
+      ctx.translate(STEP_CANVAS_SIZE / 2, STEP_CANVAS_SIZE / 2);
+      ctx.scale(STEP_PREVIEW_SCALE, STEP_PREVIEW_SCALE);
+      ctx.transform(M[0], M[2], M[1], M[3], 0, 0);
+      if (problem.isPattern) drawPattern(ctx, problem.symbol as Pattern, 160);
+      else drawAlphabet(ctx, problem.symbol as string);
+      ctx.restore();
+    }
+  }, [showPreview, userSteps, problem]);
 
   const startTimer = useCallback(() => {
     setRemainingTime(60);
@@ -603,9 +634,62 @@ export default function RotationGame() {
             ))}
           </div>
 
-          {/* STEPS + CLICK COUNT */}
+          {/* EASY MODE TOGGLE + CLICK COUNT */}
           <div className="mt-2 flex items-center justify-between">
-            <div className="flex gap-1 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <span className="text-[11px] text-[var(--gray-500)]">과정 미리보기</span>
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={showPreview}
+                onChange={(e) => setShowPreview(e.target.checked)}
+              />
+              <div className={`relative w-8 h-[18px] rounded-full transition-colors duration-200 ${showPreview ? "bg-[var(--blue-primary)]" : "bg-[var(--gray-300)]"}`}>
+                <div className={`absolute top-0.5 w-[14px] h-[14px] rounded-full bg-white shadow transition-all duration-200 ${showPreview ? "left-[18px]" : "left-0.5"}`} />
+              </div>
+              <span className="text-[11px] text-[var(--gray-500)]">쉬움 모드</span>
+            </label>
+            <div className="text-right shrink-0">
+              <div className="text-[10px] text-[var(--gray-400)]">남은 클릭</div>
+              <div className="text-[14px] font-bold text-[var(--gray-900)]">
+                {maxClicks - clickCount}
+              </div>
+            </div>
+          </div>
+
+          {/* STEPS */}
+          {showPreview ? (
+            <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`relative aspect-square rounded-lg flex items-center justify-center border overflow-hidden ${
+                    i < userSteps.length
+                      ? "border-[var(--blue-primary)] bg-[var(--blue-bg)]"
+                      : "border-[var(--gray-200)] bg-[var(--gray-100)]"
+                  }`}
+                >
+                  <span className="absolute top-0.5 left-1 text-[9px] text-[var(--gray-400)] z-10">{i + 1}</span>
+                  {i < userSteps.length ? (
+                    <>
+                      <canvas
+                        ref={(el) => { stepCanvasRefs.current[i] = el; }}
+                        width={STEP_CANVAS_SIZE}
+                        height={STEP_CANVAS_SIZE}
+                        style={{ width: STEP_CANVAS_SIZE, height: STEP_CANVAS_SIZE }}
+                      />
+                      <span className="absolute bottom-0.5 right-1 text-[11px] font-bold text-[var(--blue-primary)] z-10">
+                        {OP_ICONS[userSteps[i]]}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[13px] text-[var(--gray-300)]">{i + 1}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-1.5 flex gap-1">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
@@ -619,13 +703,7 @@ export default function RotationGame() {
                 </div>
               ))}
             </div>
-            <div className="text-right shrink-0 ml-2">
-              <div className="text-[10px] text-[var(--gray-400)]">남은 클릭</div>
-              <div className="text-[14px] font-bold text-[var(--gray-900)]">
-                {maxClicks - clickCount}
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* UNDO / RESET + SUBMIT */}
           <div className="mt-2 flex gap-2">
