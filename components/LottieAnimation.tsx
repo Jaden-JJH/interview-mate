@@ -2,7 +2,7 @@
 "use client";
 
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
-import { memo, useEffect, useState, useRef } from "react";
+import { CSSProperties, memo, useEffect, useState, useRef } from "react";
 
 // Dedupe fetches across instances. Same src used in multiple places (e.g.
 // Talking Character on hero + STEP 03, Coin in CreditBadge across pages)
@@ -31,6 +31,7 @@ interface LottieAnimationProps {
   src: string;
   fallbackSrc?: string;
   className?: string;
+  style?: CSSProperties;
   loop?: boolean;
   autoplay?: boolean;
   playing?: boolean;
@@ -40,6 +41,7 @@ function LottieAnimation({
   src,
   fallbackSrc,
   className = "",
+  style,
   loop = true,
   autoplay = true,
   playing = true,
@@ -85,6 +87,7 @@ function LottieAnimation({
       loop={loop}
       autoplay={playing ? autoplay : false}
       className={className}
+      style={style}
     />
   );
 }
