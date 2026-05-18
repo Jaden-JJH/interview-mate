@@ -41,8 +41,8 @@ const TESTS = [
     lottie: "/lottie/Animation - Magic Potion.json",
     lottieSize: "w-20 h-20",
     lottieScale: 1.2,
-    color: "from-purple-500/10 to-purple-600/5",
-    accent: "#7C5CFF",
+    color: "from-emerald-500/10 to-emerald-600/5",
+    accent: "#00B167",
     href: "/aitest/potion",
   },
   {
@@ -53,8 +53,8 @@ const TESTS = [
     lottie: "/lottie/Connected cubes animation.json",
     lottieSize: "w-12 h-12",
     lottieScale: 1,
-    color: "from-emerald-500/10 to-emerald-600/5",
-    accent: "#00B167",
+    color: "from-purple-500/10 to-purple-600/5",
+    accent: "#7C5CFF",
     href: "/aitest/rotation",
   },
 ];
@@ -116,7 +116,7 @@ export default function AiTestHub() {
               posthog.capture("aitest_card_clicked", { test: test.id });
               router.push(test.href);
             }}
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${test.color} border border-[var(--gray-200)] p-5 text-left transition-transform active:scale-[0.98]`}
+            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${test.color} p-5 text-left transition-transform active:scale-[0.98]`}
           >
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 shrink-0 rounded-xl bg-white/80 flex items-center justify-center shadow-sm overflow-hidden">

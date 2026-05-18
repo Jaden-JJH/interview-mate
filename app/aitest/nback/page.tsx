@@ -175,6 +175,7 @@ export default function NBackGame() {
         return;
       setUserAnswer(answer);
       userAnswerRef.current = answer;
+      if (progressTimer.current) clearInterval(progressTimer.current);
     },
     [isShowingShape, gameState, userAnswer]
   );
@@ -569,7 +570,7 @@ export default function NBackGame() {
           {/* TIMER BAR */}
           <div className="w-full bg-[var(--gray-100)] rounded-full h-2 mb-4 overflow-hidden">
             <div
-              className="h-2 rounded-full transition-all duration-75 ease-linear bg-gradient-to-r from-[var(--blue-primary)] to-[#5B8DEF]"
+              className="h-2 rounded-full bg-gradient-to-r from-[var(--blue-primary)] to-[#5B8DEF]"
               style={{
                 width: `${isShowingShape ? timerProgress : 0}%`,
                 opacity: isShowingShape ? 1 : 0,
@@ -773,7 +774,7 @@ export default function NBackGame() {
           </button>
           <button
             onClick={() => router.push("/aitest")}
-            className="flex-1 rounded-2xl bg-[var(--gray-100)] py-[14px] text-[16px] font-bold text-[var(--gray-700)] transition-transform active:scale-[0.98]"
+            className="flex-1 rounded-2xl bg-[var(--gray-900)] py-[14px] text-[16px] font-bold text-white transition-transform active:scale-[0.98]"
           >
             다른 검사 보기
           </button>

@@ -583,7 +583,7 @@ export default function PotionGame() {
           </button>
           <button
             onClick={() => router.push("/aitest")}
-            className="flex-1 rounded-2xl bg-[var(--gray-100)] py-[14px] text-[16px] font-bold text-[var(--gray-700)] transition-transform active:scale-[0.98]"
+            className="flex-1 rounded-2xl bg-[var(--gray-900)] py-[14px] text-[16px] font-bold text-white transition-transform active:scale-[0.98]"
           >
             다른 검사 보기
           </button>
