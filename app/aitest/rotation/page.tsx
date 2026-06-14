@@ -330,13 +330,17 @@ export default function RotationGame() {
     }
   }, [showPreview, userSteps, problem]);
 
+  // 타이머 setInterval 콜백이 최신 endRound를 호출하도록 ref로 보관
+  // (startTimer는 deps []라 첫 렌더의 endRound(currentRound===1)에 고정되는 stale closure 방지)
+  const endRoundRef = useRef<() => void>(() => {});
+
   const startTimer = useCallback(() => {
     setRemainingTime(60);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setRemainingTime((prev) => {
         if (prev <= 1) {
-          endRound();
+          endRoundRef.current();
           return 0;
         }
         return prev - 1;
@@ -368,6 +372,11 @@ export default function RotationGame() {
       setGameState("finished");
     }
   }, [currentRound, currentProblem, startTimer]);
+
+  // 매 렌더마다 endRoundRef를 최신 endRound로 갱신
+  useEffect(() => {
+    endRoundRef.current = endRound;
+  }, [endRound]);
 
   useEffect(() => {
     return () => {
