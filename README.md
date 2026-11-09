@@ -1,3 +1,5 @@
+[![Checked by Trust](https://trust-backend-knnd76vaqq-du.a.run.app/api/badge/4ccd8679-3dba-4ce7-ba32-abba2985a47e/image)](https://trust-scan.me/?utm_source=badge&utm_content=Jaden-JJH/interview-mate)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
